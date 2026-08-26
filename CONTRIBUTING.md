@@ -25,5 +25,4 @@ git config https.proxy http://127.0.0.1:7890
 git config user.name "你的姓名"; git config user.email "你的邮箱@users.noreply.github.com"
 git clone https://github.com/Archon0203/FPGA_Competition_HDMI.git
 cd FPGA_Competition_HDMI
-vsim -c -do ../sim/run_vga_timing.do   # 在 sim_tb 跑仿真自检
 ```
