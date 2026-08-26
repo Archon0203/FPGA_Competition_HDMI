@@ -1,0 +1,44 @@
+# =============================================================
+# Git 忽略规则 (用于提交到 GitHub)
+# =============================================================
+
+# ---- Anlogic TangDynasty (TD) 生成物 ----
+*.log
+*.bak
+*.ful
+*.srr
+*.rpt
+*.jcl
+# TD 综合/布局布线生成物（不提交，可由工具重新生成）
+*.bit
+*.area
+*.db
+**/.ip_cache/
+**/generated/
+**/*_impl/
+**/prj_*/
+
+# ---- ModelSim 生成物 ----
+modelsim.ini
+*.wlf
+*.vcd
+transcript
+vsim*.log
+sim_tb/work/
+sim_tb/transcript
+sim_tb/*.wlf
+sim_tb/*.vcd
+sim_tb/*.log
+
+# ---- 编辑器 / 系统 ----
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# ---- 大媒体 / 测试素材 ----
+# data/ 默认不入库 (可由 tools/ 重新生成, 避免仓库膨胀)。
+#   * 想入库个别小素材: git add -f 路径
+#   * 想整体走 Git LFS: 删掉下面 data/ 行, 用 .gitattributes
+data/

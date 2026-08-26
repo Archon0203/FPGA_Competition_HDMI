@@ -1,0 +1,33 @@
+// ============================================================
+// 管脚/位置约束 - 占位模板（**必须**替换为官方板卡资料的引脚号）
+// 芯片：EG4S20BG256  板卡：HX4S20C
+// 此文件仅示意，严禁以此直接烧录。
+// ============================================================
+
+// ---- 时钟 ----
+//set_location clk_50m P?        // 50MHz 有源时钟
+
+// ---- HDMI 输出（双口，需差分；R/G/B/Clk 各 1 对）----
+//set_location hdmi_tmds_p[0] P?
+//set_location hdmi_tmds_n[0] P?
+// ... 依次 R/G/B/Clock 差分对
+
+// ---- SD/TF 卡（SPI/SPI-Mode）----
+//set_location sd_cs_n  P?
+//set_location sd_sclk  P?
+//set_location sd_mosi  P?
+//set_location sd_miso  P?   // input
+
+// ---- SDRAM（2M x 32bit）----
+// set_location sdram_addr[..] P?   // 地址
+// set_location sdram_data[..] P?   // 数据
+// set_location sdram_cs_n  P?      // 片选
+// ... 时钟/使能/字节使能等
+
+// ---- 人机交互 ----
+//set_location key[0] P?      // 4 按键
+//set_location sw[0]  P?      // 4 拨码
+//set_location seg_sel[0] P?  // 数码管位选
+//set_location seg_data[0] P? // 数码管段选
+// ... led / buzzer / uart
+
