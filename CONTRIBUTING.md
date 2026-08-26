@@ -26,3 +26,5 @@ git config user.name "你的姓名"; git config user.email "你的邮箱@users.n
 git clone https://github.com/Archon0203/FPGA_Competition_HDMI.git
 cd FPGA_Competition_HDMI
 ```
+## Modelsim相关
+具体操作在群文件分享的教程里，注意不要直接使用TangDynasty在项目文件夹/simulation/下生成的.do脚本。如果未创建新仿真工程而直接使用该脚本，则会直接覆盖上一个仿真工程产生的文件
