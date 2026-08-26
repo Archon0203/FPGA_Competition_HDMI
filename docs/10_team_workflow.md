@@ -1,18 +1,21 @@
 # 10 · 团队协作开发流程（GitHub + main 分支保护）
 
 > 仓库：`Archon0203/FPGA_Competition_HDMI`（公开）
-> 规则：对 `main` 的直接 push 被拒绝，一切改动必须走 PR，并经审核 + 1 个 Approve 后合并。
-> 团队成员：**张宗**（队员A / 仓库所有者）、**曾雨婷**（队长）、**杨文轩**（队员B）。三人均为仓库成员（Write）。
+> 规则：对 `main` 的直接 push 被拒绝（"Changes must be made through a pull request"），一切改动必须走 PR，并经审核 + 1 个 Approve 后合并。
+> 团队成员（GitHub 账号）：**张宗** = Archon0203（队员A/所有者）、**曾雨婷** = ZYT-zyt111（队长）、**杨文轩** = ywx324（队员B）。
 
-## 0. 角色与权限
+## 0. 角色与权限（当前实际配置）
 
-| 角色 | 姓名 | GitHub 权限 | 职责 |
-|---|---|---|---|
-| **队员A**（仓库所有者） | 张宗 | **Owner** | 建仓、设分支保护、审核并合并 PR、维护 main 与文档 |
-| **队长** | 曾雨婷 | **Collaborator（Write）** | 统筹、认领模块、开发、开 PR；经张宗授权可代为审核 |
-| **队员B** | 杨文轩 | **Collaborator（Write）** | 开发、开 PR；可直接在上游开发，也可 fork 隔离 |
+| 角色 | 姓名 | GitHub 账号 | 权限 | 是否在 Rule1 bypass | 职责 |
+|---|---|---|---|---|---|
+| **队员A**（所有者） | 张宗 | Archon0203 | **Owner** | ✅ 是（可直推 main） | 建仓、设分支保护、审核并合并 PR、维护 main 与文档 |
+| **队长** | 曾雨婷 | ZYT-zyt111 | **Collaborator（Write）** | ❌ 否（必须走 PR） | 统筹、开发、开 PR；经张宗授权可代审 |
+| **队员B** | 杨文轩 | ywx324 | **Collaborator（Write）** | ❌ 否（必须走 PR） | 开发、开 PR；可 fork 隔离（可选） |
 
-> 说明：三人都是仓库成员，都**不能直接 push 到 `main`**（受保护），一律走 feature 分支 + PR。队员B 有两种用法：A) 直接在上游开发（推荐，最省事）；B ) fork 隔离（分支更独立，可选）。
+> 说明：
+> - 张宗 是 **Rule1 的 bypass 成员**，可绕过 PR 直接 push 到 main（方便管理员处理/紧急修复）；但团队改动仍建议走 PR。
+> - 曾雨婷、杨文轩 是 **Write 成员，不在 bypass 名单**，**不能直接 push main**，必须走 feature 分支 + PR。
+> - 三人对 `main` 的修改都要先 `git pull` 同步最新，避免冲突。
 
 ## 1. 通用前提（每一位成员，首次必做）
 
@@ -23,8 +26,8 @@ git config https.proxy http://127.0.0.1:7890
 ```
 再确认提交身份：
 ```powershell
-git config user.name  "张宗"      # 或 "曾雨婷" / "杨文轩"
-git config user.email "你的邮箱@users.noreply.github.com"
+git config user.name  "张宗"       # 或 "曾雨婷" / "杨文轩"
+git config user.email "你的账号@users.noreply.github.com"
 ```
 用 `git config --list` 查看是否生效。
 
@@ -36,41 +39,40 @@ git config user.email "你的邮箱@users.noreply.github.com"
 
 ## 2. 张宗（队员A / 仓库所有者 / 审核者）
 
-### 2.1 一次性初始化
+### 2.1 一次性初始化（已完成）
 1. 建公开仓库 `FPGA_Competition_HDMI` 并 push 到 `main`。
 2. 设 main 分支保护：Settings → Rulesets → Rule1，Target `main`，勾 Require a pull request before merging（approvals=1）、Block force pushes、Require conversation resolution。
-3. 邀请协作者：Settings → Collaborators → Add people，添加 **曾雨婷** 与 **杨文轩**，角色都选 **Write**。
+3. Bypass list 添加 **Archon0203**（自己），允许直推 main。
+4. Collaborators 添加 **ZYT-zyt111（曾雨婷）** 与 **ywx324（杨文轩）**，角色 **Write**。
 
 ### 2.2 日常审核与合并
 1. 打开仓库 `pulls`，看待审 PR。
-2. 进入某条 PR：Files changed 看 diff -> 留评论 -> 点 Review。
-   - 没问题 -> Approve；
-   - 有问题 -> Request changes（并说明改法）。
-3. 通过后点 Merge pull request（Squash and merge），再确认删除源分支。
+2. 进入某条 PR：Files changed 看 diff -> 留评论 -> 点 Review：没问题 Approve；有问题 Request changes。
+3. 通过后点 **Merge pull request（Squash and merge）**，再确认删除源分支。
 4. 同步本地：
    ```powershell
    git checkout main; git pull origin main
    ```
 
-### 2.3 张宗自己开发（保持 main 干净）
-- 推荐：本地建分支 -> 改 -> push -> 开 PR -> 自己审或让曾雨婷审。
-  ```powershell
-  git checkout -b feature/xxx
-  git add -A; git commit -m "feat(module): desc"
-  git push origin feature/xxx
-  ```
-  然后 GitHub 上 base `main` <- compare `feature/xxx`，Create PR。
+### 2.3 张宗自己开发
+推荐走 PR（保持 main 干净）；紧急修复可利用 bypass 直推：
+```powershell
+git checkout -b feature/xxx
+git add -A; git commit -m "feat(module): desc"
+git push origin feature/xxx        # 走 PR 时用这个
+# 紧急时（bypass 允许）可：git push origin main
+```
 
 ## 3. 曾雨婷（队长 / 仓库协作者 / 统筹）
 
-1. 接受张宗 的协作者邀请（邮箱/通知）。
-2. 克隆：
+1. 已接受邀请成为 **Write 成员**。
+2. 克隆原仓库：
    ```powershell
    git clone https://github.com/Archon0203/FPGA_Competition_HDMI.git
    cd FPGA_Competition_HDMI
    git config http.proxy  http://127.0.0.1:7890
    git config https.proxy http://127.0.0.1:7890
-   git config user.name "曾雨婷"; git config user.email "曾雨婷邮箱@users.noreply.github.com"
+   git config user.name "曾雨婷"; git config user.email "ZYT-zyt111@users.noreply.github.com"
    ```
 3. 建分支并开发：
    ```powershell
@@ -78,7 +80,7 @@ git config user.email "你的邮箱@users.noreply.github.com"
    # 修改 src/ 与 sim/；在 sim_tb 里跑 ModelSim 自检 PASS
    git add -A; git commit -m "feat(framebuf): add async_fifo"
    ```
-4. 推送并提 PR：
+4. 推送原仓库并提 PR：
    ```powershell
    git push origin feature/xxx
    ```
@@ -89,18 +91,17 @@ git config user.email "你的邮箱@users.noreply.github.com"
    ```
 6. （可选，经张宗授权）代审：在他人 PR 上 Review（Approve / Request changes）。
 
-> 注意：`main` 被保护，队长也不能直接 push 到 `main`，必须走上面 PR 流程。
+> 注意：`main` 被保护，队长**不能直接 push 到 `main`**，必须走上面 PR 流程。
 
 ## 4. 杨文轩（队员B / 仓库协作者）
 
 ### 4.1 方式 A：直接在上游开发（推荐）
-和队长一样，克隆原仓库即可：
 ```powershell
 git clone https://github.com/Archon0203/FPGA_Competition_HDMI.git
 cd FPGA_Competition_HDMI
 git config http.proxy  http://127.0.0.1:7890
 git config https.proxy http://127.0.0.1:7890
-git config user.name "杨文轩"; git config user.email "杨文轩邮箱@users.noreply.github.com"
+git config user.name "杨文轩"; git config user.email "ywx324@users.noreply.github.com"
 git checkout -b feature/xxx
 # 改 src/ 与 sim/；sim_tb 跑 ModelSim 自检 PASS
 git add -A; git commit -m "feat(display): add image_scaler"
@@ -113,7 +114,7 @@ git checkout main; git pull origin main; git branch -d feature/xxx
 
 ### 4.2 方式 B：fork 隔离（可选，分支更独立）
 1. 原仓库 -> Fork 到自己的账号。
-2. `git clone 自己的fork` -> 配代理/身份；`git remote add upstream https://github.com/Archon0203/FPGA_Competition_HDMI.git`。
+2. `git clone 你的fork` -> 配代理/身份；`git remote add upstream https://github.com/Archon0203/FPGA_Competition_HDMI.git`。
 3. `git checkout -b feature/xxx` -> 改 -> 自检 PASS -> `git push origin feature/xxx`。
 4. 到原仓库 New pull request -> base `main` <- compare **你 fork 的 feature/xxx** -> Create PR。
 5. 同步上游：`git fetch upstream; git rebase upstream/main; git push --force-with-lease`。
@@ -134,6 +135,7 @@ git checkout main; git pull origin main; git branch -d feature/xxx
 | 问题 | 处理 |
 |---|---|
 | 连不上 github.com 443 | 配代理：`git config http.proxy http://127.0.0.1:7890`（再加 https.proxy） |
-| push 被 protected branch hook declined | 正常：别直接推 main，改建 feature 分支再开 PR |
+| `protected branch hook declined` | 正常：别直接推 main，改用 feature 分支再开 PR |
 | 合并按钮灰 | 通常是未通过审批或还有未解决评论，先 Approve / resolve 再试 |
-| 无法 push 到原仓库（403） | 确认已被张宗 添加为 Collaborator（Write），或改用 fork 流程 |
+| 无法 push 到原仓库（403） | 确认已成为 Collaborator（Write）并接受邀请；或改用 fork 流程 |
+| 想直推 main | 只有张宗（bypass）可以；其他人一律走 PR |
