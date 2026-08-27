@@ -19,6 +19,7 @@
 // 时钟域: clk 为像素时钟域(clk_pix)。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T10(示例卡2)实现。
+//   2026-08-27 v1.1 修复 BT.601 定点乘法被表达式位宽截断的问题。
 // ================================================================
 
 module color_space #(
@@ -34,26 +35,26 @@ module color_space #(
     output wire          out_valid
 );
 
-    // Q8 系数
-    localparam signed [15:0] K_R_CR = 16'sd359;   // 1.402 * 256
-    localparam signed [15:0] K_G_CB = 16'sd88;    // 0.344 * 256
-    localparam signed [15:0] K_G_CR = 16'sd183;   // 0.714 * 256
-    localparam signed [15:0] K_B_CB = 16'sd454;   // 1.772 * 256
+    // Q8 系数。显式放到 32 位，避免 Verilog 乘法按“操作数最大位宽”截断。
+    localparam signed [31:0] K_R_CR = 32'sd359;   // 1.402 * 256
+    localparam signed [31:0] K_G_CB = 32'sd88;    // 0.344 * 256
+    localparam signed [31:0] K_G_CR = 32'sd183;   // 0.714 * 256
+    localparam signed [31:0] K_B_CB = 32'sd454;   // 1.772 * 256
 
     assign out_valid = pixel_valid;
 
-    // 色度去中心(0..255 -> -128..127)
-    wire signed [9:0] cbc = {2'b00, cb} - 10'sd128;
-    wire signed [9:0] crc = {2'b00, cr} - 10'sd128;
+    // 色度去中心(0..255 -> -128..127)，先零扩展到 32 位再做有符号运算。
+    wire signed [31:0] cbc = $signed({24'b0, cb}) - 32'sd128;
+    wire signed [31:0] crc = $signed({24'b0, cr}) - 32'sd128;
 
-    // 定点矩阵(算术右移 8)
+    // 定点矩阵(算术右移 8)。所有乘数均已是 32 位，结果不会截断。
     wire signed [31:0] r_off = ($signed(crc) * K_R_CR) >>> 8;
     wire signed [31:0] g_off = (($signed(cbc) * K_G_CB) + ($signed(crc) * K_G_CR)) >>> 8;
     wire signed [31:0] b_off = ($signed(cbc) * K_B_CB) >>> 8;
 
-    wire signed [31:0] r_sum = $signed({1'b0, y}) + r_off;
-    wire signed [31:0] g_sum = $signed({1'b0, y}) - g_off;
-    wire signed [31:0] b_sum = $signed({1'b0, y}) + b_off;
+    wire signed [31:0] r_sum = $signed({24'b0, y}) + r_off;
+    wire signed [31:0] g_sum = $signed({24'b0, y}) - g_off;
+    wire signed [31:0] b_sum = $signed({24'b0, y}) + b_off;
 
     function [7:0] clip;
         input signed [31:0] v;

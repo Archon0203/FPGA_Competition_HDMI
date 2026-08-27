@@ -23,12 +23,14 @@
 // 时钟域: clk 为 SD 读卡时钟域(clk_sdo)。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡实现。
+//   2026-08-27 v1.1 增加 ACMD41 idle 轮询，并支持单实例重复读块。
 // ================================================================
 
 module sd_reader #(
     parameter integer DATA_BYTES = 512,
     parameter integer RETRY_MAX  = 3,
-    parameter integer TIMEOUT    = 1000
+    parameter integer TIMEOUT    = 1000,
+    parameter integer ACMD_POLL_MAX = 4095
 )(
     input  wire        clk,
     input  wire        rst_n,
@@ -61,6 +63,7 @@ module sd_reader #(
     reg [1:0]  read_ctx;          // 0=读取响应 1=token 2=data 3=crc
     reg [31:0] timeout_cnt;
     reg [1:0]  retry_cnt;
+    reg [15:0] acmd_poll;
     reg [31:0] data_cnt;
 
     function [7:0] cmd_byte_at;
@@ -112,6 +115,7 @@ module sd_reader #(
     task retry;
         begin
             retry_cnt <= retry_cnt + 1'b1;
+            acmd_poll <= 16'd0;
             if (retry_cnt >= RETRY_MAX) begin
                 state <= S_ABORT;
             end else begin
@@ -130,13 +134,16 @@ module sd_reader #(
             is_read <= 1'b0; read_ctx <= 2'd0;
             data_valid <= 1'b0; data_out <= 8'd0;
             done <= 1'b0; ok <= 1'b0; timeout_cnt <= 32'd0;
-            retry_cnt <= 2'd0; data_cnt <= 32'd0;
+            retry_cnt <= 2'd0; acmd_poll <= 16'd0; data_cnt <= 32'd0;
         end else begin
             data_valid <= 1'b0;
             case (state)
                 S_IDLE: begin
+                    // 每次新读块前，清除上一次完成状态；否则模块只能使用一次。
+                    done <= 1'b0;
+                    ok   <= 1'b0;
                     if (start) begin
-                        phase <= 3'd0; retry_cnt <= 2'd0;
+                        phase <= 3'd0; retry_cnt <= 2'd0; acmd_poll <= 16'd0;
                         cmd_bytes <= make_cmd(3'd0, 32'd0);
                         byte_n    <= 3'd0;
                         is_read   <= 1'b0;
@@ -244,12 +251,13 @@ module sd_reader #(
                             if (resp[0] == 8'h00) begin
                                 phase <= 3'd4;
                                 start_cmd(3'd4, block_addr); // CMD17
-                            end else if (retry_cnt < RETRY_MAX) begin
-                                retry_cnt <= retry_cnt + 1'b1;
+                            end else if (resp[0] == 8'h01 && acmd_poll < ACMD_POLL_MAX) begin
+                                // 仍在初始化(idle)：继续发 CMD55+ACMD41 轮询，不消耗整体重试次数。
+                                acmd_poll <= acmd_poll + 1'b1;
                                 phase <= 3'd2;
                                 start_cmd(2'd2, 32'd0);
                             end else begin
-                                state <= S_ABORT;
+                                retry;
                             end
                         end
                         default: begin // CMD17
@@ -261,10 +269,26 @@ module sd_reader #(
                         end
                     endcase
                 end
-                S_DONE: done <= 1'b1;
+                S_DONE: begin
+                    // 完成后保持 done/ok；若再次给出 start，则重新开始下一块。
+                    if (start) begin
+                        done <= 1'b0;
+                        ok   <= 1'b0;
+                        phase <= 3'd0; retry_cnt <= 2'd0; acmd_poll <= 16'd0;
+                        cmd_bytes <= make_cmd(3'd0, 32'd0);
+                        byte_n    <= 3'd0;
+                        is_read   <= 1'b0;
+                        tx_byte   <= cmd_byte_at(make_cmd(3'd0, 32'd0), 3'd0);
+                        state     <= S_PREP;
+                        timeout_cnt <= 32'd0;
+                    end else begin
+                        done <= 1'b1;
+                    end
+                end
                 S_ABORT: begin
                     if (retry_cnt < RETRY_MAX) begin
                         retry_cnt <= retry_cnt + 1'b1;
+                        acmd_poll <= 16'd0;
                         phase <= 3'd0;
                         start_cmd(2'd0, 32'd0);
                     end else begin

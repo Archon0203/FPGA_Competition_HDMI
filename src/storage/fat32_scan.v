@@ -28,6 +28,7 @@
 // 时钟域: clk 为 SD 读卡时钟域。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T5 实现。
+//   2026-08-27 v1.1 支持重复扫描：启动时清除上一轮完成状态与文件索引。
 // ================================================================
 
 module fat32_scan #(
@@ -95,6 +96,15 @@ module fat32_scan #(
             file_wr <= 1'b0;
             case (state)
                 S_IDLE: begin
+                    // 每次启动新扫描前清除上一轮结果，支持模块复用。
+                    scan_done <= 1'b0;
+                    scan_ok   <= 1'b0;
+                    file_count<= 5'd0;
+                    file_index<= 5'd0;
+                    file_type <= 2'd0;
+                    file_cluster <= 32'd0;
+                    file_size    <= 32'd0;
+                    file_wr      <= 1'b0;
                     if (start) begin
                         state      <= S_MBR;
                         byte_idx   <= 9'd0;
@@ -212,6 +222,20 @@ module fat32_scan #(
                 end
                 S_DONE: begin
                     sector_req <= 1'b0;
+                    if (start) begin
+                        scan_done <= 1'b0;
+                        scan_ok   <= 1'b0;
+                        file_count<= 5'd0;
+                        file_index<= 5'd0;
+                        file_type <= 2'd0;
+                        file_cluster <= 32'd0;
+                        file_size    <= 32'd0;
+                        file_wr      <= 1'b0;
+                        state      <= S_MBR;
+                        byte_idx   <= 9'd0;
+                        sector_lba <= 32'd0;
+                        sector_req <= 1'b1;
+                    end
                 end
                 S_GAP: begin
                     sector_req <= 1'b1;   // 拉低一拍后重新请求下一扇区
