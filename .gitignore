@@ -24,11 +24,7 @@ modelsim.ini
 *.vcd
 transcript
 vsim*.log
-sim_tb/work/
-sim_tb/transcript
-sim_tb/*.wlf
-sim_tb/*.vcd
-sim_tb/*.log
+sim_work/
 
 # ---- 编辑器 / 系统 ----
 .DS_Store

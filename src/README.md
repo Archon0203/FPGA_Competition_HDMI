@@ -17,3 +17,18 @@
 - 跨时钟域一律用 `async_fifo.v`，禁止用快时钟直接采样慢时钟。
 - 端口命名采用 `clk_*`（时钟）、`rst_n`（低有效复位）、`*_valid`/`*_data`（握手）、`*_p*_n`（差分）。
 
+## 当前进度（2026-08-27）
+
+纯 RTL 模块已全部实现并通过 ModelSim 仿真（21 个 testbench PASS）：
+
+| 子系统 | 状态 |
+|---|---|
+| top | `reset_gen` ✓；`top`/`clk_gen` 待人工 PLL 与集成 |
+| storage | `sd_spi` / `sd_reader` / `fat32_scan` / `bmp_parser` / `vseq_reader` 全部 ✓ |
+| framebuf | `async_fifo` ✓；`sdram_ctrl`/`frame_buffer` 待厂商 IP |
+| display | `vga_timing` / `image_enhance` / `color_space` / `image_scaler` / `transition` / `osd_overlay` ✓；`tmds_encoder` 待官方参考 |
+| audio | `tone_gen` ✓；`hdmi_audio` 待官方参考 |
+| interact | `key_filter` / `sw_filter` / `menu_fsm` / `seg_driver` / `dual_led` / `beep` 全部 ✓ |
+| app | `app_scenario` ✓ |
+
+> 厂商 IP / 官方参考模块（PLL、SDRAM、TMDS、HDMI 音频）不编端口，由人工在 TD GUI 例化核对后再集成。

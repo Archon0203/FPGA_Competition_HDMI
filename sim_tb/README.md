@@ -1,6 +1,23 @@
-# sim_tb — ModelSim 仿真运行输出（不纳入版本控制）
+# sim_tb — 仿真测试台源码（按模块分类）
 
-本目录放 ModelSim 运行后的中间产物：`work/`（编译库）、`*.wlf`（波形）、`transcript`、`*.log`、`.ini` 等。
+testbench 源码按 `src/` 的子目录**一一对应**存放。ModelSim 运行产物放在 **`sim_work/`**（gitignore）。
 
-> 这些为生成物，`gitignore` 已排除。仿真源码在 `sim/`。
+```
+sim_tb/
+├─ top/        # tb for 顶层/时钟/复位
+├─ storage/    # sd_spi / sd_reader / fat32_scan / bmp_parser / vseq_reader
+├─ framebuf/   # sdram_ctrl / frame_buffer / async_fifo
+├─ display/    # vga_timing / image_enhance / color_space / image_scaler / transition / osd_overlay / tmds_encoder
+├─ audio/      # hdmi_audio / tone_gen
+├─ interact/   # key_filter / sw_filter / menu_fsm / seg_driver / dual_led / beep
+└─ app/        # app_scenario
+```
+
+约定：`tb_<模块>.v` 与 `run_<模块>.do`（编译+运行）放在同一个子目录。
+
+**运行方式**（在 `sim_work` 目录）：
+```powershell
+cd sim_work
+vsim -c -do ../sim_tb/display/run_vga_timing.do
+```
 

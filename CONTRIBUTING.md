@@ -14,8 +14,8 @@
 1. main 被保护：禁止直接 push 到 main，必须走 PR。
 2. 分支命名：feat/ fix/ docs/ refactor/。
 3. 提交信息：type(scope): subject，如 feat(framebuf): add async_fifo。
-4. 每个 src/ 模块必须有对应 sim/tb_*.v，仿真输出 PASS；贴结果到 PR。
-5. 不提交生成物：*.bit、*.db、*.area、sim_tb/ 产物、data/ 均不入库。
+4. 每个 src/ 模块必须有对应 sim_tb/tb_*.v，仿真输出 PASS；贴结果到 PR。
+5. 不提交生成物：*.bit、*.db、*.area、sim_work/ 产物、data/ 均不入库。
 6. 网络：连不上 GitHub 先配代理 git config http.proxy http://127.0.0.1:7890。
 
 ## 快速开始
