@@ -75,10 +75,10 @@ cd FPGA_Competition_HDMI
 ```
 
 ### 2.3 仿真自检（ModelSim）
-在 `sim_tb` 目录运行：
+在 `sim_work` 目录运行：
 ```powershell
-cd sim_tb
-vsim -c -do ../sim/run_vga_timing.do
+cd sim_work
+vsim -c -do ../sim_tb/display/run_vga_timing.do
 ```
 
 ---
@@ -110,7 +110,7 @@ git push origin feature/xxx
 3. 开发：
    ```powershell
    git checkout -b feature/xxx
-   # 修改 src/ 与 sim/；在 sim_tb 跑 ModelSim 自检 PASS
+   # 修改 src/ 与 sim_tb/；在 sim_work 跑 ModelSim 自检 PASS
    git add -A; git commit -m "feat(framebuf): add async_fifo"
    git push origin feature/xxx
    ```
@@ -139,8 +139,8 @@ git push origin feature/xxx
 
 - 分支：`feat/`（功能）、`fix/`（修复）、`docs/`（文档）、`refactor/`（重构）；一条 PR 只做一件事。
 - 提交信息：`type(scope): subject`，如 `feat(framebuf): add async_fifo`。
-- 每个 `src/` 模块必须带对应 `sim/tb_*.v`，仿真自检输出 `PASS`，结果贴到 PR。
-- 厂商 IP 不进仓库：PLL/SDRAM/HDMI 在 TangDynasty GUI 例化，提交 `.v` 与 `constraints/`；`*.bit`、`*.db`、`*.area`、`sim_tb/`、`data/` 已 gitignore。
+- 每个 `src/` 模块必须带对应 `sim_tb/tb_*.v`，仿真自检输出 `PASS`，结果贴到 PR。
+- 厂商 IP 不进仓库：PLL/SDRAM/HDMI 在 TangDynasty GUI 例化，提交 `.v` 与 `constraints/`；`*.bit`、`*.db`、`*.area`、`sim_work/`、`data/` 已 gitignore。
 - 大文件：图片/视频帧放 `data/`（默认不入库）；个别用 `git add -f 路径`，或改走 Git LFS。
 - 冲突：先同步上游再改；优先 `rebase`，解决后 `push --force-with-lease`。
 - PR 描述：改动内容 / 影响模块 / 仿真结果(是否 PASS) / 是否需要上板验证。

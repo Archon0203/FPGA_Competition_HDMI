@@ -12,6 +12,8 @@
         <Verilog>
             <File>src/top/vga_timing.v</File>
             <File>sim/tb_vga_timing.v</File>
+            <File>src/display/image_enhance.v</File>
+            <File>src/display/vga_timing.v</File>
         </Verilog>
         <ADC_FILE/>
         <SDC_FILE/>
@@ -23,7 +25,7 @@
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Project_Settings>
-        <Step_Last_Change>2026-08-26 10:29:16</Step_Last_Change>
+        <Step_Last_Change>2026-08-27 09:47:58</Step_Last_Change>
         <Current_Step>0</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
