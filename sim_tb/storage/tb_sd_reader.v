@@ -157,6 +157,32 @@ module tb_sd_reader;
         check(ok, 1, "ok");
         check(got_cnt, DATA_BYTES, "data byte count");
 
+        // 复用性：不复位，重新启动一次读块，done/ok 应重新产生且数据从 0 开始。
+        got_cnt = 0;
+        exp_byte = 0;
+        // 行为模型队列/游标复位，模拟卡模型可重复应答。
+        q_h = 0;
+        q_t = 0;
+        data_idx = 10'd0;
+        stream = 1'b0;
+        tx_cnt = 4'd0;
+        spi_start_prev = 1'b0;
+        block_addr = 32'd999;
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+        @(negedge clk);   // 让 RTL 在启动沿完成非阻塞更新后再检测 done
+
+        k = 0;
+        while (!done && k < 20000) begin
+            @(posedge clk);
+            k = k + 1;
+        end
+        #1;
+        check(done, 1, "second done");
+        check(ok, 1, "second ok");
+        check(got_cnt, DATA_BYTES, "second data byte count");
+
         if (errors == 0)
             $display("PASS: sd_reader ok (checks=%0d)", checks);
         else

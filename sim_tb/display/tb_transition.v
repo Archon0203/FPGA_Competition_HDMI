@@ -49,9 +49,10 @@ module tb_transition;
         input [7:0] a;
         input [7:0] b;
         input [7:0] tt;
-        reg [17:0] n;
+        reg [31:0] n;
         begin
-            n = (a * (8'd255 - tt)) + (b * tt);
+            n = ({24'b0, a} * (32'd255 - {24'b0, tt})) +
+                ({24'b0, b} * {24'b0, tt});
             ref_blend = n / 255;
         end
     endfunction

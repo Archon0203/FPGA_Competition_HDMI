@@ -21,6 +21,7 @@
 // 时钟域: clk 为像素时钟域(clk_pix)。含 1 拍流水延迟。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T11 实现。
+//   2026-08-27 v1.1 坐标乘积显式扩展到 32 位，避免大分辨率截断。
 // ================================================================
 
 module image_scaler #(
@@ -39,11 +40,11 @@ module image_scaler #(
     output reg         src_valid
 );
 
-    // 最近邻源坐标(组合)
-    wire [23:0] sx_prod = px * SRC_W;
-    wire [23:0] sy_prod = py * SRC_H;
-    wire [11:0] sx_raw  = sx_prod / DST_W;
-    wire [11:0] sy_raw  = sy_prod / DST_H;
+    // 最近邻源坐标(组合)。将坐标零扩展到 32 位，保证大分辨率也不会截断。
+    wire [31:0] sx_prod = {20'b0, px} * SRC_W;
+    wire [31:0] sy_prod = {20'b0, py} * SRC_H;
+    wire [31:0] sx_raw  = sx_prod / DST_W;
+    wire [31:0] sy_raw  = sy_prod / DST_H;
 
     // clamp 到源范围
     wire [11:0] sx_clamp = (sx_raw > SRC_W-1) ? (SRC_W-1) : sx_raw;

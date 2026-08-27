@@ -20,6 +20,7 @@
 // 时钟域: clk 为像素时钟域(clk_pix)。组合逻辑输出。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T13 实现。
+//   2026-08-27 v1.1 修复淡入淡出混合时 8bit 乘法截断问题。
 // ================================================================
 
 module transition #(
@@ -42,13 +43,15 @@ module transition #(
     assign out_valid = valid;
 
     // 单通道淡入淡出: out = (A*(255-t) + B*t) / 255  (端点精确)
+    // 显式扩展到 32 位，避免 8bit 乘 8bit 被 Verilog 截断。
     function [DW-1:0] blend;
         input [DW-1:0] a;
         input [DW-1:0] b;
         input [7:0]    tt;
-        reg [17:0]      num;
+        reg [31:0]      num;
         begin
-            num   = (a * (8'd255 - tt)) + (b * tt);
+            num   = ({24'b0, a} * (32'd255 - {24'b0, tt})) +
+                    ({24'b0, b} * {24'b0, tt});
             blend = num / 255;
         end
     endfunction

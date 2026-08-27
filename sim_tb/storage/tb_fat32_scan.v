@@ -155,6 +155,29 @@ module tb_fat32_scan;
         check(file_cluster, 3, "cluster 3");
         check(file_size, 100, "size 100");
 
+        // 复用性：不复位，再次扫描同一镜像，文件计数应从 0 重新建立。
+        sidx = 9'd0;
+        rdy = 1'b0;
+        req_prev = 1'b0;
+        last_lba = 32'd0;
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+        @(negedge clk);
+
+        i = 0;
+        while (!scan_done && i < 4000) begin
+            @(posedge clk);
+            i = i + 1;
+        end
+        #1;
+        check(scan_done, 1, "second scan done");
+        check(scan_ok, 1, "second scan ok");
+        check(file_count, 1, "second one file");
+        check(file_type, 1, "second type BMP");
+        check(file_cluster, 3, "second cluster 3");
+        check(file_size, 100, "second size 100");
+
         if (errors == 0)
             $display("PASS: fat32_scan ok (checks=%0d)", checks);
         else

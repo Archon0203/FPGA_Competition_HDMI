@@ -22,6 +22,7 @@
 // 时钟域: clk 为 SD 读卡时钟域(clk_sdo)。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T7 实现。
+//   2026-08-27 v1.1 修复 frame_size 计算位宽截断，支持真实 320x240 等分辨率。
 // ================================================================
 
 module vseq_reader #(
@@ -55,7 +56,11 @@ module vseq_reader #(
     reg  [31:0] frame_byte;        // 当前帧内字节数
     reg  [15:0] frame_idx;         // 已输出帧数
 
-    wire [31:0] frame_size = (width * height * bpp) >> 3;
+    // 显式将宽/高/位深零扩展到 32 位再相乘，防止 16bit*16bit 被截断。
+    wire [31:0] w32 = {16'b0, width};
+    wire [31:0] h32 = {16'b0, height};
+    wire [31:0] b32 = {26'b0, bpp};
+    wire [31:0] frame_size = (w32 * h32 * b32) >> 3;
 
     // 头字段提取
     always @(posedge clk or negedge rst_n) begin
