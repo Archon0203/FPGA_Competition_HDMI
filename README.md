@@ -32,7 +32,7 @@ FPGA_Competition_HDMI/
 ├─ sim_work/                   # ★ ModelSim 运行产物（work/波形/日志，gitignore）
 ├─ constraints/                # ★ 管脚(.cst) + 时钟/时序(.sdc)约束（**须与官方板卡资料核对**）
 ├─ tools/                      # 工具脚本（BMP生成 / 视频转帧 / 字库 / SD卡制作）
-├─ docs/                       # 设计文档（01~09：需求/架构/计划/风险/验证/视频/场景/卖点/实现矩阵）
+├─ docs/                       # 设计文档（01~12：需求/架构/计划/风险/验证/视频/场景/卖点/实现矩阵/团队流程/AI计划/UI叠加）
 └─ data/                       # 测试用图片/视频帧/音频（默认不入库，可重新生成）
 ```
 
@@ -52,7 +52,7 @@ FPGA_Competition_HDMI/
    vsim -c -novopt -wlf wave_vga_timing.wlf tb_vga_timing -do ../sim_tb/display/run_vga_timing_wave.do
    ```
 
-> **进度口径（2026-08-27）**：所有纯 RTL 模块已完成并被 21 个 ModelSim testbench 验证 PASS；
+> **进度口径（2026-08-28）**：所有纯 RTL 模块已完成并被 27 个 ModelSim testbench 验证 PASS；
 > 顶层 `top`、`clk_gen`(PLL)、`sdram_ctrl`/`frame_buffer`、`tmds_encoder`、`hdmi_audio`
 > 属厂商 IP / 官方参考，需人工在 TD GUI 例化核对后集成与上板。详见 `docs/11`、`docs/09` 与 `src/README.md`。
 

@@ -9,24 +9,51 @@
 
 **红线**：① 不用外部处理器；② 厂商 IP（PLL/SDRAM/HDMI 串行化）**由人在 TD GUI 例化并核对**，AI 只写 RTL 与约束，不凭空造 IP 端口；③ 每个模块必须带 testbench，ModelSim 输出 `PASS`。
 
-> 进度口径(T3 之后): 全部**纯 RTL 模块**已实现并通过仿真(21 个 testbench PASS);
-> 尚未交付: `top.v` 整合、`clk_gen`(PLL)、`sdram_ctrl`/`frame_buffer`(厂商 IP/参考)、
-> `tmds_encoder`、`hdmi_audio`(官方参考)——这些需人工核对官方样本后集成或上板验证。
+> 进度口径(2026-08-28): 已实现并通过仿真的纯 RTL/PC 工具共 27 个 testbench PASS（✅）；
+> A 组除可选 SDIO 4-bit 外已全部完成（✅）；B/C 组仍需人工拿到官方 lab_ex 与板卡约束。
+> 剩余工作按可做性分为 A(Codex 可继续)/B(需厂商 IP)/C(需上板) 三类，详见 **§1.5**。
+> **B 组(供应商 IP：clk_gen PLL、sdram_ctrl、TMDS 串行化+差分、HDMI 注入时序)与 C 组(上板联调：frame_buffer、top、constraints、集成\稳定性、720p)必须等人工拿到官方 lab_ex 与板卡约束，Codex 不编引脚、不造 IP 端口。**
 
 ---
 
-## 1. 模块地图（√=已完成）
+## 1. 模块地图（✅=已完成 / ❌=未完成）
 
 ### src/（可综合 RTL，按子系统）
-| 子系统 | 模块 | 状态 | 依赖 | 厂商IP? |
+| 子系统 | 模块 | 状态 | 依赖 | 厂商 IP / 上板说明 |
 |---|---|---|---|---|
-| top | `top.v` / `clk_gen.v` / `reset_gen.v` √ | reset_gen 完成 | 全部 | clk_gen 用 PLL |
-| storage | `sd_spi.v` √ / `sd_reader.v` √ / `fat32_scan.v` √ / `bmp_parser.v` √ / `vseq_reader.v` √ | 全部纯RTL完成 | async_fifo | SD 参考 |
-| framebuf | `sdram_ctrl.v` / `frame_buffer.v` / `async_fifo.v` √ | async_fifo 完成 | async_fifo 独立 | SDRAM 用厂商 IP |
-| display | `vga_timing.v` √ / `image_enhance.v` √ / `color_space.v` √ / `image_scaler.v` √ / `transition.v` √ / `osd_overlay.v` √ / `tmds_encoder.v` | 大部分 | valid 握手 | TMDS 用官方参考 |
-| audio | `hdmi_audio.v` / `tone_gen.v` √ | 部分(纯RTL部分完成) | — | 官方参考 |
-| interact | `key_filter.v` √ / `sw_filter.v` √ / `menu_fsm.v` √ / `seg_driver.v` √ / `dual_led.v` √ / `beep.v` √ | 全部完成 | — | 纯 RTL |
-| app | `app_scenario.v` √ | 完成 | menu/display | 纯 RTL |
+| top | `reset_gen.v` | ✅ | — | 纯 RTL，已仿真 |
+| top | `clk_gen.v` | ❌ | PLL | **厂商 IP**：PLL 生成 clk_pix/clk_tmds/clk_sdram/clk_sdo/clk_aud；必须人工在 TD GUI 例化，AI 不编端口 |
+| top | `top.v` | ❌ | 全部模块 | **需上板**：完整顶层、IO 路由、引脚约束；需官方板卡资料并人工集成 |
+| storage | `sd_spi.v` | ✅ | — | 纯 RTL，SPI Mode0 字节控制器 |
+| storage | `sd_reader.v` | ✅ | `sd_spi` | 纯 RTL，SD SPI 命令状态机 |
+| storage | `fat32_scan.v` | ✅ | — | 纯 RTL，FAT32 根目录/文件索引 |
+| storage | `bmp_parser.v` | ✅ | — | 纯 RTL，24 位非压缩 BMP |
+| storage | `vseq_reader.v` | ✅ | — | 纯 RTL，`.vseq` 头+帧流解析 |
+| storage | `vseq_yuv_unpack.v` | ✅ | `vseq_reader` | 纯 RTL，YUV444 字节流→逐像素 Y/Cb/Cr |
+| storage | `sdio_4bit.v`（可选） | ❌ | SD 物理时序 | A 组可选纯 RTL，未实现；SDIO 4-bit 读卡需 SD 时序参考，若调不通退回 SPI |
+| framebuf | `async_fifo.v` | ✅ | — | 纯 RTL，异步 FIFO |
+| framebuf | `sdram_ctrl.v` | ❌ | SDRAM IP | **厂商 IP/官方参考**：命令/自动刷新/行预充电/仲裁；人工例化 |
+| framebuf | `frame_buffer.v` | ❌ | `sdram_ctrl` | **需上板**：图片双缓冲/视频三缓冲，需先与人工锁定 SDRAM 读写接口契约 |
+| display | `vga_timing.v` | ✅ | — | 纯 RTL，HS/VS/DE+像素坐标 |
+| display | `color_space.v` | ✅ | `yuv420_upsample` | 纯 RTL，BT.601 YUV444→RGB |
+| display | `yuv420_upsample.v` | ✅ | `color_space` | 纯 RTL，420→444 最近邻上采样，含坐标延迟输出 |
+| display | `image_scaler.v` | ✅ | — | 纯 RTL，最近邻坐标映射 |
+| display | `image_enhance.v` | ✅ | — | 纯 RTL，亮度/对比度 |
+| display | `transition.v` | ✅ | — | 纯 RTL，淡入淡出/水平擦拭 |
+| display | `osd_overlay.v` | ✅ | 字库 ROM | 纯 RTL，8×16 字模叠加 |
+| display | `tmds_encoder.v`（10bit 编码逻辑） | ✅ | 显示链 | A 组纯逻辑，已完成；只做数据/控制/同步通道编码，不含串行化 |
+| display | `tmds_serializer.v`（串行化+差分） | ❌ | `tmds_encoder` | **厂商 IP/官方参考**：OSERDES/差分 IO 原语；人工按官方 lab_ex 核对 |
+| audio | `tone_gen.v` | ✅ | — | 纯 RTL，DDS 测试音 |
+| audio | `audio_visual.v` | ✅ | `vga_timing` | 纯 RTL，振幅包络柱状图 |
+| audio | `hdmi_audio_pack.v`（L-PCM/IEC60958 打包） | ✅ | `tone_gen`/PCM | A 组纯逻辑，已完成；不包含注入 TMDS 时序 |
+| audio | `hdmi_audio_inject.v`（注入 TMDS） | ❌ | `hdmi_audio_pack` | **厂商 IP/官方参考+需上板**：Data Island 注入时序，人工核对 |
+| interact | `key_filter.v` | ✅ | — | 纯 RTL，按键消抖/边沿 |
+| interact | `sw_filter.v` | ✅ | — | 纯 RTL，拨码消抖 |
+| interact | `menu_fsm.v` | ✅ | 交互事件 | 纯 RTL，主控状态机 |
+| interact | `seg_driver.v` | ✅ | — | 纯 RTL，数码管扫描 |
+| interact | `dual_led.v` | ✅ | — | 纯 RTL，双色 LED |
+| interact | `beep.v` | ✅ | — | 纯 RTL，蜂鸣器 |
+| app | `app_scenario.v` | ✅ | menu/display | 纯 RTL，信息发布/应急广播 FSM |
 
 ### sim_tb/（testbench，按 src 分目录）
 `sim_tb/<subsystem>/tb_<模块>.v` + `run_<模块>.do`，与 src/ 一一对应。
@@ -40,6 +67,48 @@ vsim -c -do ../sim_tb/display/run_image_enhance.do
 
 ---
 
+## 1.5 模块可做性分级（谁来做 / 要不要上板）
+
+> 依据 `docs/02_architecture.md` 与红线：**厂商 IP（PLL/SDRAM/TMDS 串行化/HDMI 时序）由人在 TD GUI 例化并核对；AI 不编端口、不造 IP**。
+> 凡属“纯 RTL / PC 脚本”且无需厂商原语的，Codex 可继续（ModelSim 或脚本自检）；凡涉厂商原语或物理 IO/时序的，需人工或上板。
+
+### A) 仍可交给 Codex（纯 RTL 或 PC 工具，无需开发板）
+| 模块 | 子系统 | 说明/注意 |
+|---|---|---|
+| `yuv420_upsample` | display | ✅ 420→444 色度上采样（最近邻，行缓冲 2×2 复制），color_space 前置，已含坐标延迟输出 |
+| YUV444 字节流解包 | storage | ✅ `vseq_yuv_unpack` 已完成；配合 `video_to_vseq.py --format yuv444` 使用 |
+| TMDS 10bit 编码器（数据/控制/同步通道 + XOR/XOR + DC 平衡） | display | ✅ 纯逻辑编码器已完成；**串行化/差分输出**部分留给人工（官方 lab_ex） |
+| HDMI 音频包生成（L-PCM 样本 + IEC60958 子帧打包 + 偶校验） | audio | ✅ 纯逻辑打包已完成；**注入 TMDS 通道时序**由人工/上板核对 |
+| mini-top 显示链集成仿真（vga_timing+彩条+color_space+image_enhance+transition+osd_overlay） | top/display | ✅ 已完成(3 帧逐像素/OSD/参考色全对齐) |
+| 音频可视化（扩展⑤：振幅条/简易频谱） | audio/display | ✅ 已完成(包络柱状图 audio_visual, 低资源，柱高已按满幅映射修正) |
+| PC 工具：`video_to_vseq.py`、`make_sd_card.py`、`gen_font.py`(+OSD 字模数据) | tools | ✅ `video_to_vseq.py` 默认 YUV444 直连 `vseq_yuv_unpack`，并可选 planar YUV420/RGB；`make_sd_card.py` 已生成最小 FAT32 镜像；`gen_font.py` 已生成 8x16 字模 HEX |
+| （可选）SDIO 4-bit 读卡 | storage | ❌ 纯 RTL 但复杂度高、需 SD 时序参考；两周调不通退回 SPI+预载循环 |
+
+### B) 需厂商 IP 核（人在 TD GUI 例化；AI 只写“调用占位+接口注释”）
+| 模块 | 说明 |
+|---|---|
+| ❌ `clk_gen` | PLL 生成 clk_pix/clk_tmds/clk_sdram/clk_sdo/clk_aud；必须人工例化 PLL |
+| ❌ `sdram_ctrl` | SDRAM 控制器（命令/自动刷新/行预充电/仲裁）；复用官方 IP/参考 |
+| ❌ `tmds_encoder` 串行化 + 差分 IO | OSERDES/原语，按官方 lab_ex 参考，Codex 不改参考接口 |
+| ❌ `hdmi_audio` 注入 TMDS 通道 | Data Island 注入时序按官方参考 |
+
+### C) 需开发板/上板联调（引脚、物理时序、资源与稳定性收敛）
+| 模块/任务 | 说明 |
+|---|---|
+| ❌ `frame_buffer`（双/三缓冲） | **需先与人工锁定 sdram 读/写接口契约**；纯逻辑 Codex 可写，但真写读、无撕裂须上板验证 |
+| ❌ `top.v` 完整顶层 | 例化全部 + IO 路由 + 引脚约束（引脚号见官方资料） |
+| ❌ `constraints/*.cst/*.sdc` | **必须来自官方板卡资料**，禁止 AI 编引脚号；由人核对后转写 |
+| ❌ 系统集成联调 | HDMI 出图、音频出声、长稳 ≥2h、反复快速切图无花屏/撕裂 |
+| ❌ 720p 扩展验证 | TMDS 位时钟 ~742MHz 逻辑串行化极限实测（加分项，不承诺） |
+
+> 节奏建议：先把 A 组（尤其 mini-top 集成 + TMDS 编码器 + HDMI 音频包）用仿真跑通，
+> 再等人工拿到官方 lab_ex 与板卡约束，进入 B/C 组；AI 在 B 组只产出“端口契约+占位”，不交付可综合 RTL。
+>
+> **后续 UI**：显示器界面按“分层叠加”设计，详见 `docs/12_ui_overlay_design.md`（理论分析，暂不实现）；
+> 落地为 A 组纯 RTL（状态栏/时间、滚动标语、参数面板、音频柱、应急整屏、优先级 mux），每步独立仿真。
+
+---
+
 ## 2. 全局约定（Agent 必须遵守）
 
 1. 一模块一文件，**文件名=模块名**；位置按 `src/<子系统>/`。
@@ -48,31 +117,36 @@ vsim -c -do ../sim_tb/display/run_image_enhance.do
 4. 纯 RTL 尽量可综合；涉及厂商原语时只写**调用位置+注释**，不编端口名，由人核对官方 lab_ex。
 5. 每个模块交付 = `src/.../xxx.v` + `sim_tb/<sub>/tb_xxx.v` + `sim_tb/<sub>/run_xxx.do`（+ 必要说明）。
 6. 仿真必须 `PASS`；`$display("PASS: ...")` 作为验收标志。
-7. 不改动已 `√` 模块的对外端口；如需改，先同步文档与相关 tb。
+7. 不改动已 `✅` 模块的对外端口；如需改，先同步文档与相关 tb。
 
 ---
 
 ## 3. 依赖与实现顺序
 
 ```
-地基(纯RTL, 可先做):
-  T2 vga_timing √ → T3 async_fifo → T12 image_enhance √
-  → T17 key_filter → T18 sw_filter → T20 seg_driver → T21 dual_led → T22 beep
+地基(纯RTL, 已全部完成):
+  T2 vga_timing ✅ → T3 async_fifo ✅ → T12 image_enhance ✅
+  → T17 key_filter ✅ → T18 sw_filter ✅ → T20 seg_driver ✅ → T21 dual_led ✅ → T22 beep ✅
+  → T1 reset_gen ✅
 
-数据通路(storage/framebuf):
-  T4 sd_spi → T5 fat32_scan → T6 bmp_parser → T7 vseq_reader
-  T8 sdram_ctrl(厂商IP) → T9 frame_buffer(双/三缓冲)
+数据通路(storage 已完成; framebuf 待厂商 IP/上板):
+  T4 sd_spi ✅ → T5 fat32_scan ✅ → T6 bmp_parser ✅ → T7 vseq_reader ✅ → T10 sd_reader ✅(读块)
+  T8 sdram_ctrl ❌[B 厂商IP] → T9 frame_buffer ❌[C 上板, 且需先锁 sdram 写读契约]
 
-显示处理(display):
-  T10 color_space(YCbCr→RGB) → T11 image_scaler → T13 transition → T14 osd_overlay
+显示处理(display 纯逻辑已完成; TMDS 编码器纯逻辑完成):
+  T10 color_space ✅(YUV444) → yuv420_upsample ✅ → T11 image_scaler ✅
+  → T13 transition ✅ → T14 osd_overlay ✅ → T15a TMDS 10bit 编码器 ✅[A]
 
-输出/音频:
-  T15 tmds_encoder(官方参考) → T16 hdmi_audio / tone_gen
+输出/音频(纯 RTL 编码/打包完成; 注入/串行化待厂商参考):
+  T15b tmds 串行化/差分 ❌[B+官方参考] → T16a hdmi 音频包生成 ✅[A] → T16b 注入 TMDS 时序 ❌[B+官方参考]
+  → tone_gen ✅ → audio_visual ✅
 
-应用/集成:
-  T19 menu_fsm → T23 app_scenario → T1 clk_gen(PLL) → T0 top 整合
+应用/集成(应用与 mini-top 完成; PLL/top 待人工):
+  T19 menu_fsm ✅ → T23 app_scenario ✅ → T1 clk_gen ❌[B 厂商IP] → T0 top 整合 ❌[C 上板]
+  → mini-top 显示链集成仿真 ✅[A]
 ```
-**优先级**：先地基纯 RTL（可立即仿真），再数据通路，再显示，最后 `top` 集成。厂商 IP 相关的留给人。
+**优先级**：先完成 A 组（含 mini-top 集成、TMDS 编码器、HDMI 音频包、yuv420 上采样、PC 工具、音频可视化）；
+厂商 IP 相关的 B 组、需要上板的 C 组留给人，等官方 lab_ex 与板卡约束到位后再做。
 
 ---
 
@@ -110,15 +184,17 @@ vsim -c -do ../sim_tb/display/run_image_enhance.do
 
 ## 5. 实现流程（里程碑）
 
-| 里程碑 | 内容 | 交付物 | 验收 |
-|---|---|---|---|
-| M1 地基 | vga_timing√、image_enhance√、async_fifo、key_filter、seg_driver | 各模块 RTL+tb | 各自仿真 PASS |
-| M2 数据通路 | sd_spi、fat32_scan、bmp_parser、vseq_reader | 读图/读帧→SDRAM | 仿真读文件序列正确 |
-| M3 帧缓存 | sdram_ctrl(IP)、frame_buffer(双/三缓冲) | 缓存读写/无撕裂 | 仿真 + 上板 |
-| M4 显示处理 | color_space、image_scaler、osd_overlay、transition | 处理流水线 | 仿真输出符合预期 |
-| M5 输出/音频 | tmds_encoder(官方)、hdmi_audio、tone_gen | 显示+音频 | 上板 HDMI 出图+音 |
-| M6 交互/应用 | menu_fsm、sw_filter、dual_led、beep、app_scenario | 完整交互 | 按键/拨码生效 |
-| M7 集成 top | clk_gen(PLL)、top.v | 完整设计 | 上板稳定运行≥2h |
+| 里程碑 | 内容 | 交付物 | 验收 | 状态 |
+|---|---|---|---|---|
+| M1 地基 | vga_timing ✅、image_enhance ✅、async_fifo ✅、key_filter ✅、sw_filter ✅、seg_driver ✅、dual_led ✅、beep ✅、reset_gen ✅ | 各模块 RTL+tb | 各自仿真 PASS | ✅ 完成 |
+| M2 数据通路 | sd_spi、fat32_scan、bmp_parser、vseq_reader、sd_reader | 读图/读帧 | 仿真读文件序列正确 | ✅ 完成(纯逻辑) |
+| M4 显示处理 | color_space、image_scaler、transition、osd_overlay | 处理流水线 | 仿真输出符合预期 | ✅ 完成(纯逻辑) |
+| M6 交互/应用 | menu_fsm、sw_filter、dual_led、beep、app_scenario | 完整交互 | 按键/拨码生效 | ✅ 完成(纯逻辑) |
+| M2.5 数据通路增强[A] | yuv420_upsample、(可选)SDIO 4-bit | 上采样/高带宽 | 仿真正确 | 部分：yuv420_upsample ✅；SDIO ❌ |
+| M4.5 显示扩展[A] | TMDS 10bit 编码器、mini-top 显示链集成、音频可视化 | 编码器+互联 tb | 仿真验证接口 | mini-top ✅、audio_visual ✅、TMDS 10bit ✅ |
+| M5 输出/音频 | tmds 串行化(官方)、hdmi_audio 注入(官方)、tone_gen、hdmi_audio_pack | HDMI 出图+音 | 上板出图出声 | 部分：tone_gen ✅、hdmi_audio_pack ✅；tmds/hdmi 注入 ❌(厂商) |
+| M3 帧缓存 | sdram_ctrl(B厂商IP)、frame_buffer(C上板) | 缓存读写/无撕裂 | 仿真 + 上板 | ❌ 待人工 IP + 锁契约 |
+| M7 集成 top | clk_gen(B厂商IP)、top.v(C上板)、constraints(C官方资料) | 完整设计 | 上板稳定≥2h | ❌ 待人工 |
 
 ---
 
@@ -132,17 +208,17 @@ vsim -c -do ../sim_tb/display/run_image_enhance.do
   vsim -c -do ../sim_tb/<子目录>/run_<模块>.do
   ```
 - `run_<模块>.do` 固定为：`vlib work; vlog <dut.v> <tb.v>; vsim <tb>; run -all; quit -f`。
-- 集成测试：需要时建 `tb_top` 例化多个模块（如 vga_timing + 彩条 + image_enhance）验证**模块连接/接口匹配**。
+- 集成测试：需要时建 `tb_mini_top` 例化多个模块（如 vga_timing + 彩条 + image_enhance）验证**模块连接/接口匹配**。
 
 ---
 
 ## 7. 集成路径（从模块到 top）
 
-1. **mini-top**：`vga_timing` + 测试彩条源 + `image_enhance` → 输出带时基的图（验证接口）。
-2. 加 `color_space`（接视频源）；加 `osd_overlay`（字幕/时间戳）。
-3. 加 `frame_buffer`（图片/视频双/三缓冲）。
-4. 加 `tmds_encoder` + `hdmi_audio` → 上板出图出声。
-5. 建 `src/top/top.v` 例化全部，设为 TD 的 TOP，加 `constraints/`。
+1. **mini-top（Codex 可做，纯仿真）**：`vga_timing` + 测试彩条源 + `image_enhance` → 输出带时基的图（验证接口）。
+2. 加 `color_space`（接视频源）；加 `image_scaler`/`transition`；加 `osd_overlay`（字幕/时间戳）→ **Codex 可做**（纯显示链联调）。
+3. 加 `frame_buffer`（图片/视频双/三缓冲）→ **需 sdram 接口契约 + 上板验证**。
+4. 加 `tmds_encoder`(串行化) + `hdmi_audio`(注入) → **需官方参考 + 上板**（出图出声）。
+5. 建 `src/top/top.v` 例化全部，设为 TD 的 TOP，加 `constraints/`（**需官方板卡资料，人工**）。
 
 ---
 
