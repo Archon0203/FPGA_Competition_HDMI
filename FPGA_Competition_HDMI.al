@@ -14,19 +14,38 @@
             <File>sim/tb_vga_timing.v</File>
             <File>src/display/image_enhance.v</File>
             <File>src/display/vga_timing.v</File>
+            <File>src/app/app_scenario.v</File>
+            <File>src/audio/tone_gen.v</File>
+            <File>src/display/color_space.v</File>
+            <File>src/display/image_scaler.v</File>
+            <File>src/display/osd_overlay.v</File>
+            <File>src/display/transition.v</File>
+            <File>src/framebuf/async_fifo.v</File>
+            <File>src/interact/beep.v</File>
+            <File>src/interact/dual_led.v</File>
+            <File>src/interact/key_filter.v</File>
+            <File>src/interact/menu_fsm.v</File>
+            <File>src/interact/seg_driver.v</File>
+            <File>src/interact/sw_filter.v</File>
+            <File>src/storage/bmp_parser.v</File>
+            <File>src/storage/fat32_scan.v</File>
+            <File>src/storage/sd_reader.v</File>
+            <File>src/storage/sd_spi.v</File>
+            <File>src/storage/vseq_reader.v</File>
+            <File>src/top/reset_gen.v</File>
         </Verilog>
         <ADC_FILE/>
         <SDC_FILE/>
         <CWC_FILE/>
     </Source_Files>
     <TOP_MODULE>
-        <LABEL>tb_vga_timing/u_dut</LABEL>
-        <MODULE>vga_timing</MODULE>
+        <LABEL/>
+        <MODULE>reset_gen</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Project_Settings>
-        <Step_Last_Change>2026-08-27 12:13:45</Step_Last_Change>
-        <Current_Step>0</Current_Step>
+        <Step_Last_Change>2026-08-28 13:53:58</Step_Last_Change>
+        <Current_Step>30</Current_Step>
         <Step_Status>true</Step_Status>
     </Project_Settings>
 </Project>
