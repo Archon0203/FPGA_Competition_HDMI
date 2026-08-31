@@ -1,3 +1,5 @@
+> P0 Freeze Status (2026-08-31): P0-01~07 [U], P0-08 [C-sub], P0-09 [C]; P0 media chain 已冻结。P0-09 ModelSim: checks=1698 PASS。P0 [C] 仅代表纯 RTL + mock SDRAM 端到端通过，不代表 APUG011/APUG092、TD synthesis/P&R 或上板通过。权威冻结记录见 docs/35_P0_IMPLEMENTATION_FREEZE.md。
+
 # 03 · 分阶段开发计划
 
 > 今天 2026-08-26。报名截止 09-22 24:00；作品设计 09 月—11-04；提交 11-04 18:00；决赛 11-20~11-22（南京）。

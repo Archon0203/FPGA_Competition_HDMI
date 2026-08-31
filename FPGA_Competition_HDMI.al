@@ -36,6 +36,13 @@
             <File>src/storage/vseq_yuv_unpack.v</File>
             <File>src/top/reset_gen.v</File>
             <File>src/audio/hdmi_audio_pack.v</File>
+            <File>src/storage/fat32_file_reader.v</File>
+            <File>src/storage/bmp_pixel_stream.v</File>
+            <File>src/framebuf/framebuffer_writer.v</File>
+            <File>src/framebuf/frame_buffer_manager.v</File>
+            <File>src/framebuf/line_buffer_pingpong.v</File>
+            <File>src/framebuf/line_prefetcher.v</File>
+            <File>src/framebuf/sdram_arbiter.v</File>
         </Verilog>
         <ADC_FILE/>
         <SDC_FILE/>
