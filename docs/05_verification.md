@@ -49,7 +49,7 @@ PASS: fat32_file_reader all adversarial cases passed (checks=18)
 
 覆盖：zero-length、100B、512B、513B 跨 sector/cluster、fragmented `3→7→5` 且 `SPC=2`、premature EOC、free/invalid next cluster、FAT offset=508 边界、`sectors_per_cluster=0`。
 
-该结果只证明 `fat32_file_reader` 单元达到 `[U]`；尚未证明 `fat32_scan → fat32_file_reader → bmp_pixel_stream → framebuffer` 达到 `[C]`。接口契约与测试向量分别见 `docs/13_fat32_file_reader_interface.md`、`docs/14_fat32_file_reader_test_vectors.md`。
+该条记录本身只证明 `fat32_file_reader` 单元 `[U]`；完整链路已在 §2.5 的 P0-09 回归中取得 `[C]`。接口契约与测试向量分别见 `docs/13_fat32_file_reader_interface.md`、`docs/14_fat32_file_reader_test_vectors.md`。
 
 ### 2.2 P0-02 `bmp_pixel_stream` 回归记录（2026-08-31）
 
@@ -63,7 +63,7 @@ PASS: bmp_pixel_stream all adversarial cases passed (checks=13393)
 
 波形抽查 CASE0 首像素：`pixel_r=0x21`、`pixel_g=0x45`、`pixel_b=0x62`、`pixel_x=0`、`pixel_y=1`，与独立 pattern golden 一致，证明 BGR→RGB、bottom-up 映射及 `header_done` 与首 pixel B 同拍边界正确。
 
-该结果只证明 P0-02 单元 `[U]`；BMP→framebuffer/media chain 尚未 `[C]`。
+该条记录本身只证明 P0-02 单元 `[U]`；完整 BMP→framebuffer/media chain 已在 §2.5 取得 `[C]`。
 
 ### 2.3 P0-03/P0-04 framebuffer 回归记录（2026-08-31）
 
@@ -72,7 +72,7 @@ PASS: bmp_pixel_stream all adversarial cases passed (checks=13393)
 
 两项仍只是 unit `[U]`，未证明 framebuffer/media chain `[C]`。
 
-### 2.4 P0-05/P0-06 回归完成；P0-07 `[U]` / P0-08 `[C-sub]` / P0-09 candidate 入口
+### 2.4 P0-05~P0-08 回归完成
 
 P0-05/P0-06 已完成回归，命令保留如下：
 
@@ -85,14 +85,35 @@ vsim -c -do ../sim_tb/framebuf/run_line_prefetcher.do
 - `line_buffer_pingpong`：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204），`0x0A40B2` RGB 全通道写入/读回一致，状态 `[U]`。
 - `line_prefetcher`：CASE0~CASE13 PASS（checks=2713），状态 `[U]`。
 
-本轮新增 P0-07/P0-08 回归：
+P0-07/P0-08 冻结回归命令：
 
 ```powershell
 vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter.do
 vsim -c -do ../sim_tb/framebuf/run_framebuffer_mock_chain.do
 ```
 
-P0-07 通过后可标 arbiter `[U]`；P0-08 通过后只能标 framebuffer/mock sub-chain `[C]`，不能提前标完整媒体链 `[C]`。
+实测：
+- `sdram_arbiter`：CASE0~CASE8 PASS（checks=39），状态 `[U]`。
+- `framebuffer mock chain`：CASE-GOLDEN+CASE0~CASE3 PASS（checks=1495），状态 `[C-sub]`。
+
+
+### 2.5 P0-09 完整媒体主链冻结回归（2026-08-31）
+
+状态：**`[C] CHAIN PASS`**。ModelSim 实际执行 CASE-GOLDEN + CASE0~CASE3，最终：
+
+```text
+PASS: P0 media chain end-to-end all cases passed (checks=1698)
+```
+
+覆盖：
+- CASE0：fragmented FAT `3→7`，17×12 24-bit BMP，文件 >512B，row padding=1；最终 17×12 display-order RGB 全量与独立 golden 一致。
+- CASE1：640×2 baseline，8 个非连续 cluster，≥7 次 FAT traversal、≥8 个 data-cluster read；两条 640-pixel active line 无 `pixel_valid` 间隙。
+- CASE2：无 reset 连续第三文件，`data_offset=70` + `0xEE` gap；A/B buffer 正常再次切换，gap 不被当像素。
+- CASE3：终态 `arbiter protocol_error=0/outstanding=0`、mock pending/range/queue=0、linebuffer protocol/underflow=0、prefetch recovery=0，且读写命令均 >1400。
+
+波形抽查 CASE0 首像素：`lb_pixel_data=0x125492`，等于独立 `expected_rgb(seed=0x12,x=0,y=0)`。
+
+因此 P0 media chain 正式冻结为 `[C]`。该结论只覆盖纯 RTL + `mock_sdram`；**不等价于 APUG011/TD/板级 `[S]/[B]`**。
 
 ## 3. 上板验证清单
 - [ ] 烧录成功，系统上电即进入轮播/片段播放。

@@ -1,3 +1,5 @@
+> **历史状态记录**：这是当时的 candidate release 快照。当前 P0 最终状态以 `35_P0_IMPLEMENTATION_FREEZE.md` 为准。
+
 > **状态更新**：本文件是当时的 candidate release 记录。当前 P0-07 已 `[U]`，P0-08 已 `[C-sub]`，完整 P0-09 正在等待端到端回归。
 
 # P0-05 / P0-06 回归归档

@@ -1,4 +1,4 @@
-# 31 · P0 完整媒体主链端到端回归
+# 32 · P0 完整媒体主链端到端回归（[C] PASS）
 
 ## 目标
 
@@ -17,14 +17,14 @@ FAT32 fragmented file
   -> independent golden
 ```
 
-只有这条回归实际 PASS，才允许把 **P0 media chain** 标为 `[C] CHAIN PASS`。
+本回归已实际 PASS，**P0 media chain = `[C] CHAIN PASS`**。
 
 ## 为什么这是最终 P0 验收
 
 此前：
 
 - P0-01~P0-07 是模块级 `[U]`；
-- P0-08 已证明 framebuffer/mock-memory 子链 `[C]`；
+- P0-08 已证明 framebuffer/mock-memory 子链 `[C-sub]`；
 - 但 storage/BMP 与 framebuffer/display 仍未在同一个 TB 中闭环。
 
 本 TB 使用真实 `fat32_file_reader` 读 fragmented FAT chain，不直接喂 BMP byte；最终只在 line-buffer display-order RGB 端与独立 golden 比较。
@@ -42,18 +42,12 @@ bmp_pixel_valid && !pixel_ready -> ERROR
 
 这专门验证 valid-only BMP pixel stream 不会在 writer 尚未准备好时丢像素。
 
-## 状态口径
-
-在本 TB 未实跑前：
+## 实测结果
 
 ```text
-P0-09 full media chain = candidate
-P0 media chain         = not [C]
-```
+CASE-GOLDEN + CASE0~CASE3 全部通过
+PASS: P0 media chain end-to-end all cases passed (checks=1698)
 
-实跑 PASS 后：
-
-```text
 P0-09 full media chain = [C]
 P0 media chain         = [C]
 ```

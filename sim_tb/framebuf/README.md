@@ -13,9 +13,9 @@ tb_framebuffer_mock_chain.v   + run_framebuffer_mock_chain.do   # P0-08 [C-sub] 
 mock_sdram.v                                                      # simulation-only memory model
 ```
 
-当前已有 **35 个 ModelSim testbench PASS**。加入 P0-09 后工程共有 **36 个 `tb_*.v`**；P0-09 尚待回归。
+当前工程共有 **36 个 `tb_*.v`，全部 ModelSim PASS**；P0-08 framebuffer/mock 子链 `[C-sub]`，P0-09 完整媒体主链 `[C]`。
 
-从 `sim_work/` 运行本轮 candidate：
+从 `sim_work/` 运行 P0 冻结回归：
 
 ```powershell
 vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter.do

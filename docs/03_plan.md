@@ -41,7 +41,7 @@
 - [x] **P0-06 `line_prefetcher` [U]**：CASE0~CASE13 PASS（checks=2713），多 outstanding、有序 response、timeout/stale-response quarantine 已验证。
 - [x] **P0-07**：`sdram_arbiter` `[U]`；CASE0~CASE8 PASS（checks=39）。
 - [x] **P0-08**：`mock_sdram/framebuffer mini-chain` `[C-sub]`；CASE-GOLDEN+CASE0~CASE3 PASS（checks=1495）。
-- [ ] **P0-09**：FAT32/BMP→display-order RGB 完整端到端 `[C]` candidate。
+- [x] **P0-09 `[C]`**：CASE-GOLDEN+CASE0~CASE3 PASS（checks=1698）；fragmented FAT32→BMP→framebuffer→mock SDRAM→display-order RGB 完整闭环。
 - [ ] `tools/` 写 `video_to_vseq.py`（默认 YUV444）+ `make_sd_card.py` + `gen_font.py`。
 - [ ] 自研基础链路：读图→显示→切图→轮播→测试音；单模块先仿真后上板。
 - [ ] 实现 `vseq_reader`/`vseq_yuv_unpack` + 三帧缓冲；**先做"预载循环小视频"**（最稳），流式作进阶。
@@ -93,7 +93,7 @@
 - **资源边界**：19600 LUT，扩展②⑤不要与基础流水线抢资源；视频流不加转场。
 
 
-## P0 当前实测状态（2026-08-31，P0-07/P0-08 回归后）
+## P0 最终冻结状态（2026-08-31）
 
 ```text
 P0-01 fat32_file_reader       [U]
@@ -104,12 +104,12 @@ P0-05 line_buffer_pingpong    [U]
 P0-06 line_prefetcher         [U]
 P0-07 sdram_arbiter           [U]
 P0-08 framebuffer/mock chain  [C-sub]
-P0-09 full P0 media chain     candidate
+P0-09 full P0 media chain     [C]
 ```
 
 实测记录：
 
 - `sdram_arbiter`: CASE0~CASE8 PASS, checks=39。
 - `framebuffer mock chain`: CASE-GOLDEN + CASE0~CASE3 PASS, checks=1495。
-- `[C-sub]` 只表示 framebuffer/mock-memory 子链闭环，不等价于完整媒体主链 `[C]`。
-- 下一唯一 P0 验收任务是 `sim_tb/integration/tb_p0_media_chain.v`。
+- `P0-09`: CASE-GOLDEN+CASE0~CASE3 PASS（checks=1698），完整媒体主链 `[C]`。
+- P0 Implementation Freeze v1.0 生效；后续 P1 只允许通过 adapter/vendor 边界接 APUG011/APUG092，不因实现方便反向改动 P0 契约。

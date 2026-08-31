@@ -1,3 +1,5 @@
+> **历史状态记录**：P0-09 已于 2026-08-31 实测通过并升级为 `[C]`；当前状态以 `35_P0_IMPLEMENTATION_FREEZE.md` 为准。
+
 # P0-07/P0-08 实测同步 + P0-09 Candidate
 
 ## 已实测
@@ -37,7 +39,7 @@ docs/32_p0_media_chain_end_to_end.md
 docs/33_p0_media_chain_test_vectors.md
 ```
 
-P0-09 在 ModelSim 未实跑前保持 candidate。
+P0-09 当时在 ModelSim 未实跑前保持 candidate；现已 PASS 并冻结为 `[C]`。
 
 ## TangDynasty `.al`
 

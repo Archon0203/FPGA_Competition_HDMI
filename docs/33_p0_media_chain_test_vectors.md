@@ -1,4 +1,4 @@
-# 32 · P0 完整媒体主链测试向量
+# 33 · P0 完整媒体主链测试向量（冻结回归）
 
 Testbench：
 
@@ -87,8 +87,8 @@ linebuffer underflow_sticky = 0
 prefetch recovery_required = 0
 ```
 
-最终预期：
+实测最终结果：
 
 ```text
-PASS: P0 media chain end-to-end all cases passed (...)
+PASS: P0 media chain end-to-end all cases passed (checks=1698)
 ```

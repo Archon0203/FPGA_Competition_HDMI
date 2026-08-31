@@ -6,10 +6,10 @@
 |---|---|---|---|---|---|---|
 | 1 | 时钟/复位 | PLL 生成 clk_pix、clk_hdmi_ser=clk_pix×5、clk_sdram、clk_sdo + 复位 | `clk_gen`/`reset_gen` | 厂商IP(PLL)+参考 | ★★★ | reset_gen [U]; clk_gen ❌ 待人工 PLL |
 | 2 | SD/TF 读卡 | SPI 主机控制器（可扩展 SDIO） | `sd_spi`/`sd_reader` | 纯RTL+SD参考 | ★★★ | ✅PASS(字节SPI+命令FSM) |
-| 3 | FAT32 文件系统 | 根目录索引 + FAT chain 文件流 | `fat32_scan`/`fat32_file_reader` | 纯RTL | ★★★ | `fat32_scan` [U]；`fat32_file_reader` [U]（fragmented chain / file_size / EOC 边界）；完整媒体链未 [C] |
+| 3 | FAT32 文件系统 | 根目录索引 + FAT chain 文件流 | `fat32_scan`/`fat32_file_reader` | 纯RTL | ★★★ | `fat32_scan` [U]；`fat32_file_reader` [U]；P0 完整媒体链 `[C]` |
 | 4 | BMP 图片解析/像素流 | header + BGR/padding/bottom-up 解包 | `bmp_parser`/`bmp_pixel_stream` | 纯RTL | ★★★ | 两模块均 [U]；`bmp_pixel_stream` CASE0~CASE13 PASS（checks=13393） |
 | 5 | 视频帧序列解析 | 解析自定义 `.vseq` 容器，并支持 YUV444 字节流解包 | `vseq_reader`/`vseq_yuv_unpack` | 纯RTL | ★★ | ✅PASS |
-| 6 | 帧缓存(SDRAM) | writer/manager + arbiter/adapter/line buffer + APUG011 | `framebuffer_writer`/`frame_buffer_manager`/`sdram_arbiter`/`sdram_adapter`/`line_buffer_pingpong`/APUG011 | 纯RTL+厂商IP/参考 | ★★★ | P0-03 writer [U]（1345）、P0-04 manager [U]（166）、P0-05 line buffer [U]（2204）、P0-06 prefetcher [U]（2713）；P0-07 arbiter [U]；adapter [U] |
+| 6 | 帧缓存(SDRAM) | writer/manager + arbiter/adapter/line buffer + APUG011 | `framebuffer_writer`/`frame_buffer_manager`/`sdram_arbiter`/`sdram_adapter`/`line_buffer_pingpong`/APUG011 | 纯RTL+厂商IP/参考 | ★★★ | P0-03 writer [U]（1345）、P0-04 manager [U]（166）、P0-05 line buffer [U]（2204）、P0-06 prefetcher [U]（2713）；P0-07 arbiter [U]；P0-08 framebuffer/mock `[C-sub]`；P0-09 media chain `[C]`；adapter [U] |
 | 7 | **内部 timing/x-y scheduler** | APUG092 架构下只调度 DE/x/y，不直接产生 HDMI 同步 | `vga_timing` | **纯RTL（已实现）** | ★★★ | [U] |
 | 8 | 色彩空间转换 | YCbCr→RGB（BT.601 定点矩阵，YUV420 先色度上采样） | `color_space`/`yuv420_upsample` | 纯RTL+DSP | ★★ | ✅PASS(color_space + yuv420_upsample) |
 | 9 | 图像缩放 | 最近邻/双线性，任意分辨率→输出 | `image_scaler` | 纯RTL+行缓存 | ★★ | ✅PASS(最近邻坐标映射) |
@@ -23,11 +23,11 @@
 | 17 | 状态显示 | 数码管/双色LED/蜂鸣 | `seg_driver`/`dual_led`/`beep` | 纯RTL | ★★ | ✅PASS |
 | 18 | 应用场景 | 信息发布/应急广播业务 | `app_scenario` | 纯RTL(FMS) | ★★ | ✅PASS |
 | 19 | 视频/图片转帧工具 | 转 `.vseq` + 做 SD 卡 | `tools/video_to_vseq.py`/`make_sd_card.py`/`gen_font.py` | PC 工具 | ★★ | video_to_vseq.py [U](YUV444 默认+回读校验); make_sd_card.py [U](最小 FAT32 镜像); gen_font.py [U](8x16 HEX) |
-| 20 | 仿真验证 | ModelSim 建库、编译、跑 tb、看波形 | `sim_tb/tb_*.v` + `sim_work/` | ModelSim | ★★★ | **35 个 testbench PASS**；工程 36 个 TB；P0-07 `[U]`（checks=39）、P0-08 `[C-sub]`（checks=1495），P0-09 candidate 待回归 |
+| 20 | 仿真验证 | ModelSim 建库、编译、跑 tb、看波形 | `sim_tb/tb_*.v` + `sim_work/` | ModelSim | ★★★ | **36 个 testbench PASS / 36 个 TB**；P0-07 `[U]`（39）、P0-08 `[C-sub]`（1495）、P0-09 `[C]`（1698） |
 
 ## 实现顺序建议（与 docs/03 计划一致）
 1. **地基（纯RTL）**：`vga_timing` → `async_fifo` → `sd_spi` → `key_filter` → `menu_fsm`（都能在 ModelSim 直接仿真）。
-2. **P0 媒体输入链**：`fat32_file_reader`、`bmp_pixel_stream` **[U]**；`framebuffer_writer`/`frame_buffer_manager` **[U]**；`line_prefetcher`/`line_buffer_pingpong` 已 [U]；本轮验证 `sdram_arbiter` + mock framebuffer sub-chain，再做 FAT32/BMP 端到端 `[C]`。
+2. **P0 媒体输入链**：`fat32_file_reader`、`bmp_pixel_stream` **[U]**；`framebuffer_writer`/`frame_buffer_manager` **[U]**；`line_prefetcher`/`line_buffer_pingpong`/`sdram_arbiter` 已 [U]；framebuffer/mock `[C-sub]`；FAT32/BMP→display-order RGB 端到端 `[C]`，P0 已冻结。
 3. **P1 官方 vendor/TD**：`sdram_adapter`(APUG011)、`hdmi_video_adapter`/`hdmi_audio_adapter`(APUG092)、`hx4s20c_top`、constraints、TD synthesis/P&R。
 3. **图像/视频处理（纯RTL）**：`color_space`、`image_scaler`、`image_enhance`、`transition`、`osd_overlay`。
 4. **应用与工具**：`app_scenario`、`tools/*.py`。

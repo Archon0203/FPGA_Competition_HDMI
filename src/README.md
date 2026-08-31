@@ -19,7 +19,7 @@
 
 ## 当前进度（2026-08-31）
 
-当前已记录 **35 个 ModelSim testbench PASS**；P0-01~P0-07 均已实测 `[U]`，P0-08 `[C-sub]`，P0-09 为新 candidate。完成状态按 `[U]/[C]/[S]/[B]/[L]` 口径记录：
+当前 **36 个 ModelSim testbench 全部 PASS**；P0-01~P0-07 均已实测 `[U]`，P0-08 `[C-sub]`，P0-09 完整媒体主链 `[C]`，P0 已冻结。完成状态按 `[U]/[C]/[S]/[B]/[L]` 口径记录：
 
 | 子系统 | 状态 |
 |---|---|
@@ -32,5 +32,5 @@
 | app | `app_scenario` [U] |
 
 > `fat32_file_reader` [U]：CASE0~CASE8 PASS（checks=18）；`bmp_pixel_stream` [U]：CASE0~CASE13 PASS（checks=13393）。
-> P0-03/P0-04 [U] 文档见 `../docs/17~20`；P0-05/P0-06 [U] 文档见 `../docs/21~24`；P0-07 `[U]` / P0-08 `[C-sub]` 文档见 `../docs/27~30`；P0-09 candidate 见 `../docs/32~34`。
+> P0-03/P0-04 [U] 文档见 `../docs/17~20`；P0-05/P0-06 [U] 文档见 `../docs/21~24`；P0-07 `[U]` / P0-08 `[C-sub]` 文档见 `../docs/27~30`；P0-09 `[C]` 与 P0 Freeze 见 `../docs/32~35`。
 > 正式 SDRAM 使用 APUG011，正式 HDMI 使用 APUG092；vendor 目录只读，AI 只写 wrapper/adapter。

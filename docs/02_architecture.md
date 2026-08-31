@@ -378,3 +378,37 @@ HDMI：
 - 整行 valid 连续
 - SOF/EOL 正确
 - 外部 timing 与 Core 参数一致
+
+
+## 11. P0 Implementation Freeze v1.0 — 2026-08-31
+
+P0 已完成最终端到端 ModelSim 回归并冻结。冻结证据：
+
+```text
+P0-01~P0-07  [U]
+P0-08         [C-sub]
+P0-09         [C]
+
+PASS: P0 media chain end-to-end all cases passed (checks=1698)
+```
+
+冻结主链：
+
+```text
+fat32_file_reader
+ -> bmp_parser / bmp_pixel_stream
+ -> frame_buffer_manager / framebuffer_writer
+ -> sdram_arbiter
+ -> SDRAM backend boundary
+ -> line_prefetcher
+ -> line_buffer_pingpong
+ -> display-order RGB888
+```
+
+冻结规则：
+
+1. P1 不得因 APUG011/APUG092 接入方便而重构上述 P0 模块职责、像素格式、地址语义或 A/B buffer ownership。
+2. APUG011 的 `busy/init/read latency/4-word` 差异由 `sdram_adapter`/wrapper 优先吸收。
+3. APUG092 的 Video/Audio Interface 差异由 `hdmi_video_adapter`/`hdmi_audio_adapter` 优先吸收。
+4. 若 TD synthesis/P&R、官方文档或真板证明冻结契约不可实现，必须走 Architecture Change Request：先改文档并人工审核，再改 RTL。
+5. `[C]` 只代表纯 RTL + mock SDRAM 的逻辑链闭环；不等于 `[S]`、`[B]` 或 `[L]`。
