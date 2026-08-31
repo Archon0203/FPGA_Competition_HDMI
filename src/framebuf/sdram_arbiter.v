@@ -8,7 +8,7 @@
 //           - 不直接例化 APUG011；P1 由 sdram_adapter 接官方 controller
 // 作者   : FPGA 竞赛团队
 // 日期   : 2026-08-31
-// 版本   : v1.0-candidate
+// 版本   : v1.0  ([U] UNIT PASS, CASE0~CASE8, checks=39)
 // 时钟域 : P0 抽象 memory/request 时钟域
 //
 // 设计约束：

@@ -1,3 +1,5 @@
+> **状态更新**：本文件是当时的 candidate release 记录。当前 P0-07 已 `[U]`，P0-08 已 `[C-sub]`，完整 P0-09 正在等待端到端回归。
+
 # P0-07 / P0-08 Candidate Release
 
 日期：2026-08-31

@@ -25,7 +25,7 @@ vsim -c -do ../sim_tb/display/run_vga_timing.do
 
 ## 当前回归口径（2026-08-31）
 
-- 已记录 **33 个 ModelSim testbench PASS**；当前共有 35 个 `tb_*.v`，P0-07/P0-08 两个 candidate 待回归。
+- 已记录 **35 个 ModelSim testbench PASS**；当前共有 36 个 `tb_*.v`，P0-07 `[U]`、P0-08 `[C-sub]`；P0-09 candidate 待回归。
 - `tb_fat32_file_reader`：CASE0~CASE8 PASS（checks=18），模块 `[U]`。
 - `tb_bmp_pixel_stream`：CASE0~CASE13 PASS（checks=13393），模块 `[U]`。
 - `[U]` 不代表 FAT32/BMP/framebuffer 端到端链路 `[C]`。

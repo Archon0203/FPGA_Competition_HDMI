@@ -8,12 +8,12 @@ tb_framebuffer_writer.v       + run_framebuffer_writer.do       # P0-03 [U], che
 tb_frame_buffer_manager.v     + run_frame_buffer_manager.do     # P0-04 [U], checks=166
 tb_line_buffer_pingpong.v     + run_line_buffer_pingpong.do     # P0-05 [U], checks=2204
 tb_line_prefetcher.v          + run_line_prefetcher.do          # P0-06 [U], checks=2713
-tb_sdram_arbiter.v            + run_sdram_arbiter.do            # P0-07 candidate
-tb_framebuffer_mock_chain.v   + run_framebuffer_mock_chain.do   # P0-08 integration candidate
+tb_sdram_arbiter.v            + run_sdram_arbiter.do            # P0-07 [U]
+tb_framebuffer_mock_chain.v   + run_framebuffer_mock_chain.do   # P0-08 [C-sub] integration PASS
 mock_sdram.v                                                      # simulation-only memory model
 ```
 
-当前已有 **33 个 ModelSim testbench PASS**。新增 P0-07/P0-08 后工程共有 **35 个 `tb_*.v`**。
+当前已有 **35 个 ModelSim testbench PASS**。加入 P0-09 后工程共有 **36 个 `tb_*.v`**；P0-09 尚待回归。
 
 从 `sim_work/` 运行本轮 candidate：
 

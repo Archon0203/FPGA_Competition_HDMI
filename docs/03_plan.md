@@ -39,7 +39,9 @@
 - [x] **P0-04 `frame_buffer_manager` [U]**：CASE0~CASE6 PASS（checks=166）；A/B ownership、boundary swap、失败重试与 read/write base 隔离已验证。
 - [x] **P0-05 `line_buffer_pingpong` [U]**：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204），RGB 全通道保真、连续 active line、underflow fallback 已验证。
 - [x] **P0-06 `line_prefetcher` [U]**：CASE0~CASE13 PASS（checks=2713），多 outstanding、有序 response、timeout/stale-response quarantine 已验证。
-- [ ] **P0-07/P0-08**：本包新增 `sdram_arbiter` unit candidate + `mock_sdram/framebuffer mini-chain` integration candidate；通过后继续 FAT32/BMP→display-order RGB 端到端 `[C]`。
+- [x] **P0-07**：`sdram_arbiter` `[U]`；CASE0~CASE8 PASS（checks=39）。
+- [x] **P0-08**：`mock_sdram/framebuffer mini-chain` `[C-sub]`；CASE-GOLDEN+CASE0~CASE3 PASS（checks=1495）。
+- [ ] **P0-09**：FAT32/BMP→display-order RGB 完整端到端 `[C]` candidate。
 - [ ] `tools/` 写 `video_to_vseq.py`（默认 YUV444）+ `make_sd_card.py` + `gen_font.py`。
 - [ ] 自研基础链路：读图→显示→切图→轮播→测试音；单模块先仿真后上板。
 - [ ] 实现 `vseq_reader`/`vseq_yuv_unpack` + 三帧缓冲；**先做"预载循环小视频"**（最稳），流式作进阶。
@@ -89,3 +91,25 @@
 - **Architecture Freeze v1.0**：变更必须先改文档、经人工审核，再改 RTL。
 - **一切以"能仿真验证"为主线**：AI 写→仿真→回喂修改，把上板调试压到最小。
 - **资源边界**：19600 LUT，扩展②⑤不要与基础流水线抢资源；视频流不加转场。
+
+
+## P0 当前实测状态（2026-08-31，P0-07/P0-08 回归后）
+
+```text
+P0-01 fat32_file_reader       [U]
+P0-02 bmp_pixel_stream        [U]
+P0-03 framebuffer_writer      [U]
+P0-04 frame_buffer_manager    [U]
+P0-05 line_buffer_pingpong    [U]
+P0-06 line_prefetcher         [U]
+P0-07 sdram_arbiter           [U]
+P0-08 framebuffer/mock chain  [C-sub]
+P0-09 full P0 media chain     candidate
+```
+
+实测记录：
+
+- `sdram_arbiter`: CASE0~CASE8 PASS, checks=39。
+- `framebuffer mock chain`: CASE-GOLDEN + CASE0~CASE3 PASS, checks=1495。
+- `[C-sub]` 只表示 framebuffer/mock-memory 子链闭环，不等价于完整媒体主链 `[C]`。
+- 下一唯一 P0 验收任务是 `sim_tb/integration/tb_p0_media_chain.v`。

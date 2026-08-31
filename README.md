@@ -52,9 +52,9 @@ FPGA_Competition_HDMI/
    vsim -c -novopt -wlf wave_vga_timing.wlf tb_vga_timing -do ../sim_tb/display/run_vga_timing_wave.do
    ```
 
-> **进度口径（2026-08-31）**：已记录 **33 个 ModelSim testbench PASS**；工程当前共有 **35 个 `tb_*.v`**（新增 P0-07/P0-08 candidate）。
+> **进度口径（2026-08-31）**：已记录 **35 个 ModelSim testbench PASS**；工程当前共有 **36 个 `tb_*.v`**（新增 P0-07 `[U]` / P0-08 `[C-sub]` / P0-09 candidate）。
 > P0-01 `fat32_file_reader` [U]；P0-02 `bmp_pixel_stream` [U]；P0-03 `framebuffer_writer` [U]；P0-04 `frame_buffer_manager` [U]；P0-05 `line_buffer_pingpong` [U]（CASE-GOLDEN+CASE0~CASE8，checks=2204）；P0-06 `line_prefetcher` [U]（CASE0~CASE13，checks=2713）。
-> 本包新增 P0-07 `sdram_arbiter` unit candidate 与 P0-08 `mock_sdram + framebuffer mini-chain` integration candidate，等待 Codex/ModelSim 实跑。
+> P0-07 `sdram_arbiter` 已实测 `[U]`；P0-08 `mock_sdram + framebuffer mini-chain` 已实测 `[C-sub]`。本包新增 P0-09 完整媒体主链端到端 candidate，等待 Codex/ModelSim 实跑。
 > **注意：[U] 仅表示单模块通过；P0-08 即使通过也只是 framebuffer/mock sub-chain，FAT32→BMP→display-order RGB 完整媒体主链仍未达到 [C]。**
 > 正式 SDRAM 后端使用 APUG011，正式 HDMI 使用 APUG092；自研 `tmds_encoder`/`hdmi_audio_pack` 仅 educational/reference。详见 `docs/11_ai_task_plan.md`、`docs/09_implementation_matrix.md`、`docs/13~24`。
 
@@ -68,3 +68,13 @@ FPGA_Competition_HDMI/
 - 完成 **2–3 项高性价比扩展**（OSD 字幕 / 转场 / 自适应缩放 / 参数调节 + OSD / 音频可视化）。
 - 目标奖项：**全国三等奖保底，冲二等奖**。
 - 相关评审口径见 `docs/01` 与对外叙事见 `docs/08`。
+
+
+### P0 最终端到端候选回归
+
+```text
+cd sim_work
+vsim -c -do ../sim_tb/integration/run_p0_media_chain.do
+```
+
+当前：P0-01~P0-07 `[U]`，P0-08 framebuffer/mock 子链 `[C-sub]`，P0-09 完整媒体主链等待实跑，因此**完整 P0 尚未标 `[C]`**。

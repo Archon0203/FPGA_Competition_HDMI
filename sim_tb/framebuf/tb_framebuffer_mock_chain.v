@@ -2,7 +2,7 @@
 
 // ================================================================
 // Testbench : tb_framebuffer_mock_chain
-// P0-08 integration candidate:
+// P0-08 [C-sub] integration regression:
 //   frame_buffer_manager
 //      -> framebuffer_writer --write--\
 //                                sdram_arbiter -> mock_sdram

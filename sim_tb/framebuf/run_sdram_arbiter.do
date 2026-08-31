@@ -1,4 +1,4 @@
-# sdram_arbiter P0-07 candidate unit simulation
+# sdram_arbiter P0-07 [U] unit regression
 # Run from sim_work:
 #   vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter.do
 

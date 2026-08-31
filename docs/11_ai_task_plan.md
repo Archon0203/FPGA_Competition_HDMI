@@ -9,9 +9,9 @@
 
 **红线**：① 不用外部处理器；② 厂商 IP（PLL/SDRAM/HDMI 串行化）**由人在 TD GUI 例化并核对**，AI 负责业务 RTL、wrapper/adapter 与 testbench；约束文件只能依据官方原理图/官方工程转写，由人工核对，禁止 AI 猜测引脚、IOSTANDARD、时钟约束或 vendor IP 端口；③ 每个模块必须带 testbench，ModelSim 输出 `PASS`。
 
-> 进度口径(2026-08-31): 已记录 **33 个 ModelSim testbench PASS**；P0-01~P0-06 均达到 `[U]`。工程现有 35 个 `tb_*.v`，P0-07/P0-08 两个 candidate 等待 Codex/ModelSim 回归。
+> 进度口径(2026-08-31): 已记录 **35 个 ModelSim testbench PASS**；P0-01~P0-07 均达到 `[U]`，P0-08 framebuffer/mock 子链达到 `[C-sub]`。工程现有 36 个 `tb_*.v`，P0-07 已 `[U]`、P0-08 已 `[C-sub]`；P0-09 完整媒体主链 candidate 等待 Codex/ModelSim 回归。
 > P0-05 `line_buffer_pingpong` 修复 TB golden 位宽后 CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204）；P0-06 `line_prefetcher` CASE0~CASE13 PASS（checks=2713）。
-> 本轮新增 `sdram_arbiter` unit candidate 与 `mock_sdram/framebuffer mini-chain` integration candidate；完整 FAT32→BMP→display 链仍未 `[C]`。
+> 本轮新增 `sdram_arbiter` unit [U] 与 `mock_sdram/framebuffer mini-chain` integration [U]；完整 FAT32→BMP→display 链仍未 `[C]`。
 > 官方 HDMI 使用 APUG092，官方 SDRAM 使用 APUG011；不再以自研 TMDS/SDRAM 作为正式比赛主链。
 > P0-01~P0-06 已完成并达到 `[U]`；P0-07 `sdram_arbiter` 与 P0-08 mock framebuffer chain 待回归；planar YUV420、SDIO 4-bit 仍未完成。
 > 剩余工作按可做性分为 A(Codex 可继续)/B(需厂商 IP)/C(需上板) 三类，详见 **§1.5**。
@@ -67,7 +67,7 @@
 | framebuf | `framebuffer_writer.v`                 | [U]   | `bmp_pixel_stream`                     | **P0-03 [U]**：CASE0~CASE8 PASS（checks=1345）；RGB/x/y→21-bit word address + `0x00RRGGBB` |
 | framebuf | `frame_buffer_manager.v`               | [U]   | `framebuffer_writer`/`line_prefetcher` | **P0-04 [U]**：CASE0~CASE6 PASS（checks=166）；Image A/B 双缓冲、frame metadata、frame-boundary swap、读写保护 |
 | framebuf | `line_prefetcher.v`                    | [U]   | `frame_buffer_manager`                 | **P0-06 [U]**：CASE0~CASE13 PASS（checks=2713）；连续行读、多 outstanding、有序 response/stale-response quarantine |
-| framebuf | `sdram_arbiter.v`                      | candidate | writer + prefetcher                  | **P0-07**：strict read-priority、read/write 互斥、outstanding response guard；待回归 |
+| framebuf | `sdram_arbiter.v`                      | [U] | writer + prefetcher                  | **P0-07**：strict read-priority、read/write 互斥、outstanding response guard；待回归 |
 | framebuf | `sdram_adapter.v`                      | ❌    | APUG011                                | 适配官方 `sdr_as_ram` 接口                                                                                                  |
 | framebuf | `line_buffer_pingpong.v`               | [U]   | `line_prefetcher`                      | **P0-05 [U]**：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204）；双行 ping-pong、连续 active line、RGB 保真 |
 | display  | `vga_timing.v`                         | \[U] | —                                      | 纯 RTL，APUG092 架构下作为内部 timing/x-y scheduler；由 `hdmi_video_adapter` 转官方 Video Interface                                 |
@@ -123,7 +123,7 @@ vsim -c -do ../sim_tb/display/run_image_enhance.do
 | `framebuffer_writer`   | framebuf      | [U] P0-03 CASE0~CASE8 PASS（checks=1345） |
 | `frame_buffer_manager` | framebuf      | [U] P0-04 CASE0~CASE6 PASS（checks=166） |
 | `line_prefetcher`      | framebuf      | [U] P0-06：CASE0~CASE13 PASS（checks=2713） |
-| `sdram_arbiter`        | framebuf      | candidate P0-07：strict read-priority + response guard |
+| `sdram_arbiter`        | framebuf      | [U] P0-07：strict read-priority + response guard |
 | `line_buffer_pingpong` | framebuf      | [U] P0-05：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204） |
 | `hdmi_video_adapter`   | display       | ❌ 未实现：RGB888 → APUG092 Video Interface                        |
 | `hdmi_audio_adapter`   | audio         | ❌ 未实现：pixel domain L/R → APUG092 Audio Interface              |
@@ -190,7 +190,7 @@ P0: framebuffer_writer [U]
 P0: frame_buffer_manager [U]
 P0: line_buffer_pingpong [U]
 P0: line_prefetcher [U]
-P0: sdram_arbiter [candidate]
+P0: sdram_arbiter [[U]]
 
 P0 主数据流：
   FAT32 image
@@ -254,7 +254,7 @@ P4: YUV420 / SDIO / 720p
   frame_buffer_manager [U](控制)
     ├─ framebuffer_writer [U](写源) ─┐
     └─ line_prefetcher [U](P0-06 [U], 读源) ────┤
-                                    ├→ sdram_arbiter candidate → mock SDRAM / APUG011
+                                    ├→ sdram_arbiter [U] → mock SDRAM / APUG011
                                     ↓
                            line_buffer_pingpong [U]
                                     ↓
@@ -317,7 +317,7 @@ P2 之前不得新增展示特效。
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- | --------------- |
 | M1 地基         | vga\_timing、image\_enhance、async\_fifo、key\_filter、sw\_filter、seg\_driver、dual\_led、beep、reset\_gen                                      | 各模块 RTL+tb                                | 各自仿真 PASS                                                                                | \[U]            |
 | M2 数据通路       | sd\_spi、sd\_reader、fat32\_scan、fat32\_file\_reader、bmp\_parser、bmp\_pixel\_stream、vseq\_reader、vseq\_yuv\_unpack                         | 扇区/索引/文件流/BMP像素/解析                   | 单元仿真正确                                                                                   | 上述模块 \[U]；媒体链仍未 \[C] |
-| M2.5 文件/像素流   | fat32\_file\_reader、bmp\_pixel\_stream、framebuffer\_writer、frame\_buffer\_manager、line\_prefetcher、line\_buffer\_pingpong、sdram\_arbiter | FAT32→pixel→framebuffer→display-order RGB | 端到端 \[C] | P0-01~P0-06 \[U]；P0-07/P0-08 candidate |
+| M2.5 文件/像素流   | fat32\_file\_reader、bmp\_pixel\_stream、framebuffer\_writer、frame\_buffer\_manager、line\_prefetcher、line\_buffer\_pingpong、sdram\_arbiter | FAT32→pixel→framebuffer→display-order RGB | 端到端 \[C] | P0-01~P0-06 \[U]；P0-07 `[U]` / P0-08 `[C-sub]` / P0-09 candidate |
 | M3 帧缓存        | frame\_buffer\_manager、framebuffer\_writer、line\_prefetcher、sdram\_arbiter、sdram\_adapter、line\_buffer\_pingpong、APUG011                 | 缓存读写/无撕裂                                  | \[C] mock/vendor simulation；\[S] TD synthesis/P\&R/timing；\[B] hardware SDRAM validation | ❌               |
 | M4 显示处理       | color\_space、image\_scaler、transition、osd\_overlay、audio\_visual                                                                         | 处理流水线                                     | 单元仿真                                                                                     | \[U]            |
 | M5 官方 HDMI/音频 | hdmi\_video\_adapter、hdmi\_audio\_adapter、APUG092                                                                                        | HDMI 出图+音                                 | \[S] TD synthesis/P\&R/timing；\[B] HDMI 出图/出声                                            | ❌               |
@@ -370,3 +370,25 @@ P2 之前不得新增展示特效。
 | 扩展③缩放       | color\_space/image\_scaler                                                               | 多分辨率适配       |
 | 扩展④实时调节+OSD | image\_enhance/menu\_fsm                                                                 | 亮度/对比度+参数显示  |
 | 扩展⑤音频可视化    | tone\_gen/可视化                                                                            | 频谱/波形叠加      |
+
+
+## P0 当前实测状态（2026-08-31，P0-07/P0-08 回归后）
+
+```text
+P0-01 fat32_file_reader       [U]
+P0-02 bmp_pixel_stream        [U]
+P0-03 framebuffer_writer      [U]
+P0-04 frame_buffer_manager    [U]
+P0-05 line_buffer_pingpong    [U]
+P0-06 line_prefetcher         [U]
+P0-07 sdram_arbiter           [U]
+P0-08 framebuffer/mock chain  [C-sub]
+P0-09 full P0 media chain     candidate
+```
+
+实测记录：
+
+- `sdram_arbiter`: CASE0~CASE8 PASS, checks=39。
+- `framebuffer mock chain`: CASE-GOLDEN + CASE0~CASE3 PASS, checks=1495。
+- `[C-sub]` 只表示 framebuffer/mock-memory 子链闭环，不等价于完整媒体主链 `[C]`。
+- 下一唯一 P0 验收任务是 `sim_tb/integration/tb_p0_media_chain.v`。

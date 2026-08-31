@@ -19,18 +19,18 @@
 
 ## 当前进度（2026-08-31）
 
-当前已记录 **33 个 ModelSim testbench PASS**；P0-01~P0-06 均已实测 `[U]`，P0-07/P0-08 为新 candidate。完成状态按 `[U]/[C]/[S]/[B]/[L]` 口径记录：
+当前已记录 **35 个 ModelSim testbench PASS**；P0-01~P0-07 均已实测 `[U]`，P0-08 `[C-sub]`，P0-09 为新 candidate。完成状态按 `[U]/[C]/[S]/[B]/[L]` 口径记录：
 
 | 子系统 | 状态 |
 |---|---|
 | top | `reset_gen` [U]；`system_top`/`hx4s20c_top`/`clk_gen` ❌ |
 | storage | `sd_spi` / `sd_reader` / `fat32_scan` / `fat32_file_reader` / `bmp_parser` / `bmp_pixel_stream` / `vseq_reader` / `vseq_yuv_unpack` [U] |
-| framebuf | `async_fifo`/`framebuffer_writer`/`frame_buffer_manager`/`line_buffer_pingpong`/`line_prefetcher` [U]；`sdram_arbiter` candidate；`sdram_adapter` ❌ |
+| framebuf | `async_fifo`/`framebuffer_writer`/`frame_buffer_manager`/`line_buffer_pingpong`/`line_prefetcher` [U]；`sdram_arbiter` [U]；`sdram_adapter` [U] |
 | display | 纯显示 RTL [U]；`hdmi_video_adapter` ❌；`tmds_encoder` [U] 仅 educational |
 | audio | `tone_gen` / `audio_visual` [U]；`hdmi_audio_pack` [U] 仅 educational；`hdmi_audio_adapter` ❌ |
 | interact | `key_filter` / `sw_filter` / `menu_fsm` / `seg_driver` / `dual_led` / `beep` 全部 [U] |
 | app | `app_scenario` [U] |
 
 > `fat32_file_reader` [U]：CASE0~CASE8 PASS（checks=18）；`bmp_pixel_stream` [U]：CASE0~CASE13 PASS（checks=13393）。
-> P0-03/P0-04 [U] 文档见 `../docs/17~20`；P0-05/P0-06 [U] 文档见 `../docs/21~24`；P0-07/P0-08 candidate 文档见 `../docs/27~30`。
+> P0-03/P0-04 [U] 文档见 `../docs/17~20`；P0-05/P0-06 [U] 文档见 `../docs/21~24`；P0-07 `[U]` / P0-08 `[C-sub]` 文档见 `../docs/27~30`；P0-09 candidate 见 `../docs/32~34`。
 > 正式 SDRAM 使用 APUG011，正式 HDMI 使用 APUG092；vendor 目录只读，AI 只写 wrapper/adapter。

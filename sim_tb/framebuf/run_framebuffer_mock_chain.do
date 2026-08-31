@@ -1,4 +1,4 @@
-# P0-08 framebuffer/mock-SDRAM integration candidate
+# P0-08 framebuffer/mock-SDRAM [C-sub] integration regression
 # Run from sim_work:
 #   vsim -c -do ../sim_tb/framebuf/run_framebuffer_mock_chain.do
 

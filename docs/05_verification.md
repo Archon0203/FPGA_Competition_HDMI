@@ -72,7 +72,7 @@ PASS: bmp_pixel_stream all adversarial cases passed (checks=13393)
 
 两项仍只是 unit `[U]`，未证明 framebuffer/media chain `[C]`。
 
-### 2.4 P0-05/P0-06 回归完成；P0-07/P0-08 candidate 入口
+### 2.4 P0-05/P0-06 回归完成；P0-07 `[U]` / P0-08 `[C-sub]` / P0-09 candidate 入口
 
 P0-05/P0-06 已完成回归，命令保留如下：
 
