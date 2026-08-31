@@ -1,3 +1,5 @@
+> P0 Freeze Status (2026-08-31): P0-01~07 [U], P0-08 [C-sub], P0-09 [C]; P0 media chain 已冻结。P0-09 ModelSim: checks=1698 PASS。P0 [C] 仅代表纯 RTL + mock SDRAM 端到端通过，不代表 APUG011/APUG092、TD synthesis/P&R 或上板通过。权威冻结记录见 docs/35_P0_IMPLEMENTATION_FREEZE.md。
+
 # src — 设计代码（可综合 RTL）
 
 模块按子系统分子目录。一个模块一个 `.v` 文件，文件名与模块名一致。
