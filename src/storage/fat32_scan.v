@@ -192,14 +192,16 @@ module fat32_scan #(
                                 if ((ext0==8'h42 && ext1==8'h4D && ext2==8'h50)) begin // BMP
                                     file_type     <= 2'd1;
                                     file_cluster  <= {clu_hi, clu_lo};
-                                    file_size     <= cur_size;
+                                    // 当前字节 din 是 file_size 的高 8 位；
+                                    // 直接与已锁存的低 24 位拼接，避免 NBA 读旧值。
+                                    file_size     <= {din, cur_size[23:0]};
                                     file_index    <= file_count;
                                     file_count    <= file_count + 1'b1;
                                     file_wr       <= 1'b1;
                                 end else if ((ext0==8'h53 && ext1==8'h45 && ext2==8'h51)) begin // SEQ
                                     file_type     <= 2'd2;
                                     file_cluster  <= {clu_hi, clu_lo};
-                                    file_size     <= cur_size;
+                                    file_size     <= {din, cur_size[23:0]};
                                     file_index    <= file_count;
                                     file_count    <= file_count + 1'b1;
                                     file_wr       <= 1'b1;

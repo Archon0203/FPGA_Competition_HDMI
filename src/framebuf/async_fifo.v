@@ -43,9 +43,9 @@ module async_fifo #(
     reg [PTR_W-1:0] wr_ptr;    // 下一个写入槽
     reg [PTR_W-1:0] rd_ptr;    // 下一个读出槽
 
-    // ---------- 格雷码(用于跨时钟域) ----------
-    wire [PTR_W-1:0] wr_gray = (wr_ptr >> 1) ^ wr_ptr;
-    wire [PTR_W-1:0] rd_gray = (rd_ptr >> 1) ^ rd_ptr;
+    // ---------- 已注册格雷码(源时钟域注册后再跨域，避免组合 glitch) ----------
+    reg [PTR_W-1:0] wr_gray;
+    reg [PTR_W-1:0] rd_gray;
 
     // ---------- 跨时钟域同步(2 拍) ----------
     // 写指针 -> 读域
@@ -73,6 +73,12 @@ module async_fifo #(
     // ---------- 读写使能(已满/已空时禁止) ----------
     wire wr_inc = wr_en & ~full;
     wire rd_inc = rd_en & ~empty;
+    wire [PTR_W-1:0] wr_ptr_next = wr_ptr + 1'b1;
+    wire [PTR_W-1:0] rd_ptr_next = rd_ptr + 1'b1;
+    wire [PTR_W-1:0] wr_gray_next = ((wr_inc ? wr_ptr_next : wr_ptr) >> 1) ^
+                                     (wr_inc ? wr_ptr_next : wr_ptr);
+    wire [PTR_W-1:0] rd_gray_next = ((rd_inc ? rd_ptr_next : rd_ptr) >> 1) ^
+                                     (rd_inc ? rd_ptr_next : rd_ptr);
 
     // ---------- 空/满标志(二进制比较) ----------
     // 空: 读写指针完全相等(读域内用同步写入指针判断)
@@ -83,14 +89,24 @@ module async_fifo #(
 
     // ---------- 写指针 ----------
     always @(posedge wr_clk or negedge wr_rst_n) begin
-        if (!wr_rst_n)                       wr_ptr <= {PTR_W{1'b0}};
-        else if (wr_inc)                     wr_ptr <= wr_ptr + 1'b1;
+        if (!wr_rst_n) begin
+            wr_ptr  <= {PTR_W{1'b0}};
+            wr_gray <= {PTR_W{1'b0}};
+        end else begin
+            if (wr_inc) wr_ptr <= wr_ptr_next;
+            wr_gray <= wr_gray_next;
+        end
     end
 
     // ---------- 读指针 ----------
     always @(posedge rd_clk or negedge rd_rst_n) begin
-        if (!rd_rst_n)                       rd_ptr <= {PTR_W{1'b0}};
-        else if (rd_inc)                     rd_ptr <= rd_ptr + 1'b1;
+        if (!rd_rst_n) begin
+            rd_ptr  <= {PTR_W{1'b0}};
+            rd_gray <= {PTR_W{1'b0}};
+        end else begin
+            if (rd_inc) rd_ptr <= rd_ptr_next;
+            rd_gray <= rd_gray_next;
+        end
     end
 
     // ---------- 存储体写入 ----------

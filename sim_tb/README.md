@@ -5,10 +5,10 @@ testbench 源码按 `src/` 的子目录**一一对应**存放。ModelSim 运行�
 ```
 sim_tb/
 ├─ top/        # tb for 顶层/时钟/复位
-├─ storage/    # sd_spi / sd_reader / fat32_scan / bmp_parser / vseq_reader
-├─ framebuf/   # sdram_ctrl / frame_buffer / async_fifo
+├─ storage/    # sd_spi / sd_reader / fat32_scan / fat32_file_reader / bmp_parser / bmp_pixel_stream / vseq_reader / vseq_yuv_unpack
+├─ framebuf/   # async_fifo / framebuffer_writer / manager / prefetch / line buffer / arbiter / adapter
 ├─ display/    # vga_timing / image_enhance / color_space / image_scaler / transition / osd_overlay / tmds_encoder
-├─ audio/      # hdmi_audio / tone_gen
+├─ audio/      # tone_gen / audio_visual / hdmi_audio_pack(educational) / hdmi_audio_adapter
 ├─ interact/   # key_filter / sw_filter / menu_fsm / seg_driver / dual_led / beep
 └─ app/        # app_scenario
 ```
@@ -21,3 +21,14 @@ cd sim_work
 vsim -c -do ../sim_tb/display/run_vga_timing.do
 ```
 
+
+
+## 当前回归口径（2026-08-31）
+
+- 已记录 **33 个 ModelSim testbench PASS**；当前共有 35 个 `tb_*.v`，P0-07/P0-08 两个 candidate 待回归。
+- `tb_fat32_file_reader`：CASE0~CASE8 PASS（checks=18），模块 `[U]`。
+- `tb_bmp_pixel_stream`：CASE0~CASE13 PASS（checks=13393），模块 `[U]`。
+- `[U]` 不代表 FAT32/BMP/framebuffer 端到端链路 `[C]`。
+
+- P0-05 `tb_line_buffer_pingpong`：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204）。
+- P0-06 `tb_line_prefetcher`：CASE0~CASE13 PASS（checks=2713）。

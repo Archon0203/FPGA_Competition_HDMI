@@ -34,7 +34,20 @@ module key_filter #(
     localparam integer CW = (CNT_MAX > 1) ? $clog2(CNT_MAX + 1) : 1;
 
     // 逻辑按下电平(归一化为高有效)
-    wire [3:0] raw = ACTIVE_LOW ? ~key_in : key_in;
+    wire [3:0] raw_async = ACTIVE_LOW ? ~key_in : key_in;
+
+    // 外部异步引脚先做两级同步，再进入消抖状态机。
+    reg [3:0] key_sync1, key_sync2;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            key_sync1 <= 4'b0000;
+            key_sync2 <= 4'b0000;
+        end else begin
+            key_sync1 <= raw_async;
+            key_sync2 <= key_sync1;
+        end
+    end
+    wire [3:0] raw = key_sync2;
 
     wire [3:0] stable;    // 消抖后的稳定电平(由 generate 连续赋值)
     reg [3:0] prev;       // 上一拍稳定电平

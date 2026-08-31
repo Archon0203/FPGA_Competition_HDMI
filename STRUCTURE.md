@@ -8,12 +8,12 @@ FPGA_Competition_HDMI/
 ├─ STRUCTURE.md                    # 本文件（目录规范）
 ├─ README.md                       # 项目总览（指向 STRUCTURE.md / docs/）
 ├─ .gitignore                      # 版本忽略规则
-├─ docs/                           # 设计文档（01~09：需求/架构/计划/风险/验证/视频/场景/卖点/实现矩阵）
+├─ docs/                           # 设计文档（01~24：系统/流程/AI/UI + P0 模块接口与测试向量）
 ├─ src/                            # ★ 设计代码（可综合 RTL）
 │  ├─ README.md                    # 子模块划分与命名约定
 │  ├─ top/                         # 顶层模块、时钟、复位
-│  ├─ storage/                     # SD读卡 / FAT32 / BMP解析 / 视频帧序列解析
-│  ├─ framebuf/                    # SDRAM控制 / 帧缓冲 / 异步FIFO
+│  ├─ storage/                     # SD读卡 / FAT32索引与文件流 / BMP解析 / 视频帧序列解析
+│  ├─ framebuf/                    # framebuffer writer/manager / 仲裁 / line buffer / async FIFO
 │  ├─ display/                     # 行场时序 / 色彩空间 / 缩放 / 增强 / 转场 / OSD / TMDS（含 vga_timing、image_enhance）
 │  ├─ audio/                       # HDMI音频包 / 测试音
 │  ├─ interact/                    # 按键 / 拨码 / 状态机 / 数码管 / 双色LED / 蜂鸣器
@@ -45,3 +45,10 @@ FPGA_Competition_HDMI/
 | `data/` | 图片/视频帧/音频 | ⚠️ 默认不入库 | 可由 tools 重新生成；个别用 `git add -f`；整体走 LFS 另配 `.gitattributes` |
 
 > 仿真运行统一在 `sim_work` 目录执行；testbench 源码与运行脚本放在 `sim_tb/<子系统>/`。
+
+
+## P0 framebuffer 当前文件
+
+`src/framebuf/`：`framebuffer_writer.v`、`frame_buffer_manager.v`、`line_prefetcher.v`、`line_buffer_pingpong.v`、`sdram_arbiter.v`、`async_fifo.v`。
+
+`sim_tb/framebuf/`：对应 unit TB，另有 `mock_sdram.v` + `tb_framebuffer_mock_chain.v` integration candidate。

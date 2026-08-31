@@ -60,12 +60,12 @@ module tb_sw_filter;
         check(ch0, 0, "no change event on glitch");
 
         // 拨到 ON(0 有效 -> 逻辑1), 持续超过阈值
-        sw_in[0] = 1'b0; wait_n(CNT_MAX + 3);
+        sw_in[0] = 1'b0; wait_n(CNT_MAX + 5);
         check(sw_out[0], 1, "turn on");
         check(ch0, 1, "one change event on");
 
         // 拨回 OFF(1), 产生第二次变化
-        sw_in[0] = 1'b1; wait_n(CNT_MAX + 3);
+        sw_in[0] = 1'b1; wait_n(CNT_MAX + 5);
         check(sw_out[0], 0, "turn off");
         check(ch0, 2, "second change event off");
 

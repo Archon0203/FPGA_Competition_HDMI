@@ -21,18 +21,18 @@ FPGA_Competition_HDMI/
 ├─ FPGA_Competition_HDMI.al    # TangDynasty 工程文件（TD 4.6.96021）
 ├─ README.md / STRUCTURE.md    # 项目说明 / 目录规范
 ├─ src/                        # ★ 设计代码（可综合 RTL，按子系统分目录）
-│  ├─ top/       # top / clk_gen / reset_gen
-│  ├─ storage/   # sd_spi / sd_reader / fat32_scan / bmp_parser / vseq_reader
-│  ├─ framebuf/  # sdram_ctrl / frame_buffer / async_fifo
-│  ├─ display/   # vga_timing / image_enhance / color_space / image_scaler / image_enhance / transition / osd_overlay / tmds_encoder
-│  ├─ audio/     # hdmi_audio / tone_gen
+│  ├─ top/       # system_top / hx4s20c_top / clk_gen / reset_gen
+│  ├─ storage/   # sd_spi / sd_reader / fat32_scan / fat32_file_reader / bmp_parser / bmp_pixel_stream / vseq_reader / vseq_yuv_unpack
+│  ├─ framebuf/  # frame_buffer_manager / framebuffer_writer / line_prefetcher / line_buffer_pingpong / sdram_arbiter / sdram_adapter / async_fifo
+│  ├─ display/   # vga_timing / hdmi_video_adapter / color_space / yuv420_upsample / image_scaler / image_enhance / transition / osd_overlay / tmds_encoder(educational)
+│  ├─ audio/     # hdmi_audio_adapter / hdmi_audio_pack(educational) / tone_gen / audio_visual
 │  ├─ interact/  # key_filter / sw_filter / menu_fsm / seg_driver / dual_led / beep
 │  └─ app/       # app_scenario（信息发布与应急广播业务）
 ├─ sim_tb/                     # ★ 仿真测试台源码（tb_*.v + .do），按模块分目录，与 src/ 对应
 ├─ sim_work/                   # ★ ModelSim 运行产物（work/波形/日志，gitignore）
 ├─ constraints/                # ★ 管脚(.cst) + 时钟/时序(.sdc)约束（**须与官方板卡资料核对**）
 ├─ tools/                      # 工具脚本（BMP生成 / 视频转帧 / 字库 / SD卡制作）
-├─ docs/                       # 设计文档（01~12：需求/架构/计划/风险/验证/视频/场景/卖点/实现矩阵/团队流程/AI计划/UI叠加）
+├─ docs/                       # 设计文档（01~24：系统/AI/UI + P0 模块接口与测试向量）
 └─ data/                       # 测试用图片/视频帧/音频（默认不入库，可重新生成）
 ```
 
@@ -52,9 +52,11 @@ FPGA_Competition_HDMI/
    vsim -c -novopt -wlf wave_vga_timing.wlf tb_vga_timing -do ../sim_tb/display/run_vga_timing_wave.do
    ```
 
-> **进度口径（2026-08-28）**：所有纯 RTL 模块已完成并被 27 个 ModelSim testbench 验证 PASS；
-> 顶层 `top`、`clk_gen`(PLL)、`sdram_ctrl`/`frame_buffer`、`tmds_encoder`、`hdmi_audio`
-> 属厂商 IP / 官方参考，需人工在 TD GUI 例化核对后集成与上板。详见 `docs/11`、`docs/09` 与 `src/README.md`。
+> **进度口径（2026-08-31）**：已记录 **33 个 ModelSim testbench PASS**；工程当前共有 **35 个 `tb_*.v`**（新增 P0-07/P0-08 candidate）。
+> P0-01 `fat32_file_reader` [U]；P0-02 `bmp_pixel_stream` [U]；P0-03 `framebuffer_writer` [U]；P0-04 `frame_buffer_manager` [U]；P0-05 `line_buffer_pingpong` [U]（CASE-GOLDEN+CASE0~CASE8，checks=2204）；P0-06 `line_prefetcher` [U]（CASE0~CASE13，checks=2713）。
+> 本包新增 P0-07 `sdram_arbiter` unit candidate 与 P0-08 `mock_sdram + framebuffer mini-chain` integration candidate，等待 Codex/ModelSim 实跑。
+> **注意：[U] 仅表示单模块通过；P0-08 即使通过也只是 framebuffer/mock sub-chain，FAT32→BMP→display-order RGB 完整媒体主链仍未达到 [C]。**
+> 正式 SDRAM 后端使用 APUG011，正式 HDMI 使用 APUG092；自研 `tmds_encoder`/`hdmi_audio_pack` 仅 educational/reference。详见 `docs/11_ai_task_plan.md`、`docs/09_implementation_matrix.md`、`docs/13~24`。
 
 ## 四、团队协作（fork / clone / PR）
 

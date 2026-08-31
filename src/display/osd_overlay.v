@@ -43,6 +43,9 @@ module osd_overlay #(
     output wire          out_valid
 );
 
+    localparam integer ROW_W = (FH > 1) ? $clog2(FH) : 1;
+    localparam integer COL_W = (FW > 1) ? $clog2(FW) : 1;
+
     // 字模 ROM: 16 字形 x 16 行 x 8 列  (char_code*16 + row -> 8 bits)
     reg [FW-1:0] font_rom [0:15] [0:FH-1];
     integer fi, fj;
@@ -66,8 +69,8 @@ module osd_overlay #(
     wire        in_cell = osd_en && (rx < FW) && (ry < FH);
 
     // 取字模点
-    wire [FW-1:0] row_bits = font_rom[char_code][ry[3:0]];
-    wire          dot      = in_cell ? row_bits[rx[2:0]] : 1'b0;
+    wire [FW-1:0] row_bits = font_rom[char_code][ry[ROW_W-1:0]];
+    wire          dot      = in_cell ? row_bits[rx[COL_W-1:0]] : 1'b0;
 
     always @(*) begin
         if (!valid) begin

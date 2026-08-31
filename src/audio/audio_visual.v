@@ -48,8 +48,9 @@ module audio_visual #(
     localparam [11:0] BAR_W_  = BAR_W;
     localparam [11:0] BAR_H_  = BAR_H;
 
-    // 采样幅值(取高 ENV_W 位映射到 0..255)
-    wire signed [DW-1:0] s_abs = (sample < 0) ? -sample : sample;
+    // 采样幅值(先符号扩展到 DW+1 位，避免最小负数 -2^(DW-1) 取负溢出)
+    wire signed [DW:0] s_ext = $signed(sample);
+    wire signed [DW:0] s_abs = (sample < 0) ? -s_ext : s_ext;
     wire [ENV_W-1:0] amp = s_abs[DW-1 -: ENV_W];
 
     reg [ENV_W-1:0] env;

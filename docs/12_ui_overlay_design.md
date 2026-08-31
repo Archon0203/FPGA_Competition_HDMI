@@ -41,7 +41,7 @@ EG4S20 没有 GPU、没有 OS，**不做窗口系统**。UI = 在“基础画面
 | P3 | 应急整屏 | 全屏 | 红/黑底 + 大字“应急” + 警示图形（可选蜂鸣提示） | app_scenario(emergency) + osd_overlay / 应急页 ROM |
 | P2 | OSD 文字层 | 顶部状态栏(0..23) + 底部滚动条(456..479) + 右下参数面板 | 时间 HH:MM:SS、模式、图号、播放状态、亮度/对比度/转场、滚动标语 | osd_overlay + 字库 ROM + 字符 ROM + menu_fsm |
 | P1 | 音频可视化 | 底部或右下（如 x=560..） | 振幅包络柱状条 | audio_visual |
-| P0 | 基础画面 | 全屏 | 图片 / 短视频帧，经缩放→增强→转场 | frame_buffer + image_scaler + image_enhance + transition + color_space |
+| P0 | 基础画面 | 全屏 | 图片 / 短视频帧，经缩放→增强→转场 | frame_buffer_manager + line_prefetcher + line_buffer_pingpong + image_scaler + image_enhance + transition + color_space |
 
 > P0 是“视频/图像”；P1/P2/P3 是“UI 叠加”。P3 与 P2 通常互斥（应急时隐藏状态栏细节，只留大字与警示）。
 
@@ -137,9 +137,10 @@ pix_out = P3_en ? P3_px :
 clk_sys(50M): menu_fsm / app_scenario -> 状态字段(槽位寄存器)
                  | (事件 async_fifo / 慢速双拍寄存)
 clk_pix(25.175M): vga_timing(de,x,y)
-                 -> frame_buffer -> scaler -> color_space -> enhance -> transition  (P0)
+                 -> frame_buffer_manager -> line_prefetcher -> line_buffer_pingpong
+                 -> scaler -> color_space -> enhance -> transition  (P0)
                  -> audio_visual(P1) / osd_overlay+字库(P2) / emergency(P3)
-                 -> 优先级 mux -> tmds_encoder -> HDMI
+                 -> 优先级 mux -> hdmi_video_adapter -> APUG092 -> HDMI
 ```
 
 - 像素时钟内只做：读层、判命中、优先级选择；不读外部慢速接口。

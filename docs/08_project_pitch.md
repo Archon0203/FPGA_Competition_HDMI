@@ -20,14 +20,14 @@
  SD/TF卡 ──▶ [模块A: SD读取] ──▶ [模块B: 视频/图像处理] ──▶ [模块C: HDMI驱动] ──▶ 显示器
             SPI读卡/文件系统/解帧     FPGA帧缓存 + 图像处理       TMDS编码/串行化
 
-  数据流： SD卡 → FPGA缓存(帧缓冲/SDRAM) → 图像处理(YCbCr→RGB+缩放+增强) → HDMI编码(TMDS) → 显示
+  数据流： SD卡 → FPGA缓存(APUG011 SDRAM) → 图像处理(YCbCr→RGB+缩放+增强) → APUG092 HDMI → 显示
 ```
 
 | 模块 | 职责 | 对应 RTL 子目录 |
 |---|---|---|
 | **A. SD 卡读取** | SPI 读卡；FAT32 解析；BMP 解析；`.vseq` 视频帧序列解析 | `src/storage` |
 | **B. 视频/图像处理** | 帧缓冲(SDRAM, 双/三缓冲)；**YCbCr→RGB 色彩空间转换**；**图像缩放**；亮度/对比度增强；转场/OSD 叠加 | `src/framebuf` + `src/display` |
-| **C. HDMI 驱动** | 行场时序；**TMDS 编码**；串行化输出 | `src/display`（tmds_encoder） |
+| **C. HDMI 驱动** | 使用官方 APUG092 完成 HDMI protocol/TMDS/Data Island；`hdmi_video_adapter` 转换项目像素流 | `src/display` + APUG092 |
 
 > 三大模块是“功能抽象”；实现时每个模块继续细分为子模块（见 `src/` 目录），并在内部并行流水线。
 
@@ -36,24 +36,27 @@
 ### 3.1 色彩空间转换（YCbCr→RGB）
 - 视频帧以 YCbCr（YUV）存储，按 BT.601 矩阵转 RGB：
   ```
-  R = Y + 1.402(Cr-128)
-  G = Y - 0.344(Cb-128) - 0.714(Cr-128)
-  B = Y + 1.772(Cb-128)
-  ```
-- 定点化（用移位/乘法器）实现；YUV420 需先做色度上采样（最近邻/双线性）。
+  R = 1.164(Y-16) + 1.596(Cr-128)
+  G = 1.164(Y-16) - 0.392(Cb-128) - 0.813(Cr-128)
+  B = 1.164(Y-16) + 2.017(Cb-128)
+```
+- 定点化（用移位/乘法器）实现；当前闭环优先 YUV444，YUV420 后续补充 planar reader/deinterleave。
 - 采用行缓存(line buffer)流水线，逐像素处理。
 
 ### 3.2 视频/图像缩放
 - 任意输入分辨率 → 输出分辨率；最近邻（低资源）/双线性（高质量）可切换。
-- 短视频片段（如 320×240 YUV420）放大到 640×480 输出。
+- 短视频片段（如 320×240 YUV444）放大到 640×480 输出；YUV420 作为后续带宽优化项。
 
-### 3.3 TMDS 编码与串行化
-- 采用 TMDS（最小化传输差分信号）10bit 编码，3 数据通道 + 1 时钟通道；复用官方 `lab_ex` 的 OSERDES/串行化参考。
-- **是否能用 720p/1080p 视 FPGA IO 与板卡约束而定（见第 5 节边界）。**
+### 3.3 正式 HDMI 输出
+- 正式主链使用官方 APUG092 HDMI1.4b Transmitter，不复用自研 `tmds_encoder` 作为正式主链。
+- 10bit TMDS 采用 `clk_hdmi_ser = clk_pix × 5` + ODDR 双边沿串行化。
+- 自研 `tmds_encoder`、`hdmi_audio_pack` 仅保留为 educational/reference RTL。
+- **720p 仅作加分验证；1080p60 从项目目标删除。**
 
-### 3.4 PLL & 像素时钟
-- 板载 50MHz + PLL 生成 `clk_sys`/`clk_pix`/`clk_tmds`/`clk_sdram`/`clk_sdo`/`clk_aud`。
-- 像素时钟可配置以适配不同输出分辨率（640×480 基线，向 720p 扩展验证）。
+### 3.4 PLL & 时钟架构
+- 板载 50MHz + PLL 生成 `clk_pix`、`clk_hdmi_ser=clk_pix×5`、`clk_sdram`、`clk_sdo`。
+- 基础音频不再创建独立 `clk_aud`；48k sample enable 在 pixel domain 用相位累加器/Bresenham 分数分频产生。
+- 640×480 为正式基线，720p 仅加分验证。
 
 ### 3.5 流水线并行与模块化
 - 一帧或多行流水线并行处理，吞吐率＝像素时钟；模块间用 FIFO/握手解耦。
@@ -106,4 +109,3 @@
 - 资源：待综合后填报（LUT / DFF / ERAM / SDRAM / PLL / 时序余量）
 - 稳定性：连续运行≥2h；快速切换无花屏
 - 延迟：输出流水线微秒级；SD 预载/切换为帧级（实测值）
-

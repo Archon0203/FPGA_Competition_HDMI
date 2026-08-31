@@ -4,11 +4,11 @@
 
 | 子目录 | 包含模块 |
 |---|---|
-| `top/` | `top.v`（顶层）、`clk_gen.v`、`reset_gen.v` |
-| `storage/` | `sd_spi.v`、`sd_reader.v`、`fat32_scan.v`、`bmp_parser.v`、`vseq_reader.v`、`vseq_yuv_unpack.v`（YUV444 解包） |
-| `framebuf/` | `sdram_ctrl.v`、`frame_buffer.v`、`async_fifo.v` |
-| `display/` | `vga_timing.v`、`color_space.v`、`yuv420_upsample.v`、`image_enhance.v`、`image_scaler.v`、`transition.v`、`osd_overlay.v`、`tmds_encoder.v` |
-| `audio/` | `tone_gen.v`、`audio_visual.v`、`hdmi_audio_pack.v`、`hdmi_audio.v` |
+| `top/` | `system_top.v`（业务）、`hx4s20c_top.v`（vendor/board）、`clk_gen.v`、`reset_gen.v` |
+| `storage/` | `sd_spi.v`、`sd_reader.v`、`fat32_scan.v`、`fat32_file_reader.v`、`bmp_parser.v`、`bmp_pixel_stream.v`、`vseq_reader.v`、`vseq_yuv_unpack.v` |
+| `framebuf/` | `frame_buffer_manager.v`、`framebuffer_writer.v`、`line_prefetcher.v`、`line_buffer_pingpong.v`、`sdram_arbiter.v`、`sdram_adapter.v`、`async_fifo.v` |
+| `display/` | `vga_timing.v`、`hdmi_video_adapter.v`、`color_space.v`、`yuv420_upsample.v`、`image_enhance.v`、`image_scaler.v`、`transition.v`、`osd_overlay.v`、`tmds_encoder.v`(educational) |
+| `audio/` | `hdmi_audio_adapter.v`、`tone_gen.v`、`audio_visual.v`、`hdmi_audio_pack.v`(educational) |
 | `interact/` | `key_filter.v`、`sw_filter.v`、`menu_fsm.v`、`seg_driver.v`、`dual_led.v`、`beep.v` |
 | `app/` | `app_scenario.v`（信息发布终端业务） |
 
@@ -17,18 +17,20 @@
 - 跨时钟域一律用 `async_fifo.v`，禁止用快时钟直接采样慢时钟。
 - 端口命名采用 `clk_*`（时钟）、`rst_n`（低有效复位）、`*_valid`/`*_data`（握手）、`*_p*_n`（差分）。
 
-## 当前进度（2026-08-28）
+## 当前进度（2026-08-31）
 
-纯 RTL 模块已全部实现并通过 ModelSim 仿真（27 个 testbench PASS）：
+当前已记录 **33 个 ModelSim testbench PASS**；P0-01~P0-06 均已实测 `[U]`，P0-07/P0-08 为新 candidate。完成状态按 `[U]/[C]/[S]/[B]/[L]` 口径记录：
 
 | 子系统 | 状态 |
 |---|---|
-| top | `reset_gen` ✅；mini-top 显示链集成 ✅(`tb_mini_top`)；`top`/`clk_gen` ❌ 待人工 PLL 与集成 |
-| storage | `sd_spi` / `sd_reader` / `fat32_scan` / `bmp_parser` / `vseq_reader` / `vseq_yuv_unpack` 全部 ✅ |
-| framebuf | `async_fifo` ✅；`sdram_ctrl`/`frame_buffer` ❌ 待厂商 IP |
-| display | `vga_timing` / `image_enhance` / `color_space` / `yuv420_upsample` / `image_scaler` / `transition` / `osd_overlay` / `tmds_encoder`(10bit 逻辑) ✅；TMDS 串行化/差分 ❌ 待官方参考 |
-| audio | `tone_gen` ✅ / `audio_visual` ✅ / `hdmi_audio_pack` ✅；`hdmi_audio` 注入 ❌ 待官方参考 |
-| interact | `key_filter` / `sw_filter` / `menu_fsm` / `seg_driver` / `dual_led` / `beep` 全部 ✅ |
-| app | `app_scenario` ✅ |
+| top | `reset_gen` [U]；`system_top`/`hx4s20c_top`/`clk_gen` ❌ |
+| storage | `sd_spi` / `sd_reader` / `fat32_scan` / `fat32_file_reader` / `bmp_parser` / `bmp_pixel_stream` / `vseq_reader` / `vseq_yuv_unpack` [U] |
+| framebuf | `async_fifo`/`framebuffer_writer`/`frame_buffer_manager`/`line_buffer_pingpong`/`line_prefetcher` [U]；`sdram_arbiter` candidate；`sdram_adapter` ❌ |
+| display | 纯显示 RTL [U]；`hdmi_video_adapter` ❌；`tmds_encoder` [U] 仅 educational |
+| audio | `tone_gen` / `audio_visual` [U]；`hdmi_audio_pack` [U] 仅 educational；`hdmi_audio_adapter` ❌ |
+| interact | `key_filter` / `sw_filter` / `menu_fsm` / `seg_driver` / `dual_led` / `beep` 全部 [U] |
+| app | `app_scenario` [U] |
 
-> 厂商 IP / 官方参考模块（PLL、SDRAM、TMDS、HDMI 音频）不编端口，由人工在 TD GUI 例化核对后再集成。
+> `fat32_file_reader` [U]：CASE0~CASE8 PASS（checks=18）；`bmp_pixel_stream` [U]：CASE0~CASE13 PASS（checks=13393）。
+> P0-03/P0-04 [U] 文档见 `../docs/17~20`；P0-05/P0-06 [U] 文档见 `../docs/21~24`；P0-07/P0-08 candidate 文档见 `../docs/27~30`。
+> 正式 SDRAM 使用 APUG011，正式 HDMI 使用 APUG092；vendor 目录只读，AI 只写 wrapper/adapter。

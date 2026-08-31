@@ -1,197 +1,380 @@
-# 02 · 顶层架构设计
+# 02 · 顶层架构设计（2026-08-31，基于官方开发板资料修订）
 
-> 本文件是"顶层架构契约"。人类负责锁定本设计，Codex 按此逐模块实现。
-> 端口、位宽、时钟域、存储划分以本文件为准；实现冲突时以本文件为准。
+> 本文是顶层架构契约。端口、位宽、时钟域、存储划分和 vendor IP 使用以本文件为准。
+> 普通 `src/` 模块只做可综合业务逻辑；厂商原语、PHY、PLL、板级 IO 全部收敛到 `hx4s20c_top.v`。
 
-## 1. 功能抽象：三大模块
+## 0. Architecture Freeze v1.0 — 2026-08-31
 
-```
- A.SD读取 ──▶ B.视频/图像处理 ──▶ C.HDMI驱动 ──▶ 显示器
-  (SPI读卡/文件系统/解帧)  (帧缓存+色彩空间+缩放+增强)  (行场时序+TMDS)
-```
+自本版本起，AI Agent 不得因实现方便、局部优化或新的个人建议自行改变主数据流、模块边界、vendor IP 选择、SDRAM 像素格式及时钟架构。
 
-数据流：`SD卡 → FPGA缓存(SDRAM帧缓冲) → 图像处理(YCbCr→RGB+缩放+增强) → HDMI编码(TMDS) → 显示`
+仅当以下证据证明当前契约存在冲突时，才能提出 Architecture Change Request：
 
-| 功能模块 | 职责 | RTL 子目录 |
-|---|---|---|
-| A. SD 读取 | SPI 读卡；FAT32 解析；BMP 解析；`.vseq` 视频帧序列解析 | `src/storage` |
-| B. 视频/图像处理 | SDRAM 帧缓冲(双/三缓冲)；**YCbCr→RGB**；**图像缩放**；亮度/对比度增强；转场/OSD 叠加 | `src/framebuf` + `src/display` |
-| C. HDMI 驱动 | 行场时序；**TMDS 编码**；串行化输出 | `src/display` |
+- 安路官方资料；
+- TD 综合/P&R/时序结果；
+- 真实开发板测试结果。
 
-> 三大模块是"功能抽象"，实现时再细分为子模块（见 `src/` 目录），内部用流水线并行。
+变更流程：
 
-## 2. 数据流（含视频）
+1. 先修改架构文档；
+2. 经人工审核通过；
+3. 再修改 RTL。
 
-```
-                    ┌──────────────────────────── FPGA 内部（全部硬件，无 CPU）────────────────────────────┐
- SD/TF卡(BMP/.vseq) │  SPI读卡 → FAT32解析 → BMP解析/`.vseq`解帧 → 写FIFO → SDRAM帧缓存(图片双缓冲/视频三缓冲)│
-  (SPI 或 SDIO)     │                                           │ 读FIFO                                    │
-                    │  [加载/预载: 图片一次读入; 视频预载循环或流式]│                                           │
-                    │                                           ▼                                           │
-                    │                     显示处理流水线：YCbCr→RGB → 缩放 → 增强(亮度/对比度) → 转场 → OSD   │
-                    │                        │                                                                │
-                    │                        ▼                                                                │
-                    │           行场时序 → 坐标 → TMDS编码 → 串行化 → HDMI输出                                │
-                    │                                                                                        │
- 按键/拨码 → 消抖 → 交互状态机 → 播放/暂停/切图/调参/转场/应急/字幕开关                                        │
- 数码管/双色LED/蜂鸣 → 状态显示                                                                               │
- 音频(测试音/背景音/PCM) → HDMI音频包(Data Island) → 音画同步                                                 │
-                    └──────────────────────────────────────────────────────────────────────────────────────┘
+## 1. 正式硬件链路
+
+### 1.1 HDMI 主链：使用官方 APUG092
+
+```text
+RGB888 pixel stream
+  -> hdmi_video_adapter
+  -> hdmi_1_4b_transmitter_core_wrapper
+  -> hdmi_phy_wrapper(DEVICE="EG")
+  -> EG_LOGIC_ODDR
+  -> HX4S20C HDMI 物理输出
 ```
 
-## 3. 分层与模块划分
+官方 APUG092 Core 负责：
 
-### L0 · 基础设施（`src/top`）
-| 模块 | 职责 |
-|---|---|
-| `top` | 顶层例化、时钟/复位生成、IO 路由、引脚约束（引脚号见 `constraints/`） |
-| `clk_gen` | 板载 50MHz + PLL 生成 `clk_pix`/`clk_tmds`/`clk_sdram`/`clk_sdo`/`clk_aud` 等 |
-| `reset_gen` | 上电复位、各时钟域同步复位 |
+- HDMI protocol
+- TMDS encoding
+- Video timing mapping
+- Data Island
+- HDMI Audio
+- ACR
+- DDC/EDID
 
-### L1 · 存储与文件（`src/storage`）
-| 模块 | 职责 |
-|---|---|
-| `sd_spi` | SD/TF 卡 SPI 模式控制器（块级读；若走流式可扩 SDIO 4-bit） |
-| `sd_reader` | 高层次读卡状态机（CMD/ACMD 协商、读超时/重试） |
-| `fat32_scan` | 分区表(MBR)/FAT/目录项解析，建立图片 + 视频文件索引 |
-| `bmp_parser` | 解析 BMP（14B 文件头 + 40B 信息头），支持 24 位非压缩 |
-| `vseq_reader` | 解析自定义 `.vseq` 容器（magic/宽/高/bpp/fps/帧数），流式取帧 |
+现有 `tmds_encoder.v`、`hdmi_audio_pack.v` 保留为 educational/reference RTL 和 unit test，**不得删除**，但不得作为正式 HDMI 主链。
 
-### L2 · 帧缓存（`src/framebuf`）
-| 模块 | 职责 |
-|---|---|
-| `sdram_ctrl` | SDRAM 控制器：命令/自动刷新/行预充电/读写仲裁；复用官方 IP/参考 |
-| `frame_buffer` | 帧缓冲管理：图片**双缓冲**、视频**三缓冲**（ping-pong），地址映射 |
-| `async_fifo` | 参数化跨时钟域异步 FIFO（SD→SDRAM、SDRAM→像素等） |
+禁止从零重新实现 HDMI Data Island。
 
-### L3 · 显示处理流水线（`src/display`）
-| 模块 | 职责 |
-|---|---|
-| `vga_timing` | 生成 HSync/VSync/DE + 像素 X/Y 坐标（按输出分辨率参数化） |
-| `color_space` | **YCbCr→RGB**（BT.601 定点矩阵）；YUV420 先色度上采样（最近邻/双线性） |
-| `image_scaler` | 任意分辨率 → 输出分辨率（最近邻/双线性） |
-| `image_enhance` | 亮度/对比度/增益调节 |
-| `transition` | 淡入淡出/滑动转场（图片用；视频流不叠加转场） |
-| `osd_overlay` | 字幕/时间戳叠加 + 字符点阵 ROM |
-| `tmds_encoder` | TMDS 10bit 编码（数据/控制/同步）+ 串行化 + 差分输出；复用官方 HDMI 参考 |
+### 1.2 HDMI 时钟定义
 
-### L4 · 音频（`src/audio`）
-| 模块 | 职责 |
-|---|---|
-| `hdmi_audio` | HDMI 音频包（Data Island/L-PCM）生成与注入 |
-| `tone_gen` | 测试音/背景音/提示音生成（查表或累加器） |
+删除旧的 `clk_tmds = pixel_clock × 10`。
 
-### L5 · 人机交互（`src/interact`）
-| 模块 | 职责 |
-|---|---|
-| `key_filter` / `sw_filter` | 4 按键、4 拨码消抖 |
-| `menu_fsm` | 主控状态机：播放/暂停/上下张/轮播/调参/切算法/应急/转场/字幕 |
-| `seg_driver` | 8 位数码管扫描 + 译码 |
-| `dual_led` / `beep` | 双色 LED 状态指示、蜂鸣器提示/应急 |
+新定义：
 
-### L6 · 应用场景（`src/app`）
-| 模块 | 职责 |
-|---|---|
-| `app_scenario` | "信息发布与应急广播终端"业务：图片轮播 + 短视频片段 + 时间戳 + 应急切换 + 音频联动 |
-
-## 4. 关键接口契约（逻辑端口，物理引脚见官方约束）
-
-### 4.1 `top`
-```verilog
-module top(
-    input  wire       clk_50m,      // 板载 50MHz 有源时钟
-    input  wire       rst_n,        // 复位(低有效)
-    // SD/TF (SPI/SDIO)
-    output wire       sd_cs_n, output wire sd_sclk,
-    output wire       sd_mosi, input  wire sd_miso,
-    // HDMI 输出 (R,G,B,Clk 差分；引脚取自官方约束)
-    output wire [3:0] hdmi_tmds_p, output wire [3:0] hdmi_tmds_n,
-    // 人机交互
-    input  wire [3:0] key, input  wire [3:0] sw,
-    output wire [3:0] led, output wire [7:0] seg_sel, output wire [7:0] seg_data,
-    output wire buzzer,
-    output wire uart_txd, input wire uart_rxd
-);
+```text
+clk_pix        : 像素时钟，640x480 基线
+clk_hdmi_ser   : clk_pix × 5
 ```
 
-### 4.2 关键数据接口（供 Codex/testbench 对齐）
-| 通道 | 源 → 目的 | 位宽 | 时钟域 |
-|---|---|---|---|
-| `sd_data` | sd_reader → async_fifo | 16 | `clk_sdo` |
-| `fb_wr` | frame_buffer 写总线 | 32 | `clk_sdram` |
-| `px_valid/px_data` | frame_buffer → 显示流水线 | 24 (RGB888) | `clk_pix` |
-| `yuv_valid/yuv_data` | vseq_reader → color_space | 24 (YUV444) | `clk_pix` |
-| `para_val` | menu_fsm → image_enhance | 8 | `clk_pix` |
-| `osd_char` | osd_overlay ← 字库 ROM | 8 | `clk_pix` |
-| `key_event` | key_filter → menu_fsm | 4 | `clk_sys` |
+10bit TMDS 采用 5x clock + ODDR 双边沿串行化。
 
-> 所有跨时钟域数据必须经 `async_fifo`，禁止用快时钟直接采样慢时钟信号。
+分辨率目标：
 
-## 5. 时钟域与 CDC
+- 640x480：正式基线。
+- 720p：仅作为最终加分项。
+- 1080p60：从项目目标删除。
 
-| 时钟 | 频率(建议) | 用途 |
-|---|---|---|
-| `clk_sys` | 50MHz | 系统控制/交互状态机 |
-| `clk_pix` | 25.175MHz | 640×480@60 像素时钟（720p 时为 74.25MHz） |
-| `clk_tmds` | ×10 像素时钟 | TMDS 串行化位时钟（~252/742MHz） |
-| `clk_sdo` | 12.5/25MHz | SD 读卡 |
-| `clk_sdram` | ~100MHz | SDRAM 主时钟 |
-| `clk_aud` | 12.288MHz | HDMI 音频包 |
+APUG092 自带工程是 PH1A/AP106 示例，其 PLL、pin.adc、板级 top 不能直接复制到 HX4S20C。
 
-CDC 点：SD→SDRAM（写）、SDRAM→像素（读）、菜单(50M)→像素、音频(12.288M)→TMDS，均以异步 FIFO 桥接。
+## 2. SDRAM 正式后端：使用官方 APUG011
 
-## 6. 存储映射
+```text
+frame_buffer_manager  (控制/地址分配)
+  ├─ framebuffer_writer   (写请求源)
+  └─ line_prefetcher      (读请求源)
+          └─ line_buffer_pingpong
+  └─────────────┐
+                v
+          sdram_arbiter
+                v
+          sdram_adapter
+                v
+  official APUG011 sdr_as_ram
+                v
+      EG_PHY_SDRAM_2M_32
+```
 
-### SDRAM（2M×32bit ≈ 8MB）
+`frame_buffer_manager` 只负责控制、地址分配和读写保护；
+`framebuffer_writer` 和 `line_prefetcher` 才是 SDRAM request source，
+统一经 `sdram_arbiter` 访问 `sdram_adapter`。
+
+禁止自行重新实现完整 SDRAM controller。
+
+`sdram_adapter` 必须正确处理：
+
+- `Sdr_init_done`
+- `Sdr_init_ref_vld` / `Sdr_busy`
+- `App_wr_en` / `addr` / `data` / `dm`
+- `App_rd_en` / `addr`
+- `Sdr_rd_en` / `Sdr_rd_dout`
+- read/write 互斥
+- 非零读延迟
+- 4-word 对齐/连续访问规则
+SDRAM read response 必须经 sdram_adapter → sdram_arbiter 返回给发起请求的 line_prefetcher；只有 line_prefetcher 写 line_buffer_pingpong，arbiter/adapter 不直接写 line buffer。
+### 2.1 SDRAM 像素格式
+
+统一一个像素一个 32bit word：
+
+```text
+RGB:    0x00RRGGBB
+YUV444: 0x00YYCbCr
+```
+
+禁止做 24bit 紧凑跨 word packing。
+
+### 2.2 SDRAM 映射
+
+所有 frame base address 保证 4-word 对齐。
+
 | 区域 | 大小 | 用途 |
+|---|---:|---|
+| Image A | 307200 words | 640×480 RGB 当前帧 |
+| Image B | 307200 words | 640×480 RGB 下一帧/转场 |
+| Video A | 76800 words | 320×240 YUV444 三缓冲 A |
+| Video B | 76800 words | 320×240 YUV444 三缓冲 B |
+| Video C | 76800 words | 320×240 YUV444 三缓冲 C |
+| 加载暂存/索引 | 若干 word | FAT32 索引与预载 |
+
+总占用约：
+
+```text
+307200 × 2 + 76800 × 3 = 844800 words
+```
+
+远小于 2M×32bit SDRAM。
+
+## 3. 存储与文件输入
+
+```text
+SD/TF
+  -> sd_spi / sd_reader
+  -> fat32_scan
+  -> fat32_file_reader
+  -> bmp_parser / bmp_pixel_stream
+  -> framebuffer_writer
+  -> SDRAM frame buffer
+```
+
+当前 SD 约束：
+
+- 只支持 SDHC/SDXC block addressing。
+- `sd_reader` 上电通过 `sd_spi` 发送 10 个 `0xFF` 产生 80 SCLK。
+- 初始化成功后后续 block 直接 CMD17，不重复初始化。
+- 响应/token 前 `0xFF` 有总等待上限。
+
+FAT32 baseline：
+
+- 512-byte sector。
+- SDHC/SDXC。
+- 8.3 short filename。
+- 不依赖 LFN。
+- `fat32_scan` 当前只索引根目录第一 sector。
+- `fat32_file_reader` 必须支持 fragmented FAT chain。
+- 文件读出以 `file_size` 为最终边界，不能仅靠 EOC 结束。
+
+BMP baseline：
+
+- 24-bit。
+- BI_RGB / uncompressed。
+- baseline 支持 bottom-up。
+- 必须处理 4-byte row padding。
+
+## 4. 显示流水线与行缓冲
+
+APUG092 Video Interface 要求一行有效像素不能断流。
+
+正式路径：
+
+```text
+SDRAM
+  -> line_prefetcher
+  -> line_buffer_pingpong / pixel FIFO
+  -> continuous active line
+  -> hdmi_video_adapter
+  -> APUG092
+```
+
+禁止 SDRAM 逐像素直接驱动 HDMI。
+
+`vga_timing` 在 APUG092 架构下不再直接产生 HDMI 同步信号；
+它只作为内部 timing/x-y scheduler，生成 DE、x、y，用于文件流/OSD/line prefetch 调度。
+最终由 `hdmi_video_adapter` 把这些内部时序转换成 APUG092 的 Video Interface。
+
+## 5. 模块职责
+
+### 5.1 新增正式模块
+
+| 模块 | 路径 | 职责 |
 |---|---|---|
-| 图片帧缓冲 A | 640×480×3 ≈ 230,400 word | 当前图片 |
-| 图片帧缓冲 B | 640×480×3 ≈ 230,400 word | 下一张/转场暂存（双缓冲） |
-| 视频三帧缓冲 | 320×240×2 × 3 ≈ 115,200 word | 视频帧源（三缓冲） |
-| 加载暂存区 / 文件索引 | 若干 word | SD 预载/索引缓存 |
+| `fat32_file_reader` | `src/storage/` | FAT chain、cluster→LBA、连续文件字节流、file_size 终止 |
+| `bmp_pixel_stream` | `src/storage/` | BGR→RGB、bottom-up、padding、x/y、pixel_valid |
+| `framebuffer_writer` | `src/framebuf/` | RGB pixel → 32bit word/address/write request |
+| `frame_buffer_manager` | `src/framebuf/` | 多 buffer 管理、frame swap、读写保护 |
+| `line_prefetcher` | `src/framebuf/` | SDRAM 行预取，产生读请求并填入 `line_buffer_pingpong` |
+| `sdram_arbiter` | `src/framebuf/` | 多请求源仲裁、read/write 互斥 |
+| `sdram_adapter` | `src/framebuf/` | 适配 APUG011 接口与读写时序 |
+| `line_buffer_pingpong` | `src/framebuf/` | 连续 active line 缓冲，消除 SDRAM latency/refresh stall |
+| `hdmi_video_adapter` | `src/display/` | 项目像素流 → APUG092 Video Interface |
+| `hdmi_audio_adapter` | `src/audio/` | pixel domain 下 24bit L/R → APUG092 Audio Interface |
 
-> 640×480×3 = 921,600B = 230,400 word；双缓冲 460,800 + 视频 115,200 ≈ 576,000 word << 2,097,152 word，余量充足。
-> 视频帧以 320×240 YUV/YCbCr 存，显示时经缩放放大到输出分辨率（省带宽与存储）。
+职责分离要求：
 
-### ERAM（64×9Kb + 16×32Kb ≈ 136KB）
-| 用途 | 大小 |
+- `bmp_pixel_stream` 只产生像素流，不感知 SDRAM 接口。
+- `framebuffer_writer` 只负责像素 → SDRAM word/地址/写请求。
+- `frame_buffer_manager` 只管理 buffer 选择与边界。
+- `line_prefetcher` 只负责把显示行预取到 `line_buffer_pingpong`。
+- `sdram_adapter` 只做 APUG011 接口适配，不重写 controller。
+
+## 6. 音频基础版
+
+基础版本取消独立 `clk_aud` 域。
+
+官方 HDMI Audio Interface 工作在 `I_pixel_clk` 域。
+
+```text
+pixel clock
+  -> 48k sample enable(相位累加器/Bresenham 分数分频，平均 48kHz clock-enable)
+  -> tone_gen
+  -> 24bit left/right
+  -> official HDMI Core
+```
+
+复用官方 `audio_arc_calculate` 产生 ACR。
+
+约束：
+
+- 48k sample enable 必须用相位累加器/Bresenham 型分数分频产生平均 48kHz clock-enable。
+- 禁止创建新的 fabric audio clock。
+- 禁止简单整数除法假装精确 48kHz。
+
+只有未来加入异步 PCM/I2S 源时才增加 audio CDC。
+
+## 7. 顶层拆分与 vendor 隔离
+
+| 文件 | 职责 |
 |---|---|
-| 行缓存（缩放/色彩空间/增强） | 640×3×2~3 行 ≈ 6KB |
-| 异步 FIFO | 若干 × 512~2048 word |
-| OSD 字符点阵 ROM | 8×16 × ≤256 字 ≈ 32KB |
-| 音频/像素 FIFO | 若干 KB |
+| `system_top.v` | 纯业务逻辑：文件流、framebuffer、显示/音频 adapter、交互状态机 |
+| `hx4s20c_top.v` | PLL、官方 SDRAM、官方 HDMI PHY、SD/HDMI physical IO、board reset、vendor primitive、constraints |
 
-## 7. 分辨率与带宽预算
+约束：
 
-### 7.1 输出分辨率（显示端）
-- **基线 640×480@60**（像素时钟 25.175MHz，TMDS 位时钟 ~252MHz）：与官方 `lab_ex_5` 一致，资源与时序已验证可行。
-- **720p 扩展**（1280×720@60，像素 74.25MHz，TMDS ~742MHz）：**需实测** FPGA 逻辑串行化极限，作为加分探索；**1080p 不作为承诺指标**。
+- 普通 `src/` 模块不得出现 `EG_PHY_*`、`EG_LOGIC_*`。
+- vendor 代码只允许在 `hx4s20c_top.v` 或 vendor wrapper 中出现。
 
-### 7.2 视频源读取带宽（成不成立的关键）
-| 视频源 | 每帧 | @30fps 需带宽 | 可行读取方式 |
-|---|---|---|---|
-| 640×480 YUV420 | 460,800B | 13.8 MB/s | SDIO 4-bit@25MHz(12.5)压线 |
-| 320×240 YUV420 | 115,200B | 3.46 MB/s | SPI@25MHz(3.1)压线 / SDIO 宽松 |
-| 320×240 YUV444 | 230,400B | 6.91 MB/s | SDIO 4-bit 宽松 |
+### 7.1 vendor 目录
 
-**结论**：视频主档取 **320×240 YUV420 @ 25–30fps**（配 SDIO 或预载循环）；若走预载循环则可在 SDRAM 内无缝回转，**不依赖实时 SD 读速**。显示时放大到 640×480。
+```text
+src/vendor/anlogic/hdmi_apug092/
+src/vendor/anlogic/sdram_apug011/
+```
 
-## 8. 关键技术选型与复用点
+vendor 目录官方代码禁止修改。
 
-1. **HDMI TMDS**：EG4S20 无专用 HDMI 硬核，用输出串行化(OSERDES/移位)+差分 IO 输出（3 数据通道+1 时钟通道）；**务必以官方 lab_ex 参考为准**，Codex 只改应用逻辑、不改参考接口。
-2. **SDRAM 控制器**：复用官方 IP/参考，关注自动刷新、双端口仲裁、读写带宽。
-3. **SD 卡**：图片/预载用 SPI；实时流式可扩 SDIO 4-bit（复杂度高，两周内调不通则退回 SPI+预载循环）。
-4. **色彩空间**：视频帧存 YCbCr（YUV），按 BT.601 定点矩阵转 RGB；YUV420 先色度上采样。
-5. **音频**：HDMI 音频包经 Data Island 注入；测试音/背景音用查表/累加器，或播放预采样 PCM。
+AI 只能：
 
-## 9. 交互设定（示例）
-| 输入 | 功能 |
-|---|---|
-| KEY0 | 播放/暂停 |
-| KEY1 | 下一张/下一片段 |
-| KEY2 | 上一张/上一片段 |
-| KEY3 | 进入/切换"应急信息页" 或 长按切换轮播 |
-| SW0–1 | 转场模式（无/淡入淡出/滑动） |
-| SW2–3 | 亮度/对比度档位（或 增强/算法档位切换） |
+- 读取
+- 解释
+- 例化
+- 写 wrapper/adapter
 
-数码管显示图号+播放状态/参数档位；双色 LED：播放(绿)/暂停(红)/告警(闪烁)。
+不得重构 vendor 文件。
+
+## 8. 模块完成状态
+
+状态从单个 ✅ 改为：
+
+```text
+[U] UNIT PASS
+[C] CHAIN PASS
+[S] TD SYNTH/P&R PASS，且 timing/resource/RAM inference/clock constraints 检查通过
+[B] BOARD PASS
+[L] LONG-RUN PASS
+```
+
+任何模块只通过 unit test，不得写“系统功能已完成”。
+
+## 9. 实现优先级
+
+```text
+P0:
+  fat32_file_reader
+  bmp_pixel_stream
+  framebuffer_writer
+  frame_buffer_manager
+  line_prefetcher
+  line_buffer_pingpong
+  sdram_arbiter
+
+  FAT32 image
+    -> ...
+    -> framebuffer_writer ─┐
+                          ├→ sdram_arbiter → mock SDRAM
+       line_prefetcher ───┘
+                          ↓
+                 line_buffer_pingpong
+                          ↓
+             display-order RGB stream
+                          ↓
+               Python golden compare
+
+  CHAIN PASS
+
+P1:
+  sdram_adapter 对接 APUG011
+  官方 APUG011 simulation/synthesis
+  hdmi_video_adapter + APUG092 EG wrapper
+  hx4s20c board_top + ADC/SDC
+  完整 TD synthesis/P&R/timing
+
+P2:
+  基础 HDMI audio
+  OSD / transition / brightness / audio visual
+
+P3:
+  YUV444 短视频
+
+P4:
+  YUV420 / SDIO / 720p
+```
+
+在 P0/P1 完成以前，禁止新增其他展示特效。
+
+## 10. Testbench 原则
+
+协议 TB 必须包含 adversarial tests。
+
+SD：
+
+- random response delay
+- token delay
+- timeout
+- error token
+- 连续多 block
+- 含 0xFF 的 command argument
+
+FAT32：
+
+- 连续 cluster
+- 碎片 cluster chain
+- 跨 sector
+- 文件大小不是 sector 整数倍
+- EOC
+
+BMP：
+
+- width 640 / 641 / 17
+- padding
+- bottom-up
+- 多文件连续解析
+
+SDRAM：
+
+- random busy
+- refresh stall
+- read latency
+- read/write arbitration
+- 禁止同时 read/write
+
+Frame buffer：
+
+- frame boundary swap
+- 禁止读写同一 buffer
+- underflow/overflow
+- random memory stall
+
+HDMI：
+
+- 整行 valid 连续
+- SOF/EOL 正确
+- 外部 timing 与 Core 参数一致

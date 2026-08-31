@@ -32,10 +32,17 @@
 - **检查点**：官方样例在板稳定运行；全队能讲清链路；拿到 SD 吞吐实测数据。
 
 ## P2 · 拆分重构 + 视频链路（09-15 ~ 09-28）
-- [ ] 把样例拆成 L0~L6 模块；锁定 `docs/02_architecture.md` 接口契约。
-- [ ] `tools/` 写 `video_to_vseq.py`（ffmpeg/OpenCV 转 YCbCr 帧）+ `make_sd_card.py`。
+- [ ] 按 Architecture Freeze v1.0 锁定 `docs/02_architecture.md`；主数据流、vendor IP、像素格式、时钟架构冻结。
+- [x] **P0-01 `fat32_file_reader` [U]**：fragmented FAT chain、`file_size` 边界、premature EOC/非法 cluster；ModelSim CASE0~CASE8 PASS（checks=18）。
+- [x] **P0-02 `bmp_pixel_stream` [U]**：CASE0~CASE13 adversarial PASS（checks=13393），覆盖 BGR→RGB、bottom-up、padding 0/1/2/3、640/641 宽度与错误路径。
+- [x] **P0-03 `framebuffer_writer` [U]**：CASE0~CASE8 PASS（checks=1345）；地址/stride/RGB packing/random stall/FIFO overflow/错误恢复已验证。
+- [x] **P0-04 `frame_buffer_manager` [U]**：CASE0~CASE6 PASS（checks=166）；A/B ownership、boundary swap、失败重试与 read/write base 隔离已验证。
+- [x] **P0-05 `line_buffer_pingpong` [U]**：CASE-GOLDEN+CASE0~CASE8 PASS（checks=2204），RGB 全通道保真、连续 active line、underflow fallback 已验证。
+- [x] **P0-06 `line_prefetcher` [U]**：CASE0~CASE13 PASS（checks=2713），多 outstanding、有序 response、timeout/stale-response quarantine 已验证。
+- [ ] **P0-07/P0-08**：本包新增 `sdram_arbiter` unit candidate + `mock_sdram/framebuffer mini-chain` integration candidate；通过后继续 FAT32/BMP→display-order RGB 端到端 `[C]`。
+- [ ] `tools/` 写 `video_to_vseq.py`（默认 YUV444）+ `make_sd_card.py` + `gen_font.py`。
 - [ ] 自研基础链路：读图→显示→切图→轮播→测试音；单模块先仿真后上板。
-- [ ] 实现 `vseq_reader.rs` + 三帧缓冲；**先做"预载循环小视频"**（最稳），流式作进阶。
+- [ ] 实现 `vseq_reader`/`vseq_yuv_unpack` + 三帧缓冲；**先做"预载循环小视频"**（最稳），流式作进阶。
 - [ ] 确定场景"校园/园区信息发布与应急广播终端"；准备多张自制 BMP + 一条短视频片段。
 - **检查点**：自研基础链路 + 预载小视频在板运行；接口锁定。
 
@@ -78,6 +85,7 @@
 
 ## 关键提醒
 - **P0/P1 的地基决定后程速度**：Verilog 不扎实，后面每个模块都卡在"看不懂 AI 输出"，务必别跳过。
-- **厂商 IP/原语是 AI 最大幻觉源**：SDRAM、HDMI 串行化、PLL、管脚约束必须对照官方资料人工核对。
+- **官方 vendor IP 是正式主链**：SDRAM 用 APUG011，HDMI 用 APUG092；AI 只写 wrapper/adapter，不重构 vendor 文件。
+- **Architecture Freeze v1.0**：变更必须先改文档、经人工审核，再改 RTL。
 - **一切以"能仿真验证"为主线**：AI 写→仿真→回喂修改，把上板调试压到最小。
 - **资源边界**：19600 LUT，扩展②⑤不要与基础流水线抢资源；视频流不加转场。

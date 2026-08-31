@@ -85,7 +85,7 @@ module tb_key_filter;
 
         // ---- 通道0: 持续按压(>= CNT_MAX)触发 ----
         key_in[0] = 1'b0;
-        wait_n(CNT_MAX + 3);         // 超过阈值
+        wait_n(CNT_MAX + 5);         // 超过阈值 + 2FF 同步
         check(key_out[0], 1, "press sets key_out[0]");
         check(ev0, 1, "one press event");
 
@@ -95,16 +95,16 @@ module tb_key_filter;
 
         // ---- 通道0: 释放 ----
         key_in[0] = 1'b1;
-        wait_n(CNT_MAX + 3);
+        wait_n(CNT_MAX + 5);
         check(key_out[0], 0, "release clears key_out[0]");
 
         // ---- 通道1: 干净按压/释放 ----
         key_in[1] = 1'b0;
-        wait_n(CNT_MAX + 2);
+        wait_n(CNT_MAX + 4);
         check(key_out[1], 1, "ch1 pressed");
         check(ev1, 1, "ch1 one event");
         key_in[1] = 1'b1;
-        wait_n(CNT_MAX + 2);
+        wait_n(CNT_MAX + 4);
         check(key_out[1], 0, "ch1 released");
 
         // 结语

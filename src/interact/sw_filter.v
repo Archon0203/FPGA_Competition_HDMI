@@ -33,7 +33,19 @@ module sw_filter #(
 
     localparam integer CW = (CNT_MAX > 1) ? $clog2(CNT_MAX + 1) : 1;
 
-    wire [3:0] raw = ACTIVE_LOW ? ~sw_in : sw_in;
+    wire [3:0] raw_async = ACTIVE_LOW ? ~sw_in : sw_in;
+
+    reg [3:0] sw_sync1, sw_sync2;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            sw_sync1 <= 4'b0000;
+            sw_sync2 <= 4'b0000;
+        end else begin
+            sw_sync1 <= raw_async;
+            sw_sync2 <= sw_sync1;
+        end
+    end
+    wire [3:0] raw = sw_sync2;
 
     wire [3:0] sw_stable;
     reg  [3:0] prev;

@@ -43,16 +43,13 @@ module yuv420_upsample #(
 
     reg [DW-1:0] cb_row [0:HW-1];
     reg [DW-1:0] cr_row [0:HW-1];
-    integer i;
     wire [10:0] cidx = px >> 1;      // 色度列索引 = px/2 (11 位足够覆盖 640 宽的半宽 320)
 
-    // 色度行缓冲: 偶数亮行(即色度块行)在块首像素写入
+    // 色度行缓冲: 偶数亮行(即色度块行)在块首像素写入。
+    // 行 RAM 不复位，避免把块 RAM 综合成带异步清零的大量 FF。
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            for (i = 0; i < HW; i = i + 1) begin
-                cb_row[i] <= {DW{1'b0}};
-                cr_row[i] <= {DW{1'b0}};
-            end
+            // 保留复位后首块通过 c_valid 写入的行 RAM 行为。
         end else if (c_valid) begin
             cb_row[cidx] <= cb_in;
             cr_row[cidx] <= cr_in;

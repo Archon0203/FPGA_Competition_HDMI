@@ -119,8 +119,10 @@ module tb_mini_top;
         input [7:0] iy, icb, icr;
         reg signed [31:0] off, s;
         begin
-            off = (($signed({2'b00,icr}) - 10'sd128) * 16'sd359);
-            s   = $signed({1'b0,iy}) + (off >>> 8);
+            off = (($signed({1'b0,iy}) - 32'sd16) * 32'sd298)
+                + (($signed({2'b00,icr}) - 32'sd128) * 32'sd409)
+                + 32'sd128;
+            s   = off >>> 8;
             ref_r = (s < 0) ? 8'd0 : ((s > 255) ? 8'd255 : s[7:0]);
         end
     endfunction
@@ -128,9 +130,11 @@ module tb_mini_top;
         input [7:0] iy, icb, icr;
         reg signed [31:0] off, s;
         begin
-            off = (($signed({2'b00,icb}) - 10'sd128) * 16'sd88)
-                + (($signed({2'b00,icr}) - 10'sd128) * 16'sd183);
-            s   = $signed({1'b0,iy}) - (off >>> 8);
+            off = (($signed({1'b0,iy}) - 32'sd16) * 32'sd298)
+                + (($signed({2'b00,icb}) - 32'sd128) * -32'sd100)
+                + (($signed({2'b00,icr}) - 32'sd128) * -32'sd208)
+                + 32'sd128;
+            s   = off >>> 8;
             ref_g = (s < 0) ? 8'd0 : ((s > 255) ? 8'd255 : s[7:0]);
         end
     endfunction
@@ -138,8 +142,10 @@ module tb_mini_top;
         input [7:0] iy, icb, icr;
         reg signed [31:0] off, s;
         begin
-            off = (($signed({2'b00,icb}) - 10'sd128) * 16'sd454);
-            s   = $signed({1'b0,iy}) + (off >>> 8);
+            off = (($signed({1'b0,iy}) - 32'sd16) * 32'sd298)
+                + (($signed({2'b00,icb}) - 32'sd128) * 32'sd516)
+                + 32'sd128;
+            s   = off >>> 8;
             ref_b = (s < 0) ? 8'd0 : ((s > 255) ? 8'd255 : s[7:0]);
         end
     endfunction
