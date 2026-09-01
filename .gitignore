@@ -38,3 +38,8 @@ Thumbs.db
 #   * 想入库个别小素材: git add -f 路径
 #   * 想整体走 Git LFS: 删掉下面 data/ 行, 用 .gitattributes
 data/
+
+# ---- TD GUI session / migrated-project scratch ----
+.lock.f
+*.al.back
+log/

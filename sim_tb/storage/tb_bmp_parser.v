@@ -11,6 +11,7 @@
 module tb_bmp_parser;
     reg        clk = 1'b0;
     reg        rst_n = 1'b0;
+    reg        start = 1'b0;
     reg  [7:0] din = 8'd0;
     reg        din_valid = 1'b0;
     wire       done, bmp_ok;
@@ -19,7 +20,7 @@ module tb_bmp_parser;
     wire [23:0] data_offset;
 
     bmp_parser u_dut (
-        .clk(clk), .rst_n(rst_n), .din(din), .din_valid(din_valid),
+        .clk(clk), .rst_n(rst_n), .start(start), .din(din), .din_valid(din_valid),
         .done(done), .bmp_ok(bmp_ok), .width(width), .height(height),
         .bpp(bpp), .data_offset(data_offset)
     );
@@ -82,21 +83,26 @@ module tb_bmp_parser;
         build_hdr;
         rst_n = 1'b0; #20; rst_n = 1'b1; #10;
 
+        @(negedge clk); start = 1'b1;
+        @(posedge clk); #1; start = 1'b0;
+
         // 喂 54 字节头
         feed_n(54);
+        #1;
         check(width, 640, "width"); check(height, 480, "height");
         check(bpp, 24, "bpp"); check(data_offset, 54, "data_offset");
-        check(bmp_ok, 1, "bmp_ok"); check(done, 0, "done not yet before pixel");
+        check(bmp_ok, 1, "bmp_ok"); check(done, 1, "done on header last byte");
 
-        // 喂一个像素字节 -> done 置起
+        // 下一拍对应首个像素字节；done 应回落，数据由下游从该拍开始消费。
         @(posedge clk); din = 8'hAA; din_valid = 1'b1;
         @(posedge clk); #1;
-        check(done, 1, "done on pixel start");
+        check(done, 0, "done clear after header");
         din_valid = 1'b0;
 
-        // 非 "BM" 魔数
+        // 不复位，用 start 开始第二个文件；非 "BM" 魔数
         begin
-            rst_n = 1'b0; #10; rst_n = 1'b1; #10;
+            @(negedge clk); start = 1'b1;
+            @(posedge clk); #1; start = 1'b0;
             // 手工喂 2 字节 'X' 'Y'
             @(posedge clk); din = 8'h58; din_valid = 1'b1; @(posedge clk); din_valid = 1'b0;
             @(posedge clk); din = 8'h59; din_valid = 1'b1; @(posedge clk); din_valid = 1'b0;

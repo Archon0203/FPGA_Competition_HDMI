@@ -1,0 +1,653 @@
+=========================================================================================================
+Auto created by Tang Dynasty v5.6.71036
+   Copyright (c) 2012-2023 Anlogic Inc.
+Tue Sep  1 16:00:41 2026
+=========================================================================================================
+
+
+Top Model:                p1_apug011_td_top                                               
+Device:                   eagle_s20                                                       
+Timing Constraint File:   ../../constraints/p1_apug011_td.sdc                             
+STA Level:                Detail                                                          
+Speed Grade:              NA                                                              
+
+=========================================================================================================
+Timing constraint:        clock: p1_refclk_25m                                            
+Clock = p1_refclk_25m, period 40ns, rising at 0ns, falling at 20ns
+
+0 endpoints analyzed totally, and 0 paths analyzed
+0 errors detected : 0 setup errors (TNS = 0), 0 hold errors (TNS = 0)
+Minimum period is 0ns
+---------------------------------------------------------------------------------------------------------
+
+
+=========================================================================================================
+Timing constraint:        clock: u_apug011_ref_pll/pll_inst.clkc[0]                       
+Clock = u_apug011_ref_pll/pll_inst.clkc[0], period 80ns, rising at 0ns, falling at 40ns
+
+0 endpoints analyzed totally, and 0 paths analyzed
+0 errors detected : 0 setup errors (TNS = 0), 0 hold errors (TNS = 0)
+Minimum period is 0ns
+---------------------------------------------------------------------------------------------------------
+
+
+=========================================================================================================
+Timing constraint:        clock: u_apug011_ref_pll/pll_inst.clkc[1]                       
+Clock = u_apug011_ref_pll/pll_inst.clkc[1], period 6.666ns, rising at 0ns, falling at 3.333ns
+
+562 endpoints analyzed totally, and 92256 paths analyzed
+9 errors detected : 9 setup errors (TNS = -1.357), 0 hold errors (TNS = 0.000)
+Minimum period is 7.126ns
+---------------------------------------------------------------------------------------------------------
+
+Paths for end point u_arbiter/protocol_error_reg_syn_280 (2279 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (setup check):    -0.460 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_arbiter/protocol_error_reg_syn_280.d[0] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.946ns  (logic 3.569ns, net 3.377ns, 51% logic)                
+ Logic Levels:            7 ( LUT5=3 ADDER=2 LUT3=1 LUT4=1 )                              
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.d[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_arbiter/protocol_error_reg_syn_280.d[0] (u_adapter/outstanding_next[16]) net  (fanout = 10)      0.763 r     8.908      ../../src/framebuf/sdram_adapter.v(191)
+ u_arbiter/protocol_error_reg_syn_280                        path2reg0 (LUT3)        0.314       9.222
+ Arrival time                                                                        9.222                  (7 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_280.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.460ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.460 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_arbiter/protocol_error_reg_syn_280.d[0] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.946ns  (logic 3.569ns, net 3.377ns, 51% logic)                
+ Logic Levels:            7 ( LUT5=3 ADDER=2 LUT3=1 LUT4=1 )                              
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_arbiter/protocol_error_reg_syn_280.d[0] (u_adapter/outstanding_next[16]) net  (fanout = 10)      0.763 r     8.908      ../../src/framebuf/sdram_adapter.v(191)
+ u_arbiter/protocol_error_reg_syn_280                        path2reg0 (LUT3)        0.314       9.222
+ Arrival time                                                                        9.222                  (7 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_280.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.460ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.460 ns                                                        
+ Start Point:             u_arbiter/protocol_error_reg_syn_262.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_arbiter/protocol_error_reg_syn_280.d[0] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.946ns  (logic 3.646ns, net 3.300ns, 52% logic)                
+ Logic Levels:            7 ( LUT5=4 ADDER=2 LUT3=1 )                                     
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_262.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_arbiter/protocol_error_reg_syn_262.q[0]                   clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_226.d[1] (u_adapter/tag_rd_ptr[0]) net  (fanout = 25)      0.630 r     3.052      ../../src/framebuf/sdram_adapter.v(115)
+ u_arbiter/protocol_error_reg_syn_226.fx[0]                  cell (LUT5)             0.402 r     3.454
+ u_arbiter/protocol_error_reg_syn_254.b[1] (u_arbiter/protocol_error_reg_syn_31) net  (fanout = 1)       0.505 r     3.959      ../../src/framebuf/sdram_arbiter.v(94)
+ u_arbiter/protocol_error_reg_syn_254.f[1]                   cell (LUT5)             0.431 r     4.390
+ u_adapter/reg8_syn_79.a[1] (u_arbiter/protocol_error_reg_syn_33) net  (fanout = 2)       0.738 r     5.128      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_79.f[1]                                  cell (LUT5)             0.424 r     5.552
+ u_adapter/reg8_syn_76.b[0] (u_bist/state_b[2]_syn_5)        net  (fanout = 4)       0.171 r     5.723                    
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.431 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_arbiter/protocol_error_reg_syn_280.d[0] (u_adapter/outstanding_next[16]) net  (fanout = 10)      0.763 r     8.908      ../../src/framebuf/sdram_adapter.v(191)
+ u_arbiter/protocol_error_reg_syn_280                        path2reg0 (LUT3)        0.314       9.222
+ Arrival time                                                                        9.222                  (7 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_280.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.460ns          
+
+---------------------------------------------------------------------------------------------------------
+
+Paths for end point u_adapter/reg8_syn_93 (2056 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (setup check):    -0.301 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_93.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.787ns  (logic 3.398ns, net 3.389ns, 50% logic)                
+ Logic Levels:            6 ( LUT5=3 ADDER=2 LUT4=1 )                                     
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.d[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_93.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.775 r     8.920      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_93                                       path2reg                0.143       9.063
+ Arrival time                                                                        9.063                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_93.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.301ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.301 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_93.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.787ns  (logic 3.398ns, net 3.389ns, 50% logic)                
+ Logic Levels:            6 ( LUT5=3 ADDER=2 LUT4=1 )                                     
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_93.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.775 r     8.920      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_93                                       path2reg                0.143       9.063
+ Arrival time                                                                        9.063                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_93.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.301ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.273 ns                                                        
+ Start Point:             u_arbiter/protocol_error_reg_syn_262.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_93.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.787ns  (logic 3.475ns, net 3.312ns, 51% logic)                
+ Logic Levels:            6 ( LUT5=4 ADDER=2 )                                            
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_262.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_arbiter/protocol_error_reg_syn_262.q[0]                   clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_226.d[1] (u_adapter/tag_rd_ptr[0]) net  (fanout = 25)      0.630 r     3.052      ../../src/framebuf/sdram_adapter.v(115)
+ u_arbiter/protocol_error_reg_syn_226.fx[0]                  cell (LUT5)             0.402 r     3.454
+ u_arbiter/protocol_error_reg_syn_254.b[1] (u_arbiter/protocol_error_reg_syn_31) net  (fanout = 1)       0.505 r     3.959      ../../src/framebuf/sdram_arbiter.v(94)
+ u_arbiter/protocol_error_reg_syn_254.f[1]                   cell (LUT5)             0.431 r     4.390
+ u_adapter/reg8_syn_79.a[1] (u_arbiter/protocol_error_reg_syn_33) net  (fanout = 2)       0.738 r     5.128      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_79.f[1]                                  cell (LUT5)             0.424 r     5.552
+ u_adapter/reg8_syn_76.b[0] (u_bist/state_b[2]_syn_5)        net  (fanout = 4)       0.171 r     5.723                    
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.431 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_93.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.775 r     8.920      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_93                                       path2reg                0.143       9.063
+ Arrival time                                                                        9.063                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_93.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.195       8.790
+ Required time                                                                       8.790            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.273ns          
+
+---------------------------------------------------------------------------------------------------------
+
+Paths for end point u_adapter/reg8_syn_86 (2056 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (setup check):    -0.176 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_86.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.662ns  (logic 3.398ns, net 3.264ns, 51% logic)                
+ Logic Levels:            6 ( LUT5=3 ADDER=2 LUT4=1 )                                     
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.d[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_86.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.650 r     8.795      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_86                                       path2reg                0.143       8.938
+ Arrival time                                                                        8.938                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_86.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.176ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.176 ns                                                        
+ Start Point:             u_bist/reg1_syn_23.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_86.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.662ns  (logic 3.398ns, net 3.264ns, 51% logic)                
+ Logic Levels:            6 ( LUT5=3 ADDER=2 LUT4=1 )                                     
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_bist/reg1_syn_23.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_bist/reg1_syn_23.q[0]                                     clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_287.a[1] (u_bist/state[0]) net  (fanout = 27)      0.712 r     3.134      ../../src/top/p1_apug011_bist.v(52)
+ u_arbiter/protocol_error_reg_syn_287.f[1]                   cell (LUT4)             0.408 r     3.542
+ u_arbiter/protocol_error_reg_syn_221.b[1] (u_bist/rd_addr_n) net  (fanout = 1)       0.456 r     3.998                    
+ u_arbiter/protocol_error_reg_syn_221.f[1]                   cell (LUT5)             0.431 r     4.429
+ u_bist/state_b[2]_syn_130.a[0] (u_arbiter/protocol_error_reg_syn_19) net  (fanout = 2)       0.307 r     4.736      ../../src/framebuf/sdram_arbiter.v(94)
+ u_bist/state_b[2]_syn_130.f[0]                              cell (LUT5)             0.424 r     5.160
+ u_adapter/reg8_syn_76.c[0] (u_arbiter/protocol_error_reg_syn_91) net  (fanout = 13)      0.646 r     5.806      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.348 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_86.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.650 r     8.795      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_86                                       path2reg                0.143       8.938
+ Arrival time                                                                        8.938                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_86.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.167       8.762
+ Required time                                                                       8.762            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.176ns          
+
+---------------------------------------------------------------------------------------------------------
+
+ Slack (setup check):    -0.148 ns                                                        
+ Start Point:             u_arbiter/protocol_error_reg_syn_262.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_adapter/reg8_syn_86.ce (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Slow                                                            
+ Data Path Delay:         6.662ns  (logic 3.475ns, net 3.187ns, 52% logic)                
+ Logic Levels:            6 ( LUT5=4 ADDER=2 )                                            
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_arbiter/protocol_error_reg_syn_262.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.276       2.276      encrypted_text(0)
+ launch clock edge                                                                   0.000       2.276
+---------------------------------------------------------------------------------------------------------
+ u_arbiter/protocol_error_reg_syn_262.q[0]                   clk2q                   0.146 r     2.422
+ u_arbiter/protocol_error_reg_syn_226.d[1] (u_adapter/tag_rd_ptr[0]) net  (fanout = 25)      0.630 r     3.052      ../../src/framebuf/sdram_adapter.v(115)
+ u_arbiter/protocol_error_reg_syn_226.fx[0]                  cell (LUT5)             0.402 r     3.454
+ u_arbiter/protocol_error_reg_syn_254.b[1] (u_arbiter/protocol_error_reg_syn_31) net  (fanout = 1)       0.505 r     3.959      ../../src/framebuf/sdram_arbiter.v(94)
+ u_arbiter/protocol_error_reg_syn_254.f[1]                   cell (LUT5)             0.431 r     4.390
+ u_adapter/reg8_syn_79.a[1] (u_arbiter/protocol_error_reg_syn_33) net  (fanout = 2)       0.738 r     5.128      ../../src/framebuf/sdram_arbiter.v(94)
+ u_adapter/reg8_syn_79.f[1]                                  cell (LUT5)             0.424 r     5.552
+ u_adapter/reg8_syn_76.b[0] (u_bist/state_b[2]_syn_5)        net  (fanout = 4)       0.171 r     5.723                    
+ u_adapter/reg8_syn_76.f[0]                                  cell (LUT5)             0.431 r     6.154
+ u_adapter/read_outstanding_debug[0]_syn_105.e[1] (u_arbiter/mem_rd_ready_syn_2[1]) net  (fanout = 17)      0.493 r     6.647      ../../src/framebuf/sdram_arbiter.v(48)
+ u_adapter/read_outstanding_debug[0]_syn_105.fco             cell (ADDER)            0.715 r     7.362
+ u_adapter/read_outstanding_debug[0]_syn_106.fci (u_adapter/read_outstanding_debug[0]_syn_90) net  (fanout = 1)       0.000 f     7.362      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_106.fco             cell (ADDER)            0.132 r     7.494
+ u_adapter/read_outstanding_debug[0]_syn_107.fci (u_adapter/read_outstanding_debug[0]_syn_94) net  (fanout = 1)       0.000 f     7.494      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_107.fco             cell (ADDER)            0.132 r     7.626
+ u_adapter/read_outstanding_debug[0]_syn_108.fci (u_adapter/read_outstanding_debug[0]_syn_98) net  (fanout = 1)       0.000 f     7.626      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_108.fco             cell (ADDER)            0.132 r     7.758
+ u_adapter/read_outstanding_debug[0]_syn_109.fci (u_adapter/read_outstanding_debug[0]_syn_102) net  (fanout = 1)       0.000 f     7.758      ../../src/framebuf/sdram_adapter.v(73)
+ u_adapter/read_outstanding_debug[0]_syn_109.fx[0]           cell (ADDER)            0.387 r     8.145
+ u_adapter/reg8_syn_86.ce (u_adapter/outstanding_next[16])   net  (fanout = 10)      0.650 r     8.795      ../../src/framebuf/sdram_adapter.v(191)
+ u_adapter/reg8_syn_86                                       path2reg                0.143       8.938
+ Arrival time                                                                        8.938                  (6 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_adapter/reg8_syn_86.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.045       2.045      encrypted_text(0)
+ capture clock edge                                                                  6.666       8.711
+---------------------------------------------------------------------------------------------------------
+ cell setup                                                                         -0.116       8.595
+ clock uncertainty                                                                  -0.000       8.595
+ clock recovergence pessimism                                                        0.195       8.790
+ Required time                                                                       8.790            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                              -0.148ns          
+
+---------------------------------------------------------------------------------------------------------
+
+Hold checks:
+---------------------------------------------------------------------------------------------------------
+Paths for end point u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31 (1 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (hold check):      0.260 ns                                                        
+ Start Point:             u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.mi[1] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Fast                                                            
+ Data Path Delay:         0.429ns  (logic 0.204ns, net 0.225ns, 47% logic)                
+ Logic Levels:            0                                                               
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     1.938       1.938      encrypted_text(0)
+ launch clock edge                                                                   0.000       1.938
+---------------------------------------------------------------------------------------------------------
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.q[0]            clk2q                   0.109 r     2.047
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.mi[1] (u_apug011/u_sdr_as_ram/u2_wrrd/app_wr_addr_2d[0]) net  (fanout = 1)       0.225 r     2.272      encrypted_text(0)
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31                 path2reg1               0.095       2.367
+ Arrival time                                                                        2.367                  (0 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.130       2.130      encrypted_text(0)
+ capture clock edge                                                                  0.000       2.130
+---------------------------------------------------------------------------------------------------------
+ cell hold                                                                           0.061       2.191
+ clock uncertainty                                                                   0.000       2.191
+ clock recovergence pessimism                                                       -0.084       2.107
+ Required time                                                                       2.107            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                               0.260ns          
+
+---------------------------------------------------------------------------------------------------------
+
+Paths for end point u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69 (1 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (hold check):      0.314 ns                                                        
+ Start Point:             u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69.mi[1] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Fast                                                            
+ Data Path Delay:         0.420ns  (logic 0.204ns, net 0.216ns, 48% logic)                
+ Logic Levels:            0                                                               
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     1.938       1.938      encrypted_text(0)
+ launch clock edge                                                                   0.000       1.938
+---------------------------------------------------------------------------------------------------------
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.q[0]            clk2q                   0.109 r     2.047
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69.mi[1] (u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_en_sft[4]) net  (fanout = 1)       0.216 r     2.263      encrypted_text(0)
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69                 path2reg1               0.095       2.358
+ Arrival time                                                                        2.358                  (0 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.130       2.130      encrypted_text(0)
+ capture clock edge                                                                  0.000       2.130
+---------------------------------------------------------------------------------------------------------
+ cell hold                                                                           0.061       2.191
+ clock uncertainty                                                                   0.000       2.191
+ clock recovergence pessimism                                                       -0.147       2.044
+ Required time                                                                       2.044            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                               0.314ns          
+
+---------------------------------------------------------------------------------------------------------
+
+Paths for end point u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31 (1 paths)
+---------------------------------------------------------------------------------------------------------
+ Slack (hold check):      0.314 ns                                                        
+ Start Point:             u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ End Point:               u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31.mi[0] (rising edge triggered by clock u_apug011_ref_pll/pll_inst.clkc[1])
+ Clock group:             p1_refclk_25m                                                   
+ Process:                 Fast                                                            
+ Data Path Delay:         0.420ns  (logic 0.204ns, net 0.216ns, 48% logic)                
+ Logic Levels:            0                                                               
+
+ Point                                                       Type                     Incr        Path      Info          
+---------------------------------------------------------------------------------------------------------
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     1.938       1.938      encrypted_text(0)
+ launch clock edge                                                                   0.000       1.938
+---------------------------------------------------------------------------------------------------------
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.q[0]            clk2q                   0.109 r     2.047
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31.mi[0] (u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_addr_3d[1]) net  (fanout = 1)       0.216 r     2.263      encrypted_text(0)
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31                 path2reg0               0.095       2.358
+ Arrival time                                                                        2.358                  (0 lvl)       
+
+ source latency                                                                      0.000       0.000                    
+ u_apug011_ref_pll/pll_inst.clkc[1]                                                  0.000       0.000                    
+ u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31.clk (u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_clk) net                     2.130       2.130      encrypted_text(0)
+ capture clock edge                                                                  0.000       2.130
+---------------------------------------------------------------------------------------------------------
+ cell hold                                                                           0.061       2.191
+ clock uncertainty                                                                   0.000       2.191
+ clock recovergence pessimism                                                       -0.147       2.044
+ Required time                                                                       2.044            
+---------------------------------------------------------------------------------------------------------
+ Slack                                                                               0.314ns          
+
+---------------------------------------------------------------------------------------------------------
+
+
+=========================================================================================================
+Timing constraint:        clock: u_apug011_ref_pll/pll_inst.clkc[2]                       
+Clock = u_apug011_ref_pll/pll_inst.clkc[2], period 6.666ns, rising at 3.333ns, falling at 0ns
+
+0 endpoints analyzed totally, and 0 paths analyzed
+0 errors detected : 0 setup errors (TNS = 0), 0 hold errors (TNS = 0)
+Minimum period is 0ns
+---------------------------------------------------------------------------------------------------------
+
+
+=========================================================================================================
+Timing summary:                                                                           
+---------------------------------------------------------------------------------------------------------
+Constraint path number: 92256 (STA coverage = 87.64%)
+Timing violations: 9 setup errors, and 0 hold errors.
+Minimal setup slack: -0.460, minimal hold slack: 0.260
+
+Timing group statistics: 
+	Clock constraints: 
+	  Clock Name                                  Min Period     Max Freq           Skew      Fanout            TNS
+	  u_apug011_ref_pll/pll_inst.clkc[1] (150.0MHz)        7.126ns     140.331MHz        0.480ns       241       -1.357ns
+	Minimum input arrival time before clock: no constraint path
+	Maximum output required time after clock: no constraint path
+	Maximum combinational path delay: no constraint path
+
+---------------------------------------------------------------------------------------------------------

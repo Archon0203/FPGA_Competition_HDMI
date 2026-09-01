@@ -1,0 +1,201 @@
+eagle_s20
+13 639 43 519 562 92256 9 0
+-0.460 0.260 p1_apug011_td_top eagle_s20 EG4S20BG256 Detail NA 7 4
+clock: p1_refclk_25m
+15 0 0 0
+
+clock: u_apug011_ref_pll/pll_inst.clkc[0]
+25 0 0 0
+
+clock: u_apug011_ref_pll/pll_inst.clkc[1]
+33 92256 562 2
+Setup check
+43 3
+Endpoint: u_arbiter/protocol_error_reg_syn_280
+43 -0.460000 2279 3
+Timing path: u_bist/reg1_syn_23.clk->u_arbiter/protocol_error_reg_syn_280
+u_bist/reg1_syn_23.clk
+u_arbiter/protocol_error_reg_syn_280
+45 -0.460000 8.762000 9.222000 7 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+
+Timing path: u_bist/reg1_syn_23.clk->u_arbiter/protocol_error_reg_syn_280
+u_bist/reg1_syn_23.clk
+u_arbiter/protocol_error_reg_syn_280
+97 -0.460000 8.762000 9.222000 7 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+
+Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_arbiter/protocol_error_reg_syn_280
+u_arbiter/protocol_error_reg_syn_262.clk
+u_arbiter/protocol_error_reg_syn_280
+149 -0.460000 8.762000 9.222000 7 10
+u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
+u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
+u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
+u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+
+
+Endpoint: u_adapter/reg8_syn_93
+201 -0.301000 2056 3
+Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_93
+u_bist/reg1_syn_23.clk
+u_adapter/reg8_syn_93
+203 -0.301000 8.762000 9.063000 6 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+
+Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_93
+u_bist/reg1_syn_23.clk
+u_adapter/reg8_syn_93
+255 -0.301000 8.762000 9.063000 6 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+
+Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_adapter/reg8_syn_93
+u_arbiter/protocol_error_reg_syn_262.clk
+u_adapter/reg8_syn_93
+307 -0.273000 8.762000 9.035000 6 10
+u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
+u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
+u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
+u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+
+
+Endpoint: u_adapter/reg8_syn_86
+359 -0.176000 2056 3
+Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_86
+u_bist/reg1_syn_23.clk
+u_adapter/reg8_syn_86
+361 -0.176000 8.762000 8.938000 6 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+
+Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_86
+u_bist/reg1_syn_23.clk
+u_adapter/reg8_syn_86
+413 -0.176000 8.762000 8.938000 6 10
+u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
+u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
+u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
+u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+
+Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_adapter/reg8_syn_86
+u_arbiter/protocol_error_reg_syn_262.clk
+u_adapter/reg8_syn_86
+465 -0.148000 8.762000 8.910000 6 10
+u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
+u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
+u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
+u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
+u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
+u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
+u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
+u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
+u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
+u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+
+
+
+Hold check
+517 3
+Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
+519 0.260000 1 1
+Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
+u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk
+u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
+521 0.260000 2.107000 2.367000 0 1
+u_apug011/u_sdr_as_ram/u2_wrrd/app_wr_addr_2d[0] u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.mi[1]
+
+
+Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
+555 0.314000 1 1
+Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
+u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk
+u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
+557 0.314000 2.044000 2.358000 0 1
+u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_en_sft[4] u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69.mi[1]
+
+
+Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
+591 0.314000 1 1
+Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
+u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk
+u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
+593 0.314000 2.044000 2.358000 0 1
+u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_addr_3d[1] u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31.mi[0]
+
+
+
+
+clock: u_apug011_ref_pll/pll_inst.clkc[2]
+629 0 0 0
+
+
+Timing group statistics: 
+	Clock constraints: 
+	  Clock Name                                  Min Period     Max Freq           Skew      Fanout            TNS
+	  u_apug011_ref_pll/pll_inst.clkc[1] (150.0MHz)        7.126ns     140.331MHz        0.480ns       241       -1.357ns
+	Minimum input arrival time before clock: no constraint path
+	Maximum output required time after clock: no constraint path
+	Maximum combinational path delay: no constraint path
+

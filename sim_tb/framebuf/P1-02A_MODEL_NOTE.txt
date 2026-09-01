@@ -1,0 +1,17 @@
+P1-02A external-model note
+
+Observed 150 MHz run:
+- protected core compiles/loads in QuestaSim 10.7c
+- control/protocol path works
+- readback data mismatches
+- vendor IS42s32200 model prints tRCD violations
+
+Reason for next test configuration:
+- bundled IS42s32200 is a -7 behavioral model: tCK=7ns, tRCD=21ns
+- vendor reference PLL is 150MHz (6.667ns), outside this external model's tCK limit
+- APUG011 guide allows changing global_def for other controller frequencies and
+  warns that read-data phase may require adjustment for different hardware/phase
+
+Canonical P1-02A test therefore uses 125MHz + simulation-only global_def and
+starts with 180-degree Sdr_clk_sft.  If data still mismatches, run the phase sweep.
+This does not change the final TD/board target clock.

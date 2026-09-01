@@ -1,0 +1,31 @@
+Official vendor reference subset copied from the user-supplied archive:
+  APUG011_high_performance_sdram_read_write_reference_design_v1.2
+  Anlogic APUG011 v1.2 (2023-06)
+
+Files in this directory are vendor reference/read-only material.
+Do not refactor or edit encrypted vendor cores. Project logic must connect through
+src/framebuf/sdram_adapter.v and later board/vendor wrappers.
+
+Included:
+  include/global_def.v
+  enc_file/sdr_as_ram.enc.v
+  enc_file/sdr_init_ref.enc.v
+  enc_file/sdr_wrrd.enc.v
+  model/IS42s32200.v
+
+Not copied intentionally:
+  - reference top/app_wrrd test generator
+  - reference PLL project
+  - reference ADC/SDC
+Those belong to the EG4S-MINI-DEV3 reference project and are not HX4S20C board constraints.
+
+P1-01 does NOT add these encrypted files to FPGA_Competition_HDMI.al yet.
+P1-02 will perform explicit TD/vendor-core integration and synthesis checks after
+P1-01 ModelSim verification is accepted.
+
+P1-02B addition:
+  clk_pll.v
+    Exact copy of prj/al_ip/clk_pll.v from the official APUG011 v1.2 archive.
+    Official reference only: FIN=25.000 MHz, clk1=150 MHz 0 deg,
+    clk2=150 MHz 180 deg. It is used only by p1_apug011_td_top synthesis harness;
+    it is NOT the final HX4S20C 50 MHz board PLL.
