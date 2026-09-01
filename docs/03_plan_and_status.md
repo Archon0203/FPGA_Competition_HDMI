@@ -26,22 +26,25 @@
 ## 2. 当前快照（2026-09-01）
 
 ```text
-TD Verilog source entries 42 files in `.al`（TD6.2 native：project RTL + official clk_pll + GlobalInclude + 3 protected sources + wrapper/BIST/TD harness）
+TD Verilog source entries 42 files in `.al`（TD5.6.2 native：project RTL + official clk_pll + GlobalInclude + 3 protected sources + wrapper/BIST/TD harness）
 vendor reference subset   APUG011 v1.2 read-only protected core + exact official clk_pll.v
-sim_tb/tb_*.v             40 testbenches（新增 P1 TD BIST unit TB）
+sim_tb/tb_*.v             40 testbenches（含 P1 TD BIST unit TB）
 P0 frozen reference       P0-09 [C] PASS (1698)；bmp_parser PASS (8)
-P1-01 v0.3               COMPLETE：adapter [U] PASS (61)；strict chain [C-sub] PASS (42)
-P1-02A official core      [C-sub] PASS (24)：125 MHz model-safe / 180°；readback/tCK/tRCD/DQM 全通过
-P1-02B TD candidate       TD6.2.1 native protected-source；Syn Opt 已完成，setup FAIL；P&R worker blocked
-P0-01 ~ P0-07             [U]
-P0-08 framebuffer chain   [C-sub]
-P0-09 full media chain    [C]
-P1/P2/P3/P4 system chain  尚未达到 [C]
-TD SDRAM backend          等待 synthesis/P&R/timing/resource 证据；尚无 [S]
+P1-01 adapter             v0.4 [U] PASS(61)；strict arbiter→adapter [C-sub] PASS(42)
+P1-02A official core      [C-sub] PASS(24)，tCK/tRCD/App read-DM/physical READ DQM violations 全 0
+P1-02B TD integration     [S] PASS：TD5.6.2 SynOpt/PhyOpt/BitGen；150MHz setup/hold 0 violations
+P0-01 ~ P0-06             [U]
+P0-07 sdram_arbiter       [U] PASS(39)
+P0-08 framebuffer chain   —（historical [C-sub]；arbiter v1.1 后仍待单独重跑）
+P0-09 full media chain    [C] PASS(1698)
+P1-03/P1-04/...           尚未达到 [C]/[S]/[B]
+TD SDRAM backend          [S]：6.666ns target，WNS=+0.059ns，TNS=0，hold min slack=+0.260ns
 Hardware                  尚无 [B]/[L]
 ```
 
-当前 P1-02B candidate 的 `.al` 已把 TOP 切到 `p1_apug011_td_top`，按 APUG011 官方工程方式加入 `global_def.v`（`GlobalIncluded=true`）、三个独立 protected `.enc.v`、官方 `clk_pll.v`、wrapper/BIST，并只绑定 `constraints/p1_apug011_td.sdc` 这一份**时钟级 synthesis harness 约束**；`ADC_FILE` 仍为空，现有 board pin 模板不参与本轮。该 harness 使用 APUG011 官方参考的 25 MHz 输入 PLL（150 MHz 0°/180° SDRAM clocks），**不是 HX4S20C 最终 50 MHz board top**。因此本轮即使 TD `[S]`，也只说明 SDRAM backend 子系统通过 synthesis/P&R/timing/resource/clock 检查，不代表最终系统或板级 pin `[S]/[B]`。
+当前 P1-02B `.al` TOP 为 `p1_apug011_td_top`，按 APUG011 官方工程方式加入 `global_def.v`（`GlobalIncluded=true`）、三个独立 protected `.enc.v`、官方 `clk_pll.v`、wrapper/BIST，并只绑定 `constraints/p1_apug011_td.sdc` 这一份**时钟级 synthesis harness 约束**；`ADC_FILE` 为空，board pin 模板不参与本轮。该 harness 使用 APUG011 官方参考的 25 MHz 输入 PLL（150 MHz 0°/180° SDRAM clocks），**不是 HX4S20C 最终 50 MHz board top**。
+
+P1-02B 已在 **TD5.6.2 / V5.6.71036 GUI** 完成最终 closure：SynOpt、PhyOpt(place+route)、BitGen 全部 PASS；150 MHz / 6.666 ns 下 setup errors=0、WNS=+0.059 ns、TNS=0.000 ns、minimum period=6.607 ns、Max Freq=151.355 MHz；hold errors=0、minimum slack=+0.260 ns、TNS=0.000 ns。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常识别/物理实现，后者不是 BRAM。最终资源为 LUT=283、REG=243、LE=377、PLL=1、GCLK=1、BRAM=0、BRAM32K=0。由此 SDRAM backend 子系统正式记 `[S]`；这仍**不代表**最终 HX4S20C board pin build 或真板功能 `[B]`。
 
 ## 3. P0 冻结证据
 
@@ -53,9 +56,9 @@ Hardware                  尚无 [B]/[L]
 | P0-04 | `frame_buffer_manager` | `[U]` | A/B ownership、frame-boundary swap、failure reuse；166 checks |
 | P0-05 | `line_buffer_pingpong` | `[U]` | golden literal + 连续行输出；2204 checks |
 | P0-06 | `line_prefetcher` | `[U]` | multi-outstanding、stall、timeout/recovery；2713 checks |
-| P0-07 | `sdram_arbiter` | `[U]` | read priority、delayed/zero-latency response、protocol error；39 checks |
-| P0-08 | framebuffer + mock SDRAM mini-chain | `[C-sub]` | manager→writer→arbiter→mock→prefetch→linebuffer；1495 checks |
-| P0-09 | full P0 media chain | `[C]` | fragmented FAT32 + BMP + framebuffer + readback；**1698 checks** |
+| P0-07 | `sdram_arbiter` | `[U]` | **v1.1 PASS(39)**；timing cleanup 后 unit regression 已恢复 |
+| P0-08 | framebuffer + mock SDRAM mini-chain | `—` | historical `[C-sub]` PASS(1495)；arbiter v1.1 后待回归 |
+| P0-09 | full P0 media chain | `[C]` | **PASS(1698)**；v1.1 arbiter candidate-1 同轮回归通过 |
 
 P0-09 冻结命令：
 
@@ -74,9 +77,9 @@ P0 进入维护模式；没有 Architecture Change Request 不增加功能、不
 
 ## 4. 全部现有 RTL 模块状态
 
-P0 冻结基线中的 33 个 `src/*.v` 已包含在既有 36/36 回归中。P1-01 新增 `sdram_adapter`，P1-02 加入 `apug011_core_wrapper`、BIST 与 TD harness；TD 6.2.1 使用官方 Global Include + 独立 protected-source 组织；vendor protected core/PLL 不计 project-owned 模块状态。当前仿真环境为 **QuestaSim 10.7c**。
+P0 冻结基线中的 33 个 `src/*.v` 已包含在既有 36/36 回归中。P1-01 新增 `sdram_adapter`，P1-02 加入 `apug011_core_wrapper`、BIST 与 TD harness；当前 TD5.6.2 使用官方 Global Include + 独立 protected-source 组织；vendor protected core/PLL 不计 project-owned 模块状态。当前仿真环境为 **QuestaSim 10.7c**。
 
-2026-09-01 实测已确认当前 `sdram_adapter v0.3`：`tb_sdram_adapter` **PASS (checks=61)**，因此 `[U]`；`tb_sdram_arbiter_adapter_chain` **PASS (checks=42)**，因此 arbiter→adapter→strict model `[C-sub]`。P1-02A official protected-core integration 也已 **PASS (checks=24)**：125 MHz model-safe / 180° 下 tCK=0、tRCD=0、App read-DM=0、physical READ DQM=0，且 addr5/addr8 分别读回 `0x11223344/0xA5A55A5A`，因此 official APUG011 behavioral memory sub-chain 正式为 `[C-sub]`。P0-09 同轮重新回归 **PASS (1698)**，冻结 `[C]` 保持。
+2026-09-01 candidate-2 已完成最终回归与 TD closure。六项 RTL 回归全部通过：`sdram_arbiter v1.1` **PASS(39)**、`sdram_adapter v0.4` **PASS(61)**、arbiter→adapter strict chain **PASS(42)**、P0 media chain **PASS(1698)**、P1 BIST **PASS(9)**、P1-02A official protected-core chain **PASS(24)**。随后 TD5.6.2 GUI SynOpt/PhyOpt/BitGen 全部成功，150 MHz / 6.666 ns 最终 **setup errors=0、WNS=+0.059 ns、TNS=0；hold errors=0、min slack=+0.260 ns、TNS=0**。原 baseline 的 9 条 setup failure 已全部消失。
 
 | 子系统 | 模块 | 阶段角色 | 当前状态 | 备注 |
 |---|---|---|---|---|
@@ -94,12 +97,12 @@ P0 冻结基线中的 33 个 `src/*.v` 已包含在既有 36/36 回归中。P1-0
 | framebuf | `frame_buffer_manager` | **P0** | `[U]` | P0-04；图片 A/B |
 | framebuf | `line_buffer_pingpong` | **P0** | `[U]` | P0-05；active-line continuity |
 | framebuf | `line_prefetcher` | **P0** | `[U]` | P0-06 |
-| framebuf | `sdram_arbiter` | **P0** | `[U]` | P0-07 |
-| framebuf | `sdram_adapter` | **P1** | `[U]` | **v0.3 PASS (61)**；READ/IDLE `App_wr_dm=0000`，strict chain `[C-sub]`(42) |
-| top | `apug011_core_wrapper` | **P1-02A/B** | `[C-sub]` | thin wrapper；official protected core + IS42 model PASS(24)；P1-02B 已加入 TD harness |
+| framebuf | `sdram_arbiter` | **P0** | `[U]` | **v1.1 PASS(39)**；candidate-1 timing cleanup 后 unit regression 已恢复 |
+| framebuf | `sdram_adapter` | **P1** | `[U]` | **v0.4 PASS(61)**；strict arbiter→adapter chain **[C-sub] PASS(42)** |
+| top | `apug011_core_wrapper` | **P1-02A/B** | `[C-sub]` | wrapper 未变；v0.4 adapter 下 official APUG011 chain **PASS(24)** |
 | top | `apug011_td_compile_unit` | historical | `—` | **DEPRECATED**；TD6.2 实测证明不应通过 `include` 聚合 protected sources；不进入 `.al` |
-| top | `p1_apug011_bist` | **P1-02B support** | `—` | synthesis observability/BIST traffic source；新增 unit TB 待跑 |
-| top | `p1_apug011_td_top` | **P1-02B** | `—` | official 25MHz ref PLL + 150MHz 0°/180° + APUG011 + EG internal SDRAM；等待 `[S]` |
+| top | `p1_apug011_bist` | **P1-02B support** | `[U]` | **PASS(9)**；backend_ready gate、2W+2R、readback、provider_fault negative case |
+| top | `p1_apug011_td_top` | **P1-02B** | `[S]` | TD5.6.2 SynOpt/PhyOpt/BitGen PASS；150MHz setup/hold 0 violations，WNS=+0.059ns |
 | display | `vga_timing` | P1/P2 support | `[U]` | timing/test source；正式 HDMI 需 APUG092 interface 对齐 |
 | display | `color_space` | P3 | `[U]` | YCbCr→RGB |
 | display | `image_scaler` | P2/P3 | `[U]` | 最近邻映射基础 |
@@ -124,12 +127,12 @@ P0 冻结基线中的 33 个 `src/*.v` 已包含在既有 36/36 回归中。P1-0
 | 集成对象 | 状态 | 说明 |
 |---|---|---|
 | `tb_mini_top` | `[C-sub]` | 早期纯显示处理 mini-chain；只证明该子链连接，不代表正式 HDMI |
-| `tb_framebuffer_mock_chain` | `[C-sub]` | P0-08 |
-| `tb_p0_media_chain` | `[C]` | P0-09，当前最重要的软件级端到端证据 |
-| `tb_sdram_adapter` | `[U]` | v0.3 **PASS(61)**；含 read-DQM 断言 |
-| `tb_sdram_arbiter_adapter_chain` | `[C-sub]` | v0.3 **PASS(42)** |
-| `tb_sdram_adapter_apug011_official` | `[C-sub]` | **PASS(24)**；125MHz/180°，readback + tCK/tRCD + app/physical DQM 全通过 |
-| `tb_p1_apug011_bist` | `—` | P1-02B harness traffic-source unit candidate；等待 QuestaSim 10.7c |
+| `tb_framebuffer_mock_chain` | `—` | historical P0-08 PASS；arbiter v1.1 后待回归 |
+| `tb_p0_media_chain` | `[C]` | **PASS(1698)**；v1.1 arbiter candidate-1 同轮回归通过 |
+| `tb_sdram_adapter` | `[U]` | **v0.4 PASS(61)** |
+| `tb_sdram_arbiter_adapter_chain` | `[C-sub]` | **v0.4 adapter PASS(42)** |
+| `tb_sdram_adapter_apug011_official` | `[C-sub]` | **v0.4 adapter + official APUG011 PASS(24)** |
+| `tb_p1_apug011_bist` | `[U]` | **PASS(9)**；backend_ready/2W+2R/readback/provider_fault |
 
 ## 5. P1 计划与状态
 
@@ -137,8 +140,8 @@ P1 目标是把 P0 的抽象接口接到官方 IP、TD 和真板，不重复实�
 
 | ID | 任务 | 目标证据 | 当前 |
 |---|---|---|---|
-| P1-01 | `sdram_adapter` 对接 APUG011 application-side；4-word micro-group / mask / response-filter | adapter `[U]` + arbiter-memory sub-chain `[C-sub]` | **v0.3 COMPLETE：PASS(61) + strict chain PASS(42)** |
-| P1-02 | APUG011 官方 protected core + TD 集成 | official-core `[C-sub]`，随后 TD `[S]` | **P1-02A COMPLETE `[C-sub]` PASS(24)；P1-02B 主工程 Syn Opt 已完成且 protected/primitive 均展开；setup 仍 FAIL，P&R 尚无有效结果，因此未获 `[S]`** |
+| P1-01 | `sdram_adapter` 对接 APUG011 application-side；4-word micro-group / mask / response-filter | adapter `[U]` + arbiter-memory sub-chain `[C-sub]` | **v0.4 [U] PASS(61) + strict chain [C-sub] PASS(42)** |
+| P1-02 | APUG011 官方 protected core + TD 集成 | official-core `[C-sub]`，随后 TD `[S]` | **完成：P1-02A [C-sub] PASS(24)；P1-02B [S]，150MHz setup/hold 0 violations** |
 | P1-03 | `hdmi_video_adapter` + APUG092 EG wrapper/PHY；验证整行连续 | video sub-chain `[C-sub]`，随后 `[B]` | `—` |
 | P1-04 | `system_top` / `hx4s20c_top` / PLL / **官方 HX4S20C ADC/SDC** | final design `[S]` | `—` |
 | P1-05 | 真板 SDRAM + HDMI 640×480 出图 | `[B]` | `—` |
@@ -163,33 +166,14 @@ vsim -c -do ../sim_tb/framebuf/run_sdram_adapter_apug011_official.do
 
 P1-02A 已正式完成。最终 model-safe 验证使用 **125 MHz / 180°**（只为满足随包 IS42 -7 外部模型的 tCK/tRCD envelope），结果 **PASS (checks=24)**：tCK violation=0、tRCD violation=0、App read-DM violation=0、physical READ DQM violation=0、physical READ command count>0；addr5/addr8 分别读回 `0x11223344` 与 `0xA5A55A5A`。因此 `sdram_adapter -> official protected APUG011 -> official IS42 model` 正式记 `[C-sub]`。这不把最终硬件频率降为 125 MHz；官方参考 PLL 与 P1-02B 仍使用 150 MHz 0°/180°。
 
-同轮回归：`bmp_parser PASS(8)`、P0-09 **PASS(1698)**、`sdram_adapter v0.3 PASS(61)`、strict arbiter-adapter chain **PASS(42)**。P0 `[C]` 和 P1-01 `[U]/[C-sub]` 均保持有效。
+最终 candidate-2 回归：P0-09 **PASS(1698)**、`sdram_adapter v0.4 PASS(61)`、strict arbiter-adapter chain **PASS(42)**，并完成 P1 BIST PASS(9) 与 official APUG011 PASS(24)。P0 `[C]` 和 P1-01 `[U]/[C-sub]` 均保持有效。
 
-P1-02 继续拆成两个有证据边界的子步骤：
+P1-02 按两个证据边界正式收口：
 
-- **P1-02A：COMPLETE `[C-sub]`**。QuestaSim 10.7c 已验证 project adapter 与官方 protected controller/behavioral SDRAM model 的数据完整性和 DQM 语义。
-- **P1-02B：当前 TD6.2.1 native-source candidate**。已完成最小判别实验：在 APUG011 官方 `sdram_as_ram.al` 副本中将 `sdr_as_ram.enc.v` 设为 Top，移除仅针对 demo top 的 `io.adc` 后，TD 6.2.1 Engineer 168116 执行 Syn Opt **0 ERROR**（存在 warnings，尚待主工程报告分类）。这证明 protected RTL 可被 TD 6.2.1 解密/elaborate/synthesize，先前主工程的 `**`/black-box 不是“缺 APUG011 专用授权”，而是 source organization 错误。主 `.al` 现严格镜像官方工程：`global_def.v` 设 `GlobalIncluded=true`，`sdr_as_ram.enc.v` / `sdr_init_ref.enc.v` / `sdr_wrrd.enc.v` 三个文件独立作为 Verilog source；旧 `apug011_td_compile_unit.v` 停用且不进入 `.al`。PLL 仍使用官方 APUG011 v1.2 原始 `clk_pll.v`（25 MHz ref -> 150 MHz 0°/180°），并按官方 top 精确例化 `EG_PHY_SDRAM_2M_32`。`p1_apug011_bist` 产生两写两读流量，保证整条 backend 在综合中可观察。
+- **P1-02A `[C-sub]`**：`sdram_adapter v0.4 -> official protected APUG011 -> official IS42 model` 回归 **PASS(24)**；tCK/tRCD/App read-DM/physical READ DQM violations 全 0，addr5/addr8 正确读回。125 MHz/180° 仅是 IS42 -7 model-safe 行为仿真设置，不改变硬件 150 MHz 目标。
+- **P1-02B `[S]`**：TD5.6.2 / V5.6.71036 GUI 完成 SynOpt + PhyOpt(place+route) + BitGen。150 MHz / 6.666 ns 下 **setup errors=0、WNS=+0.059 ns、TNS=0.000 ns；hold errors=0、min slack=+0.260 ns、TNS=0.000 ns；minimum period=6.607 ns、Max Freq=151.355 MHz**。原始 baseline 9 条 setup failure 已全部消失。资源：LUT=283、REG=243、LE=377、PLL=1、GCLK=1、BRAM=0、BRAM32K=0。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常实现，BitGen 生成合法 `.bit`。
 
-P1-02B 的 `constraints/p1_apug011_td.sdc` **只有 clock constraint，没有 pin/IOSTANDARD**：25 MHz ref clock + TD 6.2.1 当前命令 `derive_clocks`。此前 `derive_pll_clocks` 会触发 CRITICAL-WARNING（obsolete），因此本版已替换；禁止为了消除 setup 负裕量而放宽 150 MHz 目标。本轮不使用历史 `eg4s20bg256_pins.cst`，也不把官方 demo 的 T14/R15 pin 复制到 HX4S20C。TD synthesis + P&R + timing/resource/clock/primitive 检查全部通过后，可把 **SDRAM backend 子系统**提升 `[S]`；最终 50 MHz HX4S20C board PLL、board ADC/SDC 和系统 top 仍属于 P1-04，不能提前记 system `[S]`。
-
-
-### P1-02B 当前 TD6.2.1 实测（Syn Opt 完成，P&R 待恢复）
-
-主工程 native-source 组织已完成一次有效综合：`read_design/opt_rtl/opt_gate` 全部完成并输出 gate DB。`sdr_as_ram` 非黑盒，其内部 `sdr_init_ref`/`sdr_wrrd` 已展开；`EG_PHY_PLL`、`EG_LOGIC_BUFG` 和 `EG_PHY_SDRAM_2M_32` 均被识别。综合资源快照约 LUT 282、FF 283、PLL 1/4，internal SDRAM 以物理 MACRO 计而不是 ERAM/BRAM。
-
-该次 timing 仅作为 **pre-P&R 诊断证据**：setup WNS=-5958 ps、TNS=-389433 ps、115 endpoints；hold WNS=+549 ps。由于当时 SDC 仍用了 TD6.2.1 已标记 obsolete 的 `derive_pll_clocks`，并且 `phy_1` 未完成，不能把这些数值当最终时序结论。本版改用 `derive_clocks` 后必须重新 Syn Opt，再完成 P&R 后读取最终 WNS/TNS。
-
-`phy_1` 当前属于 **FLOW BLOCKED，不是 P&R FAIL**：DeepSeek 在执行 `reset_runs syn_1 -f` 后，worker `run.exe` 只输出 banner 即停在初始化，`wait_run` 无法完成。因此没有合法的 P&R PASS/FAIL 证据，也没有 `[S]`。优先用本 candidate 的干净工程从 GUI 重新 Syn Opt → Physical Design，不复用被 reset 的旧 run 产物；若 GUI 仍卡住，再保存 TD log/run worker 日志定位工具流程问题。
-
-P1-02B candidate 先跑新增 BIST unit：
-
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/top/run_p1_apug011_bist.do
-```
-
-然后用 **Anlogic TD 6.2.1 Engineer 168116** 打开根目录 `FPGA_Competition_HDMI.al`，确认 TOP=`p1_apug011_td_top`、ADC 为空、SDC=`constraints/p1_apug011_td.sdc`，依次执行 Synthesis 与 Physical Design。验收必须记录：protected core 是否成功解密/展开、`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 是否成功 elaborate/legalize、150 MHz generated clocks、worst slack、LUT/FF/PLL/SDRAM primitive 资源，以及全部 WARNING/ERROR。任何一个环节失败都不标 `[S]`。
-
+最终 worst setup path 已为正 slack：`u_adapter/provider_fault_reg_syn_12.clk -> u_bist/reg1_syn_28`，slack +0.059 ns；不再存在负 timing path。CLI `import_device -package` 空 DB 的失败只记录为 TD5.6.2 CLI 环境问题，不覆盖 GUI implementation 的 `[S]` 证据。详细 closure 记录见 `docs/develop_records/P1-02B_TD56_TIMING_CLOSURE_CANDIDATE2.md`。
 
 P1 完成前最重要的资源检查：`line_buffer_pingpong` 的 RAM 数组故意不做整块 reset，以保留 ERAM inference 机会；只有 TD 报告确认后才能说“行缓存进了 ERAM”。
 
