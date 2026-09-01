@@ -8,7 +8,9 @@ FPGA_Competition_HDMI/
 ├─ STRUCTURE.md                    # 本文件（目录规范）
 ├─ README.md                       # 项目总览（指向 STRUCTURE.md / docs/）
 ├─ .gitignore                      # 版本忽略规则
-├─ docs/                           # 设计文档（01~09：需求/架构/计划/风险/验证/视频/场景/卖点/实现矩阵）
+├─ docs/                           # 当前有效文档（01 架构 / 02 目标 / 03 计划状态 / 04 用例）
+│  ├─ olds/                        # 旧版 01~12 文档，仅留存，不再更新
+│  └─ develop_records/             # 开发过程记录（接口/测试向量/回归/阶段 note）
 ├─ src/                            # ★ 设计代码（可综合 RTL）
 │  ├─ README.md                    # 子模块划分与命名约定
 │  ├─ top/                         # 顶层模块、时钟、复位
@@ -40,7 +42,9 @@ FPGA_Competition_HDMI/
 | `sim_tb/` | testbench `.v` + 运行脚本 `.do` | ✅ | 仿真源码，按模块分类、与 `src/` 对应；需评审 |
 | `sim_work/` | ModelSim 运行产物 | ❌ | 工作库、波形、日志；只放中间产物 |
 | `constraints/` | 管脚 + 时钟/时序约束 | ✅ | **必须**与官方板卡资料/原理图逐项核对，勿由 AI 编 |
-| `docs/` | 各阶段设计文档 | ✅ | 评审与答辩依据 |
+| `docs/` | 当前有效架构/目标/计划状态/用例 | ✅ | 只放权威文档，避免混乱 |
+| `docs/olds/` | 旧版 01~12 文档 | ✅ | 仅留存，不再更新 |
+| `docs/develop_records/` | 开发过程记录 | ✅ | 接口/测试向量/回归/note 统一归档 |
 | `tools/` | 生成/转换脚本 | ✅ | 用 bundled Python 运行 |
 | `data/` | 图片/视频帧/音频 | ⚠️ 默认不入库 | 可由 tools 重新生成；个别用 `git add -f`；整体走 LFS 另配 `.gitattributes` |
 

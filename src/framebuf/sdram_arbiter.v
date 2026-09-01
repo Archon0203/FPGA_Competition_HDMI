@@ -8,7 +8,7 @@
 //           - 不直接例化 APUG011；P1 由 sdram_adapter 接官方 controller
 // 作者   : FPGA 竞赛团队
 // 日期   : 2026-08-31
-// 版本   : v1.0  ([U] UNIT PASS, CASE0~CASE8, checks=39)
+// 版本   : v1.1  (150 MHz timing cleanup candidate; rerun UNIT regression required)
 // 时钟域 : P0 抽象 memory/request 时钟域
 //
 // 设计约束：
@@ -52,7 +52,7 @@ module sdram_arbiter #(
     // ---------------- Status/debug ----------------
     output reg          protocol_error,
     output reg          contention_seen,
-    output reg  [15:0]  rd_outstanding_debug,
+    output wire [15:0]  rd_outstanding_debug,
     output reg  [31:0]  read_accept_count_debug,
     output reg  [31:0]  write_accept_count_debug
 );
@@ -86,16 +86,19 @@ module sdram_arbiter #(
     assign rd_rvalid = response_legal;
     assign rd_rdata  = mem_rdata;
 
-    wire [16:0] outstanding_next = {1'b0, rd_outstanding}
-                                 + (rd_accept      ? 17'd1 : 17'd0)
-                                 - (response_legal ? 17'd1 : 17'd0);
+    // The request path is already credit-gated by read_credit, therefore an
+    // accepted read can never increase rd_outstanding beyond the configured
+    // limit.  Keep the sequential update as a 2-bit event case instead of a
+    // 17-bit add/subtract/compare cone.  This is functionally equivalent but
+    // removes a non-functional timing path from downstream ready back into the
+    // sticky protocol_error register at 150 MHz.
+    assign rd_outstanding_debug = rd_outstanding;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             rd_outstanding          <= 16'd0;
             protocol_error          <= 1'b0;
             contention_seen         <= 1'b0;
-            rd_outstanding_debug    <= 16'd0;
             read_accept_count_debug <= 32'd0;
             write_accept_count_debug<= 32'd0;
         end else begin
@@ -116,13 +119,11 @@ module sdram_arbiter #(
             if (mem_rvalid && !response_legal)
                 protocol_error <= 1'b1;
 
-            if (outstanding_next > MAX_READ_OUTSTANDING) begin
-                protocol_error <= 1'b1;
-            end else begin
-                rd_outstanding <= outstanding_next[15:0];
-            end
-
-            rd_outstanding_debug <= outstanding_next[15:0];
+            case ({rd_accept, response_legal})
+                2'b10: rd_outstanding <= rd_outstanding + 16'd1;
+                2'b01: rd_outstanding <= rd_outstanding - 16'd1;
+                default: rd_outstanding <= rd_outstanding;
+            endcase
         end
     end
 

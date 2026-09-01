@@ -171,7 +171,7 @@ UI-L0 Base media     最低优先级
 - APUG011/APUG092/PLL/IO 原语端口必须以安路官方文档和 HX4S20C 官方工程为准，禁止猜端口。
 - 管脚、IOSTANDARD、时钟约束必须来自 **HX4S20C 官方约束/原理图**；不能为了“工程完整”绑定占位 pin。
 - 当前 `constraints/eg4s20bg256_pins.cst` 与 `constraints/eg4s20bg256_timing.sdc` 是**历史占位模板，不是可上板约束**。
-- 当前 `.al` 中 `ADC_FILE/SDC_FILE` 为空、TOP 为 `reset_gen`；因此当前工程没有资格标记 `[S]`。
+- 当前 P1-02B `.al` 的 TOP 为 `p1_apug011_td_top`，ADC 为空，只绑定 `constraints/p1_apug011_td.sdc` 的 clock constraint；这是 TD-only SDRAM backend harness，不是最终 HX4S20C board pin build。
 - vendor 源文件为只读参考；AI/人工应通过 adapter/wrapper 对接，而不是直接重构官方 core。
 
 ## 7. 架构变更规则
@@ -199,7 +199,9 @@ sdram_arbiter / direct requester
   -> official IS42s32200 behavioral SDRAM model
 
 TD P1-02B synthesis harness path:
-sdram_arbiter
+p1_apug011_bist
+  -> one-entry registered request slice (harness-only)
+  -> sdram_arbiter
   -> sdram_adapter
   -> official sdr_as_ram
   -> EG_PHY_SDRAM_2M_32
@@ -210,4 +212,6 @@ sdram_arbiter
 
 **P1-02A 已验证边界（2026-09-01）**：随包 `IS42s32200` 是 -7 timing model（`tCK=7ns`、`tRCD=21ns`），因此行为模型用 125 MHz/180° 做 model-safe 数据完整性验收；最终结果 tCK/tRCD/DQM 全部 0 violation，addr5/addr8 正确读回，official-core chain `[C-sub]`。该 125 MHz 只属于外部模型，不改变正式硬件目标。adapter 的正式契约维持：**READ/IDLE 的 App_wr_dm=0000；仅 ST_WRITE padding lane 使用 1111**。
 
-**P1-02B TD6.2.1 集成边界**：主工程采用 TD 6.2.1 Engineer 168116 的原生 protected-source 组织。`global_def.v` 在 `.al` 中设置 `GlobalIncluded=true`；`sdr_as_ram.enc.v`、`sdr_init_ref.enc.v`、`sdr_wrrd.enc.v` 作为三个独立 Verilog source，禁止再通过项目自有 compile-unit `include` 聚合。TD-only `p1_apug011_td_top` 暂复用官方 25 MHz reference `clk_pll.v` 得到 150 MHz 0°/180°，并连接 `EG_PHY_SDRAM_2M_32`。该 harness 不绑定 HX4S20C pin；最终板卡仍需基于 50 MHz 板载时钟和官方 HX4S20C ADC/SDC 完成 P1-04。TD 6.2.1 时钟派生命令使用 `derive_clocks`，不再使用已 obsolete 的 `derive_pll_clocks`。
+**P1-02B TD5.6.2 集成边界**：主工程按官方工程组织 protected sources。`global_def.v` 在 `.al` 中设置 `GlobalIncluded=true`；`sdr_as_ram.enc.v`、`sdr_init_ref.enc.v`、`sdr_wrrd.enc.v` 作为三个独立 Verilog source，禁止再通过项目自有 compile-unit `include` 聚合。TD-only `p1_apug011_td_top` 复用官方 25 MHz reference `clk_pll.v` 得到 150 MHz 0°/180°，并连接 `EG_PHY_SDRAM_2M_32`。当前实测工具固定为 **TD5.6.2 / V5.6.71036**，SDC 使用 `derive_pll_clocks`。该 harness 不绑定 HX4S20C pin；最终板卡仍需基于 50 MHz 板载时钟和官方 HX4S20C ADC/SDC 完成 P1-04。
+
+**P1-02B 最终实现证据（2026-09-01）**：candidate-2 六项 RTL 回归全部 PASS；TD5.6.2 GUI SynOpt/PhyOpt/BitGen 全部 PASS。150 MHz / 6.666 ns 下 setup errors=0、WNS=+0.059 ns、TNS=0；hold errors=0、minimum slack=+0.260 ns、TNS=0；minimum period=6.607 ns，Max Freq=151.355 MHz。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常实现，因此 TD SDRAM backend 正式达到 `[S]`。

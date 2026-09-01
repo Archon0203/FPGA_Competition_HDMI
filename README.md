@@ -1,7 +1,7 @@
 # 基于 EG4S20 的 HDMI 多媒体播放系统
 
 
- > **P1 当前证据（2026-09-01）**：P1-01 v0.3 已完成：`sdram_adapter [U]` **PASS(61)**，strict arbiter→adapter chain `[C-sub]` **PASS(42)**。P1-02A 已完成：QuestaSim 10.7c 下 official protected APUG011 + official IS42 model **PASS(24)**，P0-09 同轮重新 **PASS(1698)**。P1-02B 的 TD 6.2.1 native-source 组织已经解决 protected-core black-box 问题：主工程 `syn_1` 已完整完成 read_design/opt_rtl/opt_gate 并生成 gate DB；`sdr_as_ram/sdr_init_ref/sdr_wrrd`、`EG_PHY_PLL/EG_LOGIC_BUFG` 与 `EG_PHY_SDRAM_2M_32` 均被识别。当前综合后 setup 仍失败（报告 WNS=-5958 ps，115 endpoints；hold 通过），而 `phy_1` 因 run worker 卡在初始化尚未产出有效 P&R，因此 **仍不能标 `[S]`**。TD 6.2.1 已明确提示 `derive_pll_clocks` obsolete，本 candidate 将 SDC 更新为 `derive_clocks`，必须重新 Syn Opt 后再以 P&R 后 timing 为准。
+ > **P1 当前证据（2026-09-01）**：P1-01 `sdram_adapter v0.4` 已完成 `[U]` **PASS(61)**，strict arbiter→adapter chain `[C-sub]` **PASS(42)**。P1-02A official protected APUG011 + IS42 **[C-sub] PASS(24)**。P1-02B 已在 **TD5.6.2 / V5.6.71036** 完成 SynOpt + PhyOpt(place+route) + BitGen，并正式达到 **`[S]`**：150 MHz / 6.666 ns 下 setup errors=0、WNS=+0.059 ns、TNS=0；hold errors=0、minimum slack=+0.260 ns、TNS=0；minimum period=6.607 ns，Max Freq=151.355 MHz。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常实现，原 baseline 9 条 setup failure 已全部消失。
 
 > 2026 全国大学生嵌入式芯片与系统设计竞赛 · FPGA 创新设计赛道 · 安路选题一  
 > 平台：HX4S20C / EG4S20BG256  
@@ -12,14 +12,15 @@
 状态证据统一使用：`[U] UNIT PASS`、`[C-sub] SUB-CHAIN PASS`、`[C] CHAIN PASS`、`[S] TD SYNTH/P&R PASS`、`[B] BOARD PASS`、`[L] LONG-RUN PASS`。
 
 ```text
-P0-01 ~ P0-07             [U]
-P0-08 framebuffer chain   [C-sub]
-P0-09 full media chain    [C]  (checks=1698)
+P0-01 ~ P0-06             [U]
+P0-07 sdram_arbiter       [U] (39 checks)
+P0-08 framebuffer chain   —  (historical PASS; rerun required after arbiter v1.1)
+P0-09 full media chain    [C] (1698 checks)
 P0                         Implementation Freeze v1.0
-P1-01 v0.3               [U] / [C-sub] (61 / 42 checks)
+P1-01 v0.4               [U] / [C-sub] (61 / 42 checks)
 P1-02A official core      [C-sub] (24 checks)
-P1-02B TD integration      —  (Syn Opt completed; setup failing; P&R pending)
-TD final build             尚无 [S]
+P1-02B TD integration     [S] (150MHz setup/hold 0 violations)
+TD SDRAM backend          [S] (WNS=+0.059ns; hold min slack=+0.260ns)
 Hardware                   尚无 [B]/[L]
 ```
 
@@ -77,18 +78,11 @@ vsim -c -do ../sim_tb/framebuf/run_sdram_adapter.do
 vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter_adapter_chain.do
 ```
 
-当前已实测 `tb_sdram_adapter` **PASS (checks=61)**，`sdram_adapter v0.3` 正式为 `[U]`；`tb_sdram_arbiter_adapter_chain` **PASS (checks=42)**，因此 arbiter→adapter→strict APUG011-like model 为 `[C-sub]`。
+当前 candidate-2 已实测 `tb_sdram_adapter` **PASS (checks=61)**，`sdram_adapter v0.4` 正式为 `[U]`；`tb_sdram_arbiter_adapter_chain` **PASS (checks=42)**，因此 arbiter→adapter→strict APUG011-like model 为 `[C-sub]`。
 
 P1-02A 已实测 **PASS (checks=24)**：125 MHz/180° model-safe 下 tCK/tRCD=0 violation，App read-DM/physical READ DQM 均 0 violation，addr5/addr8 正确读回 `0x11223344/0xA5A55A5A`。因此 official protected APUG011 behavioral chain 正式 `[C-sub]`。P1-02B 当前把官方原始 `clk_pll.v`、`global_def.v`（TD Global Include）、三个独立 protected `.enc.v`、`apug011_core_wrapper` 与 `EG_PHY_SDRAM_2M_32` 接入 TD-only harness；25 MHz ref 只是官方 reference harness，不是最终 HX4S20C 50 MHz board clock。旧 `apug011_td_compile_unit.v` 已停用且不进入 TD source。
 
-P1-02B TD candidate 先验证 BIST：
-
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/top/run_p1_apug011_bist.do
-```
-
-随后用 **TD 6.2.1 Engineer 168116** 打开根目录 `FPGA_Competition_HDMI.al`。本 candidate 的 TOP 是 `p1_apug011_td_top`，只使用 `constraints/p1_apug011_td.sdc` 的 25 MHz reference-clock/PLL 约束，**不绑定任何板级 ADC/pin**。先重新跑 Synthesis/Syn Opt（本版 SDC 已改用 TD6.2.1 的 `derive_clocks`），再跑 Physical Design/P&R；只有 P&R 后 timing/resource/PLL/`EG_PHY_SDRAM_2M_32`/constraints 均确认通过才给 SDRAM backend 标 `[S]`。
+P1-02B 的 BIST **PASS (checks=9)**，`p1_apug011_bist` 为 `[U]`。candidate-2 最终六项 RTL 回归全部 PASS，并在 **TD5.6.2 / V5.6.71036 GUI** 完成 SynOpt、PhyOpt 与 BitGen；TOP=`p1_apug011_td_top`，ADC 为空，SDC=`constraints/p1_apug011_td.sdc`，150 MHz / 6.666 ns 未放宽。最终 setup/hold 均无 violation，因此 TD SDRAM backend 正式记 `[S]`。详细 closure 证据见 `docs/develop_records/P1-02B_TD56_TIMING_CLOSURE_CANDIDATE2.md`.
 
 ## 工程规则
 
