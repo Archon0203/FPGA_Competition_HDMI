@@ -45,7 +45,7 @@ set rc [catch {
   open_project {FPGA_Competition_HDMI.prj}
   import_device eagle_s20.db -package EG4S20BG256
   import_db {../syn_1/FPGA_Competition_HDMI_gate.db}
-  read_sdc ../../constraints/p1_apug011_td.sdc
+  read_sdc ../../constraints/p1_hx4s20c_hdmi_board.sdc
   place
   export_db {FPGA_Competition_HDMI_place.db}
 } RESULT]

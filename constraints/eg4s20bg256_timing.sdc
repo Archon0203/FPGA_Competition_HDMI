@@ -1,14 +1,14 @@
 # ============================================================
-# 时钟/时序约束 - 占位模板（以官方与综合报报告为准）
+# Generic timing placeholder - NOT an active board constraint set.
+# Replace/derive clocks from the final TD5.6.2 EG PLL in P1-04.
 # ============================================================
 
-create_clock -name clk_50m     -period 20.000 [get_ports clk_50m]     # 50MHz
-create_clock -name clk_pix     -period 39.722 [get_ports clk_pix]     # 25.175MHz (640x480@60)
-create_clock -name clk_tmds    -period 3.972  [get_ports clk_tmds]    # ~251.75MHz TMDS 位时钟
-create_clock -name clk_sdram   -period 10.000 [get_ports clk_sdram]   # 100MHz
-create_clock -name clk_sdo     -period 40.000 [get_ports clk_sdo]     # 25MHz SD
-create_clock -name clk_aud     -period 81.380 [get_ports clk_aud]     # 12.288MHz 音频
+create_clock -name clk_50m       -period 20.000 [get_ports clk_50m]       # HX4S20C board oscillator target
+create_clock -name clk_pix       -period 39.722 [get_ports clk_pix]       # HISTORICAL placeholder: 25.175 MHz / 640x480
+create_clock -name clk_hdmi_ser  -period 7.944  [get_ports clk_hdmi_ser]  # HISTORICAL placeholder: 125.875 MHz = 5 * pixel
+create_clock -name clk_sdram     -period 6.666  [get_ports clk_sdram]     # 150 MHz APUG011 hardware target
+create_clock -name clk_sdo       -period 40.000 [get_ports clk_sdo]       # 25 MHz SD target
+create_clock -name clk_aud       -period 81.380 [get_ports clk_aud]       # 12.288 MHz audio target
 
-# 时钟域间用异步 FIFO，时序上避免伪路径
-# set_false_path -from [get_clocks clk_sys] -to [get_clocks clk_pix]
-
+# Final false-path/clock-group policy must be based on the real generated
+# clocks and CDC structure.  Do not use this placeholder for board BitGen.

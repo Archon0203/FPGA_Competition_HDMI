@@ -1,0 +1,29 @@
+# ============================================================================
+# P1-04B BOARD PIN TEMPLATE -- NOT SAFE TO USE FOR BITGEN / PROGRAMMING
+#
+# The current conversation has the EG4S20 chip reference package and APUG092
+# vendor reference, but not the actual HX4S20C lab_ex4_tf board .adc file.
+# Therefore no package locations are guessed here.
+#
+# Before board programming, copy the WORKING official lab_ex4_tf ADC mappings
+# for the following physical nets and rename only the logical port names:
+#   board 50 MHz clock -> I_CLK_50M
+#   HDMI DDC SCL       -> O_DDC_SCL
+#   HDMI DDC SDA       -> IO_DDC_SDA
+#   HDMI TMDS D0 P     -> O_TMDS_CH0_P
+#   HDMI TMDS D1 P     -> O_TMDS_CH1_P
+#   HDMI TMDS D2 P     -> O_TMDS_CH2_P
+#   HDMI TMDS CLK P    -> O_TMDS_CLK_P
+#
+# APUG092's official constraint style constrains only the positive LVDS output
+# pin; TD binds the complementary pair through the LVDS I/O standard.
+#
+# Debug outputs O_PLL_LOCK/O_VIDEO_LOCKED/O_ADAPTER_ERROR/O_PROVIDER_ERROR/
+# O_FRAME_HEARTBEAT may be mapped to known LEDs later or left unbound for the
+# first synthesis-only pass.
+#
+# USER HARDWARE NOTE (2026-09-10): the user's working official lab_ex4_tf
+# sample appears to have KEY1/KEY2 logical assignments reversed. P1-04A avoids
+# both key pins entirely. When P1-04B imports board buttons, verify by physical
+# press rather than trusting the sample's key labels.
+# ============================================================================

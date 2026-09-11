@@ -1,0 +1,49 @@
+APUG092 HDMI1.4b Transmitter V1.0 official reference subset
+============================================================
+Source: user-provided EG4S20 data/reference package
+Original directory: APUG092_HDMI1.4b_Transmitter_V1.0/src/user_source/hdl_source/
+
+Copied read-only vendor files:
+- hdmi_1_4b_transmitter_core_wrapper.enc.v
+- hdmi_phy_warpper.v
+- lane_lvds_10_1.v
+
+Official APUG092 facts used by this project:
+- Video/EDID/Audio/ACR interfaces are in the pixel-clock domain.
+- I_axis_s_user is a one-cycle frame-start pulse on the first active pixel.
+- I_axis_s_valid marks active video data.
+- I_axis_s_last is asserted at the end of each active line.
+- O_axis_s_ready indicates the core can accept data.
+- O_axis_s_ready only deasserts after I_axis_s_last; one active line must be
+  supplied continuously without valid gaps.
+- VIDEO_TPG must be "Disable" for external video input.
+- RGB and YUV444 8-bit formats are supported.
+- PHY serializer requires serial clock = 5 * pixel clock and uses DDR.
+- hdmi_phy_wrapper supports DEVICE="EG" and selects EG_LOGIC_ODDR.
+- APUG092 resource table lists EG4-family core use of about 1734 LUT,
+  1925 REG and 17 ERAM (vendor reference figure, not this project's final
+  implementation result).
+
+Reference-package limitations relevant to HX4S20C:
+- The supplied APUG092 example top/project is for PH1A, not EG4S20.
+- The supplied pll.v instantiates PH1 primitives and must NOT be copied into
+  the EG4S20 build.
+- The supplied pin.adc is for that PH1A reference board and must NOT be reused
+  for HX4S20C.
+- APUG092 documentation tells users to obtain VIDEO_VIC from CTA-861.
+- The supplied reference top configures the protected core for 1280x720 and
+  passes VIDEO_VIC=69; the user guide uses 1920x1080/VIC16 as its default
+  parameter/clock-calculation example.
+
+Current integration status (P1-03B candidate):
+- Project-owned apug092_core_wrapper and apug092_tx_wrapper now bind the
+  protected core and official hdmi_phy_wrapper(DEVICE="EG").
+- FPGA_Competition_HDMI_P1-03B.al is a dedicated TD5.6.2 harness with two
+  injected top-level clocks. It does NOT claim the final board PLL or pins.
+- constraints/p1_apug092_td.sdc now uses the project 1280x720 transport
+  baseline: 74.25 MHz pixel and 371.25 MHz serial (=5x pixel) for this
+  isolated clock-injected harness.
+- Final 50 MHz HX4S20C -> EG PLL generation and HDMI/clock/DDC pin constraints
+  remain P1-04 board-binding work and require official board evidence.
+
+Do not edit the three vendor source files above.
