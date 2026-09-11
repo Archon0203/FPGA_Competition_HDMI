@@ -23,3 +23,14 @@ cd sim_work
 vsim -c -do ../sim_tb/display/run_vga_timing.do
 ```
 
+
+
+## P1-03A HDMI video adapter
+
+```powershell
+cd sim_work
+vsim -c -do ../sim_tb/display/run_hdmi_video_adapter.do
+vsim -c -do ../sim_tb/integration/run_hdmi_video_linebuffer_chain.do
+```
+
+两项均 PASS 后才可把 `hdmi_video_adapter` 标 `[U]`，并把 real line-buffer → adapter 边界标 `[C-sub]`。

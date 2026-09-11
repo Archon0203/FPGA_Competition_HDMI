@@ -10,6 +10,8 @@ tb_image_scaler.v   + run_image_scaler.do
 tb_transition.v     + run_transition.do
 tb_osd_overlay.v    + run_osd_overlay.do
 tb_tmds_encoder.v   + run_tmds_encoder.do
+tb_hdmi_video_adapter.v + run_hdmi_video_adapter.do
+tb_hdmi_test_pattern_line_provider.v + run_hdmi_test_pattern_line_provider.do
 ```
 
 运行示例（在 `sim_work` 目录）：

@@ -6,10 +6,10 @@
 
 | 子目录 | 包含模块 |
 |---|---|
-| `top/` | `top.v`（顶层）、`clk_gen.v`、`reset_gen.v` |
+| `top/` | `reset_gen.v`、APUG011/APUG092 wrappers、P1 TD harnesses；最终 `hx4s20c_top/clk_gen` 待 P1-04 |
 | `storage/` | `sd_spi.v`、`sd_reader.v`、`fat32_scan.v`、`bmp_parser.v`、`vseq_reader.v`、`vseq_yuv_unpack.v`（YUV444 解包） |
 | `framebuf/` | `sdram_ctrl.v`、`frame_buffer.v`、`async_fifo.v` |
-| `display/` | `vga_timing.v`、`color_space.v`、`yuv420_upsample.v`、`image_enhance.v`、`image_scaler.v`、`transition.v`、`osd_overlay.v`、`tmds_encoder.v` |
+| `display/` | 显示处理模块 + `hdmi_video_adapter.v` + `hdmi_test_pattern_line_provider.v`；正式 TMDS 使用 APUG092 |
 | `audio/` | `tone_gen.v`、`audio_visual.v`、`hdmi_audio_pack.v`、`hdmi_audio.v` |
 | `interact/` | `key_filter.v`、`sw_filter.v`、`menu_fsm.v`、`seg_driver.v`、`dual_led.v`、`beep.v` |
 | `app/` | `app_scenario.v`（信息发布终端业务） |
@@ -34,3 +34,7 @@
 | app | `app_scenario` ✅ |
 
 > 厂商 IP / 官方参考模块（PLL、SDRAM、TMDS、HDMI 音频）不编端口，由人工在 TD GUI 例化核对后再集成。
+
+## P1 vendor integration note (2026-09-10)
+
+P1-02 APUG011 已有 TD5.6.2 `[S]` 证据。P1-03A/P1-03B 当前新增 APUG092 application adapter、color-bar line provider、protected-core wrapper、EG PHY wrapper binding 与独立 TD harness，但尚未执行本轮 Questa/TD，所以这些新增对象保持 candidate。最终板级 PLL/pins 不在这些 wrapper 内硬编码。

@@ -1,0 +1,21 @@
+# ============================================================================
+# P1-04B HX4S20C HDMI_B physical pin constraints
+#
+# These assignments are copied from the user's physically working official
+# lab_ex4_tf project (pin.adc) / board schematic confirmation.  Unlike the
+# previous template, this file is intended for real P&R/BitGen verification.
+#
+# KEY1/KEY2 are deliberately absent: user observed their board labels may be
+# reversed relative to the official logical names, and this smoke test does
+# not need either key.
+# ============================================================================
+
+set_pin_assignment { clk }          { LOCATION = R7; IOSTANDARD = LVCMOS33; }
+
+set_pin_assignment { HDMI_D0_P }    { LOCATION = G5; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_D1_P }    { LOCATION = F1; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_D2_P }    { LOCATION = E1; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_CLK_P }   { LOCATION = C3; IOSTANDARD = LVDS33; }
+
+set_pin_assignment { HDMI_DDC_SCL } { LOCATION = P2; IOSTANDARD = LVCMOS33; }
+set_pin_assignment { HDMI_DDC_SDA } { LOCATION = R2; IOSTANDARD = LVCMOS33; }

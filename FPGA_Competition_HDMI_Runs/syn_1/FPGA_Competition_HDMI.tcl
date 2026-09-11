@@ -44,7 +44,7 @@ set ACTIVESTEP read_design
 set rc [catch {
   open_project {FPGA_Competition_HDMI.prj}
   import_device eagle_s20.db -package EG4S20BG256
-  elaborate -top {p1_apug011_td_top}
+  elaborate -top {p1_hx4s20c_hdmi_board_top}
   export_db {FPGA_Competition_HDMI_elaborate.db}
 } RESULT]
 if {$rc} {
@@ -57,7 +57,7 @@ if {$rc} {
 step_begin opt_rtl
 set ACTIVESTEP opt_rtl
 set rc [catch {
-  read_adc
+  read_adc ../../constraints/p1_hx4s20c_hdmi_board.adc
   optimize_rtl
   report_area -file FPGA_Competition_HDMI_rtl.area
   export_db {FPGA_Competition_HDMI_rtl.db}
@@ -72,7 +72,7 @@ if {$rc} {
 step_begin opt_gate
 set ACTIVESTEP opt_gate
 set rc [catch {
-  read_sdc ../../constraints/p1_apug011_td.sdc
+  read_sdc ../../constraints/p1_hx4s20c_hdmi_board.sdc
   optimize_gate -maparea FPGA_Competition_HDMI_gate.area
   legalize_phy_inst
   export_db {FPGA_Competition_HDMI_gate.db}

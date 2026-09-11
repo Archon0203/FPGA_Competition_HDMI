@@ -12,7 +12,7 @@
 | **P1 · Vendor & Board Integration** | 用 APUG011/APUG092/PLL/官方约束把 P0 接入 EG4S20 真硬件 | `[S]` → `[B]`；下一阶段 |
 | **P2 · Presentation** | HDMI 音频、OSD、亮度/对比度、转场、交互、音频可视化、应急叠加 | 子链 `[C]`，最终上板 `[B]` |
 | **P3 · Short Video** | `.vseq` YUV444 短视频片段，帧序列读取、色彩转换、缩放、播放控制 | `[C]` → `[B]` |
-| **P4 · Bonus / Stretch** | YUV420、省带宽读卡、SDIO、720p 等加分项 | 有余量再做；不阻塞基线 |
+| **P4 · Bonus / Stretch** | YUV420、省带宽读卡、SDIO、1080p/双板可行性等加分项 | 有余量再做；不阻塞 720p 基线 |
 
 其中 **P0/P1 是系统地基**。P0/P1 未稳定前，不以新增展示特效替代底层闭环工作。
 
@@ -131,15 +131,15 @@ hx4s20c_top.v
 
 ## 4. 时钟与 CDC
 
-当前显示基线：**640×480@60**。
+当前区分两个分辨率边界：**board-safe bring-up baseline = 640×480**（与用户已实测通过的官方 lab_ex4_tf 相同），**性能目标 = 1280×720**。P0 的 640×480 framebuffer geometry 因此继续作为冻结回归几何；720p 仍保留在 injected-clock/PLL feasibility 分支，直到 TD timing closure 后才升级为板级基线。
 
 - `clk_sys`：板载 50 MHz 系统控制基准。
-- `clk_pix`：640×480 基线约 25.175 MHz。
-- `clk_hdmi_ser`：正式 EG HDMI PHY 采用 **`clk_pix × 5` + DDR** 发送 10 bit/pixel；不是旧文档里的“10× fabric clock”。
+- `clk_pix`：P1-04B board-safe build 使用 working official **25 MHz**；P1-03B/P1-04A 720p 实验分别使用 74.25/75 MHz。
+- `clk_hdmi_ser`：正式 EG HDMI PHY 采用 **`clk_pix × 5` + DDR** 发送 10 bit/pixel；P1-04B 为 working official **125 MHz / 0deg**。P1-04A 375 MHz@90deg 已被 TD5.6.2 STA 判定不闭合，因此只保留实验属性。
 - SDRAM 时钟：以 APUG011 官方示例/TD 实际配置为准，不在业务 RTL 中写死 vendor 时序。
 - 跨时钟域的数据流必须使用明确 CDC（如 `async_fifo`）；慢速状态可按经过评审的同步方式处理，禁止快时钟直接采样异步事件。
 
-720p60 接近本器件 True-LVDS/PHY 能力边界，只属于 P4 加分验证；**1080p 不纳入当前设计目标**。
+P1-03B 保留 1280×720 作为性能目标和 transport stress profile；当前正式 board-safe bring-up 回退到 working official 640×480。1920×1080 仅保留 compile-time timing profile：按 APUG092 文档，1080p60 需要 148.5 MHz pixel / 742.5 MHz serial。是否能在 EG4S20/HX4S20C 上实现必须以 TD5.6.2 P&R、PLL 和真板链路证据决定。增加第二块同型号板可以分担存储/处理，但不会自动降低最终 HDMI 输出板的 742.5 MHz serializer 要求，因此暂不为 1080p 打开大规模双板重构。
 
 ## 5. P2/P3/P4 的接入位置
 
@@ -170,8 +170,11 @@ UI-L0 Base media     最低优先级
 
 - APUG011/APUG092/PLL/IO 原语端口必须以安路官方文档和 HX4S20C 官方工程为准，禁止猜端口。
 - 管脚、IOSTANDARD、时钟约束必须来自 **HX4S20C 官方约束/原理图**；不能为了“工程完整”绑定占位 pin。
-- 当前 `constraints/eg4s20bg256_pins.cst` 与 `constraints/eg4s20bg256_timing.sdc` 是**历史占位模板，不是可上板约束**。
-- 当前 P1-02B `.al` 的 TOP 为 `p1_apug011_td_top`，ADC 为空，只绑定 `constraints/p1_apug011_td.sdc` 的 clock constraint；这是 TD-only SDRAM backend harness，不是最终 HX4S20C board pin build。
+- 当前 `constraints/eg4s20bg256_pins.cst` 与 `constraints/eg4s20bg256_timing.sdc` 是**历史占位模板，不是可上板约束**；其中 HDMI 串行时钟说明已统一为 APUG092 的 `5× pixel + DDR` 架构。
+- `FPGA_Competition_HDMI.al` 保留 P1-02B 已验证 TOP=`p1_apug011_td_top`；ADC 为空，只绑定 `constraints/p1_apug011_td.sdc`，作为 closed SDRAM backend harness。
+- `FPGA_Competition_HDMI_P1-03B.al` 是独立 APUG092/EG-PHY candidate，TOP=`p1_apug092_td_top`，ADC 同样为空；它用两个 top-level injected clocks，默认验证 74.25/371.25 MHz 的 1280×720 transport，只用于 vendor compile/P&R 边界，不是可烧录 board build。
+- `FPGA_Competition_HDMI_P1-04A.al` 是 720p board-clock 实验，TOP=`p1_hx4s20c_hdmi_smoke_top`；75/375MHz clocks 能被 TD 派生和综合，但 setup/hold/removal 未闭合，且无 ADC，因此**禁止烧板**。
+- `FPGA_Competition_HDMI_P1-04B.al` 是当前 board-safe candidate，TOP=`p1_hx4s20c_hdmi_board_top`；直接使用用户 working official `lab_ex4_tf` 的 25/125MHz PLL 参数和真实 HDMI_B 50MHz/TMDS/DDC ADC。它不使用 KEY1/KEY2；完成 TD P&R/timing/BitGen 后才允许首次下载。
 - vendor 源文件为只读参考；AI/人工应通过 adapter/wrapper 对接，而不是直接重构官方 core。
 
 ## 7. 架构变更规则
@@ -215,3 +218,22 @@ p1_apug011_bist
 **P1-02B TD5.6.2 集成边界**：主工程按官方工程组织 protected sources。`global_def.v` 在 `.al` 中设置 `GlobalIncluded=true`；`sdr_as_ram.enc.v`、`sdr_init_ref.enc.v`、`sdr_wrrd.enc.v` 作为三个独立 Verilog source，禁止再通过项目自有 compile-unit `include` 聚合。TD-only `p1_apug011_td_top` 复用官方 25 MHz reference `clk_pll.v` 得到 150 MHz 0°/180°，并连接 `EG_PHY_SDRAM_2M_32`。当前实测工具固定为 **TD5.6.2 / V5.6.71036**，SDC 使用 `derive_pll_clocks`。该 harness 不绑定 HX4S20C pin；最终板卡仍需基于 50 MHz 板载时钟和官方 HX4S20C ADC/SDC 完成 P1-04。
 
 **P1-02B 最终实现证据（2026-09-01）**：candidate-2 六项 RTL 回归全部 PASS；TD5.6.2 GUI SynOpt/PhyOpt/BitGen 全部 PASS。150 MHz / 6.666 ns 下 setup errors=0、WNS=+0.059 ns、TNS=0；hold errors=0、minimum slack=+0.260 ns、TNS=0；minimum period=6.607 ns，Max Freq=151.355 MHz。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常实现，因此 TD SDRAM backend 正式达到 `[S]`。
+
+
+## P1-04C HDMI Board Baseline
+
+P1阶段已完成第一版真实硬件闭环：
+
+```text
+EG4S20 50MHz
+  ↓
+PLL (25MHz/125MHz)
+  ↓
+APUG092 HDMI transmitter
+  ↓
+HDMI_B
+  ↓
+Display
+```
+
+该版本固定 HDMI PHY、PLL、ADC 与板级约束，后续媒体链开发只替换 RGB 视频源。
