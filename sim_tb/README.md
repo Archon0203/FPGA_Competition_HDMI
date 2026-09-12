@@ -1,36 +1,31 @@
-> P0 Freeze Status (2026-08-31): P0-01~07 [U], P0-08 [C-sub], P0-09 [C]; P0 media chain 已冻结。P0-09 ModelSim: checks=1698 PASS。P0 [C] 仅代表纯 RTL + mock SDRAM 端到端通过，不代表 APUG011/APUG092、TD synthesis/P&R 或上板通过。权威冻结记录见 docs/35_P0_IMPLEMENTATION_FREEZE.md。
+# sim_tb
 
-# sim_tb — 仿真测试台源码（按模块分类）
+Questa testbench 与统一 `run_*.do` 入口。建议从独立 `sim_work` 目录执行。
 
-testbench 源码按 `src/` 的子目录**一一对应**存放。ModelSim 运行产物放在 **`sim_work/`**（gitignore）。
+## P1-05A final results
 
-```
-sim_tb/
-├─ top/        # tb for 顶层/时钟/复位
-├─ storage/    # sd_spi / sd_reader / fat32_scan / bmp_parser / vseq_reader
-├─ framebuf/   # sdram_ctrl / frame_buffer / async_fifo
-├─ display/    # vga_timing / image_enhance / color_space / image_scaler / transition / osd_overlay / tmds_encoder
-├─ audio/      # hdmi_audio / tone_gen
-├─ interact/   # key_filter / sw_filter / menu_fsm / seg_driver / dual_led / beep
-└─ app/        # app_scenario
-```
-
-约定：`tb_<模块>.v` 与 `run_<模块>.do`（编译+运行）放在同一个子目录。
-
-**运行方式**（在 `sim_work` 目录）：
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/display/run_vga_timing.do
+```text
+p1_framebuffer_pattern_writer      PASS(259)
+p1_sdram_read_cdc_bridge           PASS(13)
+hdmi_framebuffer_scanout           PASS(35)
+p1_sdram_hdmi_pipeline             PASS(258)
+p1_sdram_cached_adapter            PASS(58)
+p1_sdram_hdmi_cached_chain         PASS(260), pixels=256, underflow=0
+cached adapter + official APUG011  PASS(24)
 ```
 
-
-
-## P1-03A HDMI video adapter
+核心命令：
 
 ```powershell
-cd sim_work
-vsim -c -do ../sim_tb/display/run_hdmi_video_adapter.do
-vsim -c -do ../sim_tb/integration/run_hdmi_video_linebuffer_chain.do
+vsim -c -do ../sim_tb/framebuf/run_p1_framebuffer_pattern_writer.do
+vsim -c -do ../sim_tb/framebuf/run_p1_sdram_read_cdc_bridge.do
+vsim -c -do ../sim_tb/display/run_hdmi_framebuffer_scanout.do
+vsim -c -do ../sim_tb/integration/run_p1_sdram_hdmi_pipeline.do
+vsim -c -do ../sim_tb/framebuf/run_p1_sdram_cached_adapter.do
+vsim -c -do ../sim_tb/integration/run_p1_sdram_hdmi_cached_chain.do
+vsim -c -do ../sim_tb/framebuf/run_p1_sdram_cached_adapter_apug011_official.do
 ```
 
-两项均 PASS 后才可把 `hdmi_video_adapter` 标 `[U]`，并把 real line-buffer → adapter 边界标 `[C-sub]`。
+official APUG011 TB 采用 bundled IS42 `-7` model-safe 125 MHz / shifted-clock configuration，验证 application-port grouping/data/timing envelope；最终 150 MHz 硬件频率由 TD5.6.2 STA 与真板负责证明。
+
+状态以 `docs/03_plan_and_status.md` 为准。

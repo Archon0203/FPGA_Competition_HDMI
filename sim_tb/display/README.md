@@ -19,3 +19,7 @@ tb_hdmi_test_pattern_line_provider.v + run_hdmi_test_pattern_line_provider.do
 cd sim_work
 vsim -c -do ../sim_tb/display/run_color_space.do
 ```
+
+### P1-05A framebuffer scanout (2026-09-12)
+
+`run_hdmi_framebuffer_scanout.do` 已实测 **PASS(35)**。该证据只覆盖 scanout unit，不覆盖 SDRAM→CDC→prefetch→line-buffer integration。

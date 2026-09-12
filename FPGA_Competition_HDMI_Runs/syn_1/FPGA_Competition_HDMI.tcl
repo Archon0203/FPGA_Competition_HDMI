@@ -44,7 +44,7 @@ set ACTIVESTEP read_design
 set rc [catch {
   open_project {FPGA_Competition_HDMI.prj}
   import_device eagle_s20.db -package EG4S20BG256
-  elaborate -top {p1_hx4s20c_hdmi_board_top}
+  elaborate -top {p1_hx4s20c_sdram_hdmi_top}
   export_db {FPGA_Competition_HDMI_elaborate.db}
 } RESULT]
 if {$rc} {

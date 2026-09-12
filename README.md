@@ -1,129 +1,155 @@
 # 基于 EG4S20 的 HDMI 多媒体播放系统
 
-> **TD5.6.2 打开方式（2026-09-11 修复）**：项目根目录现在只保留一个可打开的 `FPGA_Competition_HDMI.al`，它已经切换到 **P1-04B HX4S20C HDMI_B board-safe** 配置，TOP=`p1_hx4s20c_hdmi_board_top`，ADC=`constraints/p1_hx4s20c_hdmi_board.adc`，SDC=`constraints/p1_hx4s20c_hdmi_board.sdc`。旧 P1 工程定义已保存到 `docs/olds/td_projects/*.reference.txt`，不要再从根目录选择旧 `.al`。
-
-
-
- > **P1 当前证据（更新至 2026-09-11）**：P1-01 `sdram_adapter v0.4` 已完成 `[U]` **PASS(61)**，strict arbiter→adapter chain `[C-sub]` **PASS(42)**。P1-02A official protected APUG011 + IS42 **[C-sub] PASS(24)**。P1-02B 已在 **TD5.6.2 / V5.6.71036** 完成 SynOpt + PhyOpt(place+route) + BitGen，并正式达到 **`[S]`**：150 MHz / 6.666 ns 下 setup errors=0、WNS=+0.059 ns、TNS=0；hold errors=0、minimum slack=+0.260 ns、TNS=0；minimum period=6.607 ns，Max Freq=151.355 MHz。`EG_PHY_PLL` 与 `EG_PHY_SDRAM_2M_32` 均正常实现，原 baseline 9 条 setup failure 已全部消失。
-
 > 2026 全国大学生嵌入式芯片与系统设计竞赛 · FPGA 创新设计赛道 · 安路选题一  
 > 平台：HX4S20C / EG4S20BG256  
-> 作品定位：校园/园区信息发布与应急广播终端；运行时不依赖外部 CPU/MCU。
+> 开发工具：Anlogic TD 5.6.2 / V5.6.71036；QuestaSim 10.7c
 
-## 当前工程状态
+## 当前稳定基线
 
-状态证据统一使用：`[U] UNIT PASS`、`[C-sub] SUB-CHAIN PASS`、`[C] CHAIN PASS`、`[S] TD SYNTH/P&R PASS`、`[B] BOARD PASS`、`[L] LONG-RUN PASS`。
+**P1-05A 已完成并正式关闭：internal SDRAM framebuffer → HDMI_B 已取得仿真、TD timing、BitGen 和真板证据。**
 
-```text
-P0-01 ~ P0-06             [U]
-P0-07 sdram_arbiter       [U] (39 checks)
-P0-08 framebuffer chain   —  (historical PASS; rerun required after arbiter v1.1)
-P0-09 full media chain    [C] (1698 checks)
-P0                         Implementation Freeze v1.0
-P1-01 v0.4               [U] / [C-sub] (61 / 42 checks)
-P1-02A official core      [C-sub] (24 checks)
-P1-02B TD integration     [S] (150MHz setup/hold 0 violations)
-TD SDRAM backend          [S] (WNS=+0.059ns; hold min slack=+0.260ns)
-P1-03A HDMI adapter       [U] PASS(24); line-buffer sub-chain [C-sub] PASS(57)
-P1-03B pattern provider     [U] PASS(37); protected-core Questa = TOOL_BLOCKED
-P1-04A 720p clock experiment SynOpt PASS; 75/375MHz STA FAIL（非 board-safe）
-P1-04B official-640 board    candidate：真实 HDMI_B ADC + working 25/125MHz PLL 已导入
-Hardware                   开发板/TF卡/显示器已到位；官方 lab_ex4_tf 已真板 PASS，本项目尚无 [B]/[L]
-```
-
-P0 `[C]` 只证明纯 RTL + mock SDRAM 的端到端媒体链；不等于 APUG011/APUG092、TD 完整构建或真板通过。
-
-## 四份权威文档
-
-- `docs/01_architecture.md`：P0→P4 系统架构、冻结边界、vendor/CDC 红线；
-- `docs/02_implementation_goals.md`：实现目标、内容格式、最终验收边界；
-- `docs/03_plan_and_status.md`：**唯一进度/模块状态权威**，含 `[U]/[C]/[S]/[B]/[L]` 证据；
-- `docs/04_use_cases.md`：信息发布、应急广播、交互与答辩使用场景。
-
-`docs/olds/` 仅保存历史资料，不作为当前架构或状态依据。
-`docs/evidence/` 保存测试产生的结果、证据等，供参考。
-
-## 当前主数据链
+当前 active build：
 
 ```text
-TF/FAT32 → BMP → RGB888
-               ↓
-      framebuffer_writer
-               ↓
-      frame_buffer_manager
-               ↓
-        sdram_arbiter
-               ↓
-        sdram_adapter            (P1-01; [U]，strict chain 已 [C-sub])
-               ↓
-   APUG011 sdr_as_ram / EG SDRAM (P1 vendor boundary)
-               ↓
-        line_prefetcher
-               ↓
-     line_buffer_pingpong
-               ↓
-      display-order RGB888
-               ↓
-  APUG092 HDMI path（后续 P1）
+Project : FPGA_Competition_HDMI.al
+Device  : EG4S20BG256
+TOP     : p1_hx4s20c_sdram_hdmi_top
+ADC     : constraints/p1_hx4s20c_hdmi_board.adc
+SDC     : constraints/p1_hx4s20c_hdmi_board.sdc
 ```
 
-P1-01 的 `sdram_adapter` 根据 APUG011 v1.2 application-side 语义实现：21-bit/32-bit、读写互斥、init/refresh/busy 门控、4-word 地址组、`Sdr_rd_en` 返回。为保持 P0 任意单 word 地址契约，adapter 将每个抽象 word 转换为一个 4-word 对齐 micro-group；写入用 `App_wr_dm` 屏蔽另外 3 words，读取只返回目标 lane。
+当前真板稳定显示固定 SDRAM framebuffer：四周白边、红/绿/蓝/黄四象限、中央洋红竖条和青色横条。最终 BitGen 上板后画面持续稳定，无可见抖动、抽搐、撕裂或移动黑线。
 
-## 仿真
+P1-04C 八色条仍保留为 HDMI golden rollback；P1-05A 则是当前 **framebuffer golden baseline**。
 
-P0 冻结回归：
+## P1-05A 证据摘要
 
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/integration/run_p0_media_chain.do
+### QuestaSim
+
+```text
+p1_framebuffer_pattern_writer     PASS(259)
+p1_sdram_read_cdc_bridge          PASS(13)
+hdmi_framebuffer_scanout          PASS(35)
+p1_sdram_hdmi_pipeline            PASS(258)
+p1_sdram_cached_adapter           PASS(58)
+p1_sdram_hdmi_cached_chain        PASS(260), pixels=256, underflow=0
+cached adapter + official APUG011 PASS(24)
 ```
 
-P1-01（当前仿真环境：QuestaSim 10.7c）：
+最终 cached-adapter 单测确认：
 
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/framebuf/run_sdram_adapter.do
-vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter_adapter_chain.do
+```text
+abstract_reads=8
+app_reads=8
+hits=6
+misses=2
 ```
 
-当前 candidate-2 已实测 `tb_sdram_adapter` **PASS (checks=61)**，`sdram_adapter v0.4` 正式为 `[U]`；`tb_sdram_arbiter_adapter_chain` **PASS (checks=42)**，因此 arbiter→adapter→strict APUG011-like model 为 `[C-sub]`。
+official APUG011 compatibility 确认：两次 abstract read 均被正确接受，读回 `addr=5 -> 0x11223344`、`addr=8 -> 0xA5A55A5A`，并保持 tCK/tRCD/DQM/protocol health 全部 PASS。
 
-P1-02A 已实测 **PASS (checks=24)**：125 MHz/180° model-safe 下 tCK/tRCD=0 violation，App read-DM/physical READ DQM 均 0 violation，addr5/addr8 正确读回 `0x11223344/0xA5A55A5A`。因此 official protected APUG011 behavioral chain 正式 `[C-sub]`。P1-02B 当前把官方原始 `clk_pll.v`、`global_def.v`（TD Global Include）、三个独立 protected `.enc.v`、`apug011_core_wrapper` 与 `EG_PHY_SDRAM_2M_32` 接入 TD-only harness；25 MHz ref 只是官方 reference harness，不是最终 HX4S20C 50 MHz board clock。旧 `apug011_td_compile_unit.v` 已停用且不进入 TD source。
+### TD5.6.2 combined timing
 
-P1-02B 的 BIST **PASS (checks=9)**，`p1_apug011_bist` 为 `[U]`。candidate-2 最终六项 RTL 回归全部 PASS，并在 **TD5.6.2 / V5.6.71036 GUI** 完成 SynOpt、PhyOpt 与 BitGen；TOP=`p1_apug011_td_top`，ADC 为空，SDC=`constraints/p1_apug011_td.sdc`，150 MHz / 6.666 ns 未放宽。最终 setup/hold 均无 violation，因此 TD SDRAM backend 正式记 `[S]`。详细 closure 证据见 `docs/develop_records/P1-02B_TD56_TIMING_CLOSURE_CANDIDATE2.md`.
+```text
+Timing violations : 0 setup / 0 hold
+Setup WNS         : +0.068 ns
+Setup TNS         : 0.000 ns
+Hold WHS          : +0.131 ns
+Hold TNS          : 0.000 ns
+STA coverage       : 98.69%
+```
 
-## P1-03 已获得的验证证据
+各时钟域：
 
-P1-03A 的 project-owned 视频契约已经通过 QuestaSim 10.7c：`hdmi_video_adapter` **PASS(24)**，正式记 `[U]`；真实 `line_buffer_pingpong -> hdmi_video_adapter` 子链 **PASS(57)**，正式记 `[C-sub]`。`hdmi_test_pattern_line_provider` 同样 **PASS(37)**，记 `[U]`。这些结果都来自本轮实际 transcript，而不是代码存在性判断。
+| Clock | Target | Min Period | Max Freq | TNS |
+|---|---:|---:|---:|---:|
+| HDMI pixel | 25 MHz | 27.015 ns | 37.000 MHz | 0 |
+| SDRAM | 150 MHz | 6.598 ns | 151.561 MHz | 0 |
+| board | 50 MHz | 6.770 ns | 147.710 MHz | 0 |
+| HDMI serial | 125 MHz | 7.177 ns | 139.334 MHz | 0 |
 
-APUG092 protected core 在 Questa 10.7c 中可 `vlog` 编译（Errors=0），但 `vsim` optimization 在 protected region 报错 4 次，因此其行为仿真状态记为 **TOOL_BLOCKED**，不判项目 RTL FAIL。TD5.6.2 SynOpt 则能够正常 elaboration protected transmitter、`hdmi_phy_wrapper` 和四路 `EG_LOGIC_ODDR`，说明 synthesis integration 边界成立。
+**注意：P1-05A 虽已 `[S] PASS`，但 150 MHz 关键裕量只有约 68 ps，属于“已闭合但余量较薄”。后续任何 RTL、约束或布局变化都必须重新跑完整 STA，不能继承本次正裕量。**
 
-P1-03B 仍保留 1280x720 injected-clock harness 作为高分辨率 transport/STA 实验边界；它不是当前可烧板工程。
+### Post-Phy 资源
 
-## P1-04A 720p 实验结论
+```text
+LUT      9977 / 19600 = 50.90%
+REG      2825 / 19600 = 14.41%
+BRAM9K     10 / 64    = 15.62%
+BRAM32K     0 / 16    = 0%
+DSP         1 / 29
+PLL         2 / 4
+GCLK        2 / 16
+```
 
-`FPGA_Competition_HDMI_P1-04A.al` 的 50MHz -> 75/375MHz experimental clock path 已完成 SynOpt，但 TD5.6.2 STA 未闭合：375MHz 有 setup violation，75MHz 有 hold violation，同时存在 removal violation。因此 P1-04A **明确保留为实验分支，禁止烧板**；不能因为 synthesis 成功就升级 `[S]`。
+line buffer 的 block-RAM 映射仍有优化空间；此前仅添加 `ram_style` 并未显著改变 BRAM 数量。该项作为后续资源优化任务保留，不阻塞 P1-05A 关闭，但 P1-05B 加入 TF/FAT32/BMP 前后必须持续监控 LUT 与 timing margin。
 
-这一轮最重要的新事实来自用户已实际运行成功的官方 `lab_ex4_tf`：HX4S20C HDMI_B 使用 640x480、25MHz pixel / 125MHz serial、50MHz board clock，并有已验证 package pin。项目据此进入 P1-04B。
+## 当前数据链
 
-## P1-04B board-safe candidate
+```text
+50 MHz board clock
+├─ HDMI PLL -> 25 MHz pixel / 125 MHz serial
+│   └─ P1-04C free-running raster / APUG092 / HDMI PHY / HDMI_B
+│
+└─ 25 MHz -> APUG011 PLL -> 150 MHz / shifted SDRAM clocks
+      ↓
+p1_framebuffer_pattern_writer
+      ↓
+sdram_arbiter
+      ↓
+p1_sdram_cached_adapter
+      ↓
+official APUG011 + EG_PHY_SDRAM_2M_32
+      ↓
+internal SDRAM
+      ↓
+p1_sdram_read_cdc_bridge (150 ↔ 25 MHz)
+      ↓
+line_prefetcher
+      ↓
+line_buffer_pingpong
+      ↓
+hdmi_framebuffer_scanout
+      ↓
+axis_data mux
+      ↓
+P1-04C APUG092 / HDMI_B golden boundary
+```
 
-新增独立工程 `FPGA_Competition_HDMI_P1-04B.al`，TOP=`p1_hx4s20c_hdmi_board_top`。它不再复用 P1-04A 75/375MHz 手写 PLL，而使用用户 working official `video_pll.v` 报告出的完整 EG PLL 参数，生成 **25MHz pixel + 125MHz serial，均 0deg**。输出模式严格匹配 working sample：**640x480 / 800x525 / VIC=1**。
+关键工程修复：
 
-真实板级约束已经写入：
+- sequential-read 4-word cache 消除了 P1-02 random-word adapter 在视频连续读取下的重复 APUG011 group 开销；
+- prefetch 仅在 `lb_fill_ready` 时启动，避免启动阶段等待 ping-pong bank 导致 watchdog timeout；
+- 25 MHz 与 150 MHz 在 SDC 中按 intentional asynchronous CDC boundary 处理；
+- cached adapter 写入口采用 one-entry registered request slice，切断 `pattern_writer -> payload compare -> backend` 的 150 MHz 长组合反馈路径。
 
-- board `clk`: R7 / LVCMOS33
-- HDMI_B D0/D1/D2/CLK P: G5/F1/E1/C3 / LVDS33
-- DDC SCL/SDA: P2/R2 / LVCMOS33
+## Golden boundary
 
-P1-04B 不使用 KEY1/KEY2，也不暴露需要额外 LED pin 的 debug port，因此第一次烧板不会受到用户观察到的 KEY1/KEY2 标号疑似互换问题影响。
+P1-05A 未破坏 P1-04C 已真板验证的：
 
-640x480 是**board-safe bring-up baseline**，与官方样例相同，不低于官方样例；它不是最终性能目标。P1-04B 真板点亮后再重新打开 720p PLL/STA 优化，1080p/双板仍等待高串行速率 PHY feasibility 证据。详细见 `docs/develop_records/P1-04B_HX4S20C_OFFICIAL640_BOARD_SAFE_CANDIDATE.md`。
+- HDMI_B pin；
+- 50→25/125 MHz PLL；
+- APUG092 protected transmitter；
+- EG HDMI PHY；
+- PLL lock 后约 20 ms reset hold；
+- EDID single trigger；
+- `IIC_SCL_DIV=250`；
+- 640×480 / 800×525 / VIC=1 timing。
 
-## 工程规则
+`src/top/p1_hx4s20c_hdmi_board_top.v` 继续作为 HDMI 无信号时的第一 rollback top。
 
-- `FPGA_Competition_HDMI.al` 只列可综合 RTL；testbench/mock 不进入 TD synthesis source；
-- APUG011/APUG092/PLL/IO/管脚必须来自官方资料，禁止猜 vendor 端口和约束；
-- P0 已冻结；vendor 时序差异优先由 P1 adapter/wrapper 吸收；
-- `.git/` 只由本地仓库维护，不应随项目覆盖包复制；
-- 每次迭代：代码/文档/`.al` → QuestaSim 10.7c / TD 验证 → 依据证据提升状态 → PR/review。
+## 下一阶段
+
+下一阶段为 **P1-05B：TF/FAT32/BMP → SDRAM framebuffer → HDMI**。P1-05A 的显示、SDRAM provider、CDC 和 timing-closure 结构视为冻结基线；P1-05B 优先替换固定 pattern writer，不重新改 HDMI golden boundary。
+
+## 文档规则
+
+主要当前文档：
+
+- `README.md`
+- `STRUCTURE.md`
+- `docs/01_architecture.md`
+- `docs/02_implementation_goals.md`
+- `docs/03_plan_and_status.md`（唯一状态权威）
+- `docs/04_use_cases.md`
+
+开发过程、阶段复盘和候选变更记录统一放 `docs/develop_records/`；`docs/` 根目录不再新增其他当前设计文档。`docs/olds/` 只读保留。

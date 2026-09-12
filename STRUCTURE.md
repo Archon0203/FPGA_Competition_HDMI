@@ -1,70 +1,116 @@
-# 项目目录结构（工程规范）
+# 项目目录结构
 
-命名约定：全小写、语义明确、一个目录只干一件事；用 `/` 分隔；避免中英文混排与空格。
+当前 active baseline 为 **P1-05A internal SDRAM framebuffer → HDMI_B `[S][B] PASS / CLOSED`**。P1-04C 八色条 top 继续保留为 HDMI golden rollback。
+
+根目录只使用一个 TD 工程：
+
+```text
+FPGA_Competition_HDMI.al
+```
 
 ```text
 FPGA_Competition_HDMI/
-├─ FPGA_Competition_HDMI.al         # P1-02B 已验证 TD5.6.2 SDRAM closed baseline
-├─ FPGA_Competition_HDMI_P1-03B.al  # APUG092/EG-PHY 双时钟注入 candidate
-├─ FPGA_Competition_HDMI_P1-04A.al  # 720p 75/375MHz timing experiment；STA FAIL，无 ADC
-├─ FPGA_Competition_HDMI_P1-04B.al  # board-safe 640x480：working PLL + HDMI_B real ADC
+├─ FPGA_Competition_HDMI.al
 ├─ README.md
 ├─ STRUCTURE.md
+├─ CONTRIBUTING.md
 ├─ docs/
-│  ├─ 01_architecture.md
-│  ├─ 02_implementation_goals.md
-│  ├─ 03_plan_and_status.md
-│  ├─ 04_use_cases.md
-│  ├─ develop_records/              # 阶段设计/验证记录
-│  ├─ evidence/                     # 已确认的工具/真板证据快照
-│  └─ olds/                         # 历史文档，只读留存
-├─ src/                             # 可综合 RTL
-│  ├─ top/                          # 顶层、复位、PLL、vendor wrappers
-│  ├─ vendor/anlogic/               # 官方 protected/reference source，只读
-│  ├─ storage/                      # SD/FAT32/BMP/.vseq
-│  ├─ framebuf/                     # SDRAM adapter/arbiter/framebuffer/line buffer
-│  ├─ display/                      # HDMI adapter、pattern、OSD、缩放、增强等
+│  ├─ 01_architecture.md             # 当前架构权威
+│  ├─ 02_implementation_goals.md     # 目标与验收边界
+│  ├─ 03_plan_and_status.md          # 唯一进度/状态权威
+│  ├─ 04_use_cases.md                # 场景与演示口径
+│  ├─ develop_records/               # 开发过程记录，可追加，不替代 01~04
+│  │  └─ P1-05A_CLOSEOUT_20260912.md # 本阶段实现/调试/timing 复盘
+│  ├─ evidence/                      # 历史验证证据
+│  └─ olds/                          # 历史主文档，只读
+├─ src/
+│  ├─ top/
+│  │  ├─ p1_hx4s20c_hdmi_board_top.v      # P1-04C HDMI rollback top
+│  │  └─ p1_hx4s20c_sdram_hdmi_top.v      # P1-05A active top
+│  ├─ framebuf/
+│  │  ├─ async_fifo.v
+│  │  ├─ sdram_arbiter.v
+│  │  ├─ sdram_adapter.v                   # P1-02 frozen random-word adapter
+│  │  ├─ p1_sdram_cached_adapter.v         # P1-05 sequential video adapter
+│  │  ├─ line_prefetcher.v
+│  │  ├─ line_buffer_pingpong.v
+│  │  ├─ p1_framebuffer_pattern_writer.v
+│  │  ├─ p1_sdram_read_cdc_bridge.v
+│  │  └─ p1_sdram_hdmi_pipeline.v
+│  ├─ display/
+│  │  ├─ hdmi_official_baseline_source.v
+│  │  └─ hdmi_framebuffer_scanout.v
+│  ├─ storage/
 │  ├─ audio/
 │  ├─ interact/
-│  └─ app/
-├─ ip/                              # TD IP Generator 配置输入（.ipc）
-├─ sim_tb/                          # Questa testbench 与 .do
-│  ├─ top/
-│  ├─ storage/
+│  ├─ app/
+│  └─ vendor/anlogic/                      # vendor/protected source，只读
+├─ constraints/
+│  ├─ p1_hx4s20c_hdmi_board.adc
+│  ├─ p1_hx4s20c_hdmi_board.sdc
+│  └─ ...                                  # 历史/实验约束
+├─ sim_tb/
 │  ├─ framebuf/
 │  ├─ display/
-│  ├─ integration/
-│  ├─ audio/
-│  ├─ interact/
-│  └─ app/
-├─ sim_work/                        # Questa 运行目录/中间产物
-├─ constraints/                     # SDC + board ADC/templates
-├─ tools/                           # 内容制备/测试数据生成工具
-└─ data/                            # 测试素材
+│  └─ integration/
+├─ ip/
+├─ tools/
+└─ data/                                   # 默认不入仓库
 ```
 
-## 当前 P1 工程边界
+## Active TD build
 
-| 工程 | TOP | 用途 | 板级状态 |
-|---|---|---|---|
-| `FPGA_Competition_HDMI.al` | `p1_apug011_td_top` | 已收口 APUG011/内部 SDRAM backend，150MHz timing closed | `[S]`，不是完整 HDMI board build |
-| `FPGA_Competition_HDMI_P1-03B.al` | `p1_apug092_td_top` | APUG092 + EG PHY 的 injected-clock integration | candidate；无 ADC |
-| `FPGA_Competition_HDMI_P1-04A.al` | `p1_hx4s20c_hdmi_smoke_top` | 50MHz -> 75/375MHz -> 720p experimental color bars | SynOpt PASS but STA FAIL；无 ADC，禁止烧板 |
-| `FPGA_Competition_HDMI_P1-04B.al` | `p1_hx4s20c_hdmi_board_top` | working official 50->25/125MHz + 640x480 bars + APUG092/EG PHY + HDMI_B real pins | board-safe candidate；待 TD P&R/BitGen/真板 |
+```text
+TOP = p1_hx4s20c_sdram_hdmi_top
+```
 
-P1-04B 已导入用户实测通过的 official `lab_ex4_tf` 50MHz/HDMI/DDC ADC 映射，并刻意不使用 KEY1/KEY2。640x480 与官方样例相同，是首次安全点亮基线；720p 后续单独做 timing closure。
+```text
+50 MHz
+├─ HDMI PLL -> 25 / 125 MHz
+│   └─ P1-04C APUG092 / HDMI_B golden boundary
+│
+└─ 25 MHz -> APUG011 PLL -> 150 / shifted SDRAM clocks
+    ├─ p1_framebuffer_pattern_writer
+    ├─ sdram_arbiter
+    ├─ p1_sdram_cached_adapter
+    ├─ official APUG011
+    └─ EG_PHY_SDRAM_2M_32
+           ↓
+       ordered read CDC
+           ↓ 25 MHz
+       line_prefetcher
+           ↓
+       line_buffer_pingpong
+           ↓
+       hdmi_framebuffer_scanout
+```
 
-## 目录职责速查
+APUG092 的 `axis_user/axis_valid/axis_last` 仍来自 P1-04C free-running source；P1-05A 仅在安全 frame boundary 将 `axis_data` 切换为 SDRAM RGB。
 
-| 目录 | 内容 | 关键规则 |
+## 当前约束
+
+`constraints/p1_hx4s20c_hdmi_board.sdc`：
+
+- 50 MHz root clock；
+- `derive_pll_clocks`；
+- 25 MHz pixel 与 150 MHz SDRAM 明确声明为异步 clock groups，仅通过既有 CDC FIFO/synchronizer 通信。
+
+最终 combined STA：0 setup / 0 hold，WNS `+0.068 ns`，WHS `+0.131 ns`。该裕量较薄，任何 active RTL/SDC 修改后必须重新实现和 STA。
+
+## Board pin
+
+| Logical port | Pin | Standard |
 |---|---|---|
-| `src/` | 可综合 RTL | project-owned 逻辑与 vendor 源边界分离；官方 protected/source 不重构 |
-| `src/vendor/anlogic/` | 安路官方 reference/protected 源 | 只读；通过 wrapper 对接 |
-| `sim_tb/` | TB + `.do` | 自动自检；P1-03 project-owned HDMI TB 已获得 PASS 证据 |
-| `sim_work/` | 仿真运行产物 | 不作为源代码 |
-| `constraints/` | 时钟和 package pin 约束 | 真板 ADC 必须来自 HX4S20C 官方工程/原理图，不使用占位 pin |
-| `ip/` | `.ipc` 再生成输入 | P1-04A 75/375 IPC 保留为实验资料；P1-04B 以 working official video_pll 参数为源 |
-| `docs/develop_records/` | 每阶段设计与验证记录 | 记录假设、证据和未验证边界 |
-| `docs/evidence/` | 已获得的工具/真板结果 | 只保存确实执行过的证据，不用代码存在替代 PASS |
+| `clk` | R7 | LVCMOS33 |
+| `HDMI_D0_P` | G5 | LVDS33 |
+| `HDMI_D1_P` | F1 | LVDS33 |
+| `HDMI_D2_P` | E1 | LVDS33 |
+| `HDMI_CLK_P` | C3 | LVDS33 |
+| `HDMI_DDC_SCL` | P2 | LVCMOS33 |
+| `HDMI_DDC_SDA` | R2 | LVCMOS33 |
 
-> Questa 统一从 `sim_work` 调用 `sim_tb/**/run_*.do`。P1-04A 不再作为烧板候选。当前首次可进入完整 SynOpt/PhyOpt/BitGen 验证的是 P1-04B；只有 timing 全闭合后才允许下载。
+P1-05A 没有增加 external board pin。
+
+## 文档组织规则
+
+主要当前文档固定为根 `README.md`、`STRUCTURE.md` 与 `docs/01~04`。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。

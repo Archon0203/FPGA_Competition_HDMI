@@ -1,628 +1,707 @@
 eagle_s20
-13 2531 2299 2183 4014 53054 0 0
-1.090 0.081 p1_hx4s20c_hdmi_board_top eagle_s20 EG4S20BG256 Detail NA 9 3
+13 2817 2191 1033 16130 590644 0 0
+0.068 0.131 p1_hx4s20c_sdram_hdmi_top eagle_s20 EG4S20BG256 Detail NA 10 6
 clock: hx4s20c_clk50m
-13 858 70 2
+13 1782 136 2
 Setup check
 23 3
-Endpoint: rst_all_reg_syn_23
-23 15.252000 14 3
-Timing path: reg1_syn_76.clk->rst_all_reg_syn_23
-reg1_syn_76.clk
-rst_all_reg_syn_23
-25 15.252000 23.542000 8.290000 3 9
-rst_cnt[7] lt0_syn_70.a[0]
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+23 13.230000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+25 13.230000 23.470000 10.240000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
 lt0_syn_10 lt0_syn_73.fci
 lt0_syn_14 lt0_syn_76.fci
 lt0_syn_18 lt0_syn_79.fci
 lt0_syn_22 lt0_syn_82.fci
 lt0_syn_26 lt0_syn_85.fci
 lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_23.mi[0]
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
-Timing path: reg1_syn_67.clk->rst_all_reg_syn_23
-reg1_syn_67.clk
-rst_all_reg_syn_23
-79 15.274000 23.542000 8.268000 3 5
-rst_cnt[15] lt0_syn_82.a[0]
-lt0_syn_26 lt0_syn_85.fci
-lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_23.mi[0]
-
-Timing path: reg1_syn_73.clk->rst_all_reg_syn_23
-reg1_syn_73.clk
-rst_all_reg_syn_23
-125 15.328000 23.542000 8.214000 3 8
-rst_cnt[9] lt0_syn_73.a[0]
-lt0_syn_14 lt0_syn_76.fci
-lt0_syn_18 lt0_syn_79.fci
-lt0_syn_22 lt0_syn_82.fci
-lt0_syn_26 lt0_syn_85.fci
-lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_23.mi[0]
-
-
-Endpoint: rst_all_reg_syn_21
-177 15.406000 14 3
-Timing path: reg1_syn_76.clk->rst_all_reg_syn_21
-reg1_syn_76.clk
-rst_all_reg_syn_21
-179 15.406000 23.542000 8.136000 3 9
-rst_cnt[7] lt0_syn_70.a[0]
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+79 13.456000 23.470000 10.014000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
 lt0_syn_10 lt0_syn_73.fci
 lt0_syn_14 lt0_syn_76.fci
 lt0_syn_18 lt0_syn_79.fci
 lt0_syn_22 lt0_syn_82.fci
 lt0_syn_26 lt0_syn_85.fci
 lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_21.mi[0]
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
-Timing path: reg1_syn_67.clk->rst_all_reg_syn_21
-reg1_syn_67.clk
-rst_all_reg_syn_21
-233 15.428000 23.542000 8.114000 3 5
-rst_cnt[15] lt0_syn_82.a[0]
-lt0_syn_26 lt0_syn_85.fci
-lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_21.mi[0]
-
-Timing path: reg1_syn_73.clk->rst_all_reg_syn_21
-reg1_syn_73.clk
-rst_all_reg_syn_21
-279 15.482000 23.542000 8.060000 3 8
-rst_cnt[9] lt0_syn_73.a[0]
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+133 13.579000 23.470000 9.891000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
 lt0_syn_14 lt0_syn_76.fci
 lt0_syn_18 lt0_syn_79.fci
 lt0_syn_22 lt0_syn_82.fci
 lt0_syn_26 lt0_syn_85.fci
 lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_21.mi[0]
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
 
-Endpoint: rst_all_reg_syn_19
-331 15.505000 14 3
-Timing path: reg1_syn_76.clk->rst_all_reg_syn_19
-reg1_syn_76.clk
-rst_all_reg_syn_19
-333 15.505000 23.542000 8.037000 3 9
-rst_cnt[7] lt0_syn_70.a[0]
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+185 13.238000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+187 13.238000 23.470000 10.232000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
 lt0_syn_10 lt0_syn_73.fci
 lt0_syn_14 lt0_syn_76.fci
 lt0_syn_18 lt0_syn_79.fci
 lt0_syn_22 lt0_syn_82.fci
 lt0_syn_26 lt0_syn_85.fci
 lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_19.mi[0]
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
 
-Timing path: reg1_syn_67.clk->rst_all_reg_syn_19
-reg1_syn_67.clk
-rst_all_reg_syn_19
-387 15.527000 23.542000 8.015000 3 5
-rst_cnt[15] lt0_syn_82.a[0]
-lt0_syn_26 lt0_syn_85.fci
-lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_19.mi[0]
-
-Timing path: reg1_syn_73.clk->rst_all_reg_syn_19
-reg1_syn_73.clk
-rst_all_reg_syn_19
-433 15.581000 23.542000 7.961000 3 8
-rst_cnt[9] lt0_syn_73.a[0]
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+241 13.464000 23.470000 10.006000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
+lt0_syn_10 lt0_syn_73.fci
 lt0_syn_14 lt0_syn_76.fci
 lt0_syn_18 lt0_syn_79.fci
 lt0_syn_22 lt0_syn_82.fci
 lt0_syn_26 lt0_syn_85.fci
 lt0_syn_30 lt0_syn_88.fci
-rst_all_n1 rst_all_reg_syn_15.d[0]
-rst_all_reg_syn_3 rst_all_reg_syn_19.mi[0]
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
+
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+295 13.587000 23.470000 9.883000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+347 13.678000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+349 13.678000 23.470000 9.792000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
+
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+403 13.904000 23.470000 9.566000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
+
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+457 14.027000 23.470000 9.443000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
 
 
 
 Hold check
-485 3
-Endpoint: reg1_syn_85
-487 1.080000 3 3
-Timing path: reg1_syn_85.clk->reg1_syn_85
-reg1_syn_85.clk
-reg1_syn_85
-489 1.080000 3.001000 4.081000 1 2
-rst_cnt[1] add1_syn_122.a[1]
-rst_cnt_b2[1] reg1_syn_85.mi[1]
+509 3
+Endpoint: reg1_syn_72
+511 1.065000 5 3
+Timing path: reg1_syn_75.clk->reg1_syn_72
+reg1_syn_75.clk
+reg1_syn_72
+513 1.065000 3.016000 4.081000 1 2
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
 
-Timing path: reg1_syn_85.clk->reg1_syn_85
-reg1_syn_85.clk
-reg1_syn_85
-529 1.271000 3.001000 4.272000 1 2
-rst_cnt[2] add1_syn_122.b[1]
-rst_cnt_b2[1] reg1_syn_85.mi[1]
+Timing path: reg1_syn_72.clk->reg1_syn_72
+reg1_syn_72.clk
+reg1_syn_72
+553 1.080000 3.016000 4.096000 1 2
+hdmi_rst_cnt[3] add0_syn_123.a[0]
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
 
-Timing path: reg1_syn_82.clk->reg1_syn_85
-reg1_syn_82.clk
-reg1_syn_85
-569 1.369000 3.001000 4.370000 1 2
-rst_cnt[0] add1_syn_122.b[0]
-rst_cnt_b2[1] reg1_syn_85.mi[1]
-
-
-Endpoint: reg1_syn_67
-609 1.089000 17 3
-Timing path: reg1_syn_67.clk->reg1_syn_67
-reg1_syn_67.clk
-reg1_syn_67
-611 1.089000 3.001000 4.090000 1 2
-rst_cnt[15] add1_syn_126.a[0]
-rst_cnt_b2[15] reg1_syn_67.mi[1]
-
-Timing path: reg1_syn_70.clk->reg1_syn_67
-reg1_syn_70.clk
-reg1_syn_67
-651 1.256000 3.001000 4.257000 1 2
-rst_cnt[16] add1_syn_126.b[0]
-rst_cnt_b2[15] reg1_syn_67.mi[1]
-
-Timing path: add1_syn_122.clk->reg1_syn_67
-add1_syn_122.clk
-reg1_syn_67
-691 1.304000 3.001000 4.305000 2 3
-rst_cnt[12] add1_syn_125.b[0]
-add1_syn_116 add1_syn_126.fci
-rst_cnt_b2[15] reg1_syn_67.mi[1]
+Timing path: reg1_syn_72.clk->reg1_syn_72
+reg1_syn_72.clk
+reg1_syn_72
+593 1.298000 3.016000 4.314000 2 3
+hdmi_rst_cnt[2] add0_syn_122.b[1]
+add0_syn_104 add0_syn_123.fci
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
 
 
-Endpoint: reg1_syn_73
-733 1.150000 11 3
-Timing path: reg1_syn_76.clk->reg1_syn_73
-reg1_syn_76.clk
-reg1_syn_73
-735 1.150000 3.046000 4.196000 1 2
-rst_cnt[10] add1_syn_124.b[1]
-rst_cnt_b2[9] reg1_syn_73.mi[1]
+Endpoint: reg1_syn_93
+635 1.089000 9 3
+Timing path: reg1_syn_93.clk->reg1_syn_93
+reg1_syn_93.clk
+reg1_syn_93
+637 1.089000 3.001000 4.090000 1 2
+hdmi_rst_cnt[7] add0_syn_124.a[0]
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
 
-Timing path: reg1_syn_79.clk->reg1_syn_73
-reg1_syn_79.clk
-reg1_syn_73
-775 1.377000 3.046000 4.423000 1 2
-rst_cnt[8] add1_syn_124.b[0]
-rst_cnt_b2[9] reg1_syn_73.mi[1]
+Timing path: reg1_syn_96.clk->reg1_syn_93
+reg1_syn_96.clk
+reg1_syn_93
+677 1.157000 3.001000 4.158000 1 2
+hdmi_rst_cnt[8] add0_syn_124.b[0]
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
 
-Timing path: reg1_syn_76.clk->reg1_syn_73
-reg1_syn_76.clk
-reg1_syn_73
-815 1.445000 3.046000 4.491000 1 2
-rst_cnt[7] add1_syn_124.a[0]
-rst_cnt_b2[9] reg1_syn_73.mi[1]
+Timing path: reg1_syn_75.clk->reg1_syn_93
+reg1_syn_75.clk
+reg1_syn_93
+717 1.320000 3.001000 4.321000 2 3
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+add0_syn_108 add0_syn_124.fci
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
+
+
+Endpoint: reg1_syn_75
+759 1.199000 5 3
+Timing path: reg1_syn_75.clk->reg1_syn_75
+reg1_syn_75.clk
+reg1_syn_75
+761 1.199000 3.001000 4.200000 1 2
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_75
+reg1_syn_72.clk
+reg1_syn_75
+801 1.233000 3.001000 4.234000 1 2
+hdmi_rst_cnt[3] add0_syn_123.a[0]
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_75
+reg1_syn_72.clk
+reg1_syn_75
+841 1.439000 3.001000 4.440000 2 3
+hdmi_rst_cnt[2] add0_syn_122.b[1]
+add0_syn_104 add0_syn_123.fci
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
 
 
 
 
 clock: u_hdmi_pll/u_pll.clkc[0]
-855 51930 3800 4
+883 556254 14582 4
 Setup check
-865 3
-Endpoint: HDMI_DDC_SDA_syn_2
-865 29.160000 222 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk->HDMI_DDC_SDA_syn_2
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk
-HDMI_DDC_SDA_syn_2
-867 29.160000 41.825000 12.665000 9 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_54.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_38.b[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_56.b[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_scl_clk_trig_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_50.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_i4_syn_3 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_40.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_8 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg18_syn_56.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_13 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_43.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_15 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg19_syn_52.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_17 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_reg_syn_5.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n HDMI_DDC_SDA_syn_2.ts
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk->HDMI_DDC_SDA_syn_2
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk
-HDMI_DDC_SDA_syn_2
-923 29.160000 41.825000 12.665000 9 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_54.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_38.b[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_56.b[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_scl_clk_trig_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_50.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_i4_syn_3 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_40.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_8 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg18_syn_56.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_13 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_43.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_15 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg19_syn_52.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_17 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_reg_syn_5.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n HDMI_DDC_SDA_syn_2.ts
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk->HDMI_DDC_SDA_syn_2
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_0_bit_tx_en_reg_syn_8.clk
-HDMI_DDC_SDA_syn_2
-979 29.198000 41.825000 12.627000 9 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_data_1_bit_tx_en u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_54.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_38.b[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_56.b[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/S_scl_clk_trig_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_bit_tx_ready_n_syn_50.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_i4_syn_3 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_40.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_8 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg18_syn_56.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_13 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_43.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_15 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg19_syn_52.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n_syn_17 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_scl_reg_syn_5.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_bit_transmitter/O_iic_sda_n HDMI_DDC_SDA_syn_2.ts
+893 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+893 12.985000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+895 12.985000 21.936000 8.951000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_559.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_166 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436.e[0]
 
 
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-1035 29.261000 1336 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-1037 29.261000 42.096000 12.835000 10 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/S_tx_data_cnt[4] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_69.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/O_iic_tx_data_b1_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_866.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_20 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[0] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_216.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_62 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_219.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_78 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_228.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_92 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_232.c[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_94 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201.a[0]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.clkb->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.clkb
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-1093 29.309000 42.096000 12.787000 8 8
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_data[9] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_872.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_48 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_185.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_50 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_189.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[2] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_199.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_60 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_187.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_64 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_228.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_90 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_232.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_94 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201.a[0]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201
-1145 29.428000 42.096000 12.668000 10 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/S_tx_data_cnt[4] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_69.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/O_iic_tx_data_b1_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_866.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_20 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[0] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_222.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_56 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_203.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_80 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201.b[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_96 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_210.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_98 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_201.b[0]
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+939 12.988000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+941 12.988000 21.936000 8.948000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_557.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_170 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660.e[0]
 
 
-Endpoint: pixel_clk_syn_1593
-1201 29.452000 218 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk->pixel_clk_syn_1593
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.clk
-pixel_clk_syn_1593
-1203 29.452000 42.096000 12.644000 10 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/S_tx_data_cnt[4] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_69.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/O_iic_tx_data_b1_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_866.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_20 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[0] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_222.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_56 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.c[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_869.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_881.a[0]
-pixel_clk_syn_1091 pixel_clk_syn_1593.a[1]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.clk->pixel_clk_syn_1593
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.clk
-pixel_clk_syn_1593
-1259 29.741000 42.096000 12.355000 10 10
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/S_tx_data_cnt[2] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_69.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_63.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_4 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/reg2_syn_60.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_hdmi_edid_read_controller/O_iic_tx_data_b1_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_866.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_20 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[0] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_222.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_56 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.c[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_869.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_881.a[0]
-pixel_clk_syn_1091 pixel_clk_syn_1593.a[1]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.clkb->pixel_clk_syn_1593
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.clkb
-pixel_clk_syn_1593
-1315 29.749000 42.096000 12.347000 8 8
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_data[9] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_872.c[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_48 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_185.a[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_50 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_189.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_next_state[2] u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_193.d[1]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/O_bit_tx_data_type_b[0]_syn_58 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/reg1_syn_29.d[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_869.a[0]
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/S_fifo_rd_en_n_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_881.a[0]
-pixel_clk_syn_1091 pixel_clk_syn_1593.a[1]
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+985 12.990000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+987 12.990000 21.936000 8.946000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_557.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_170 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632.e[0]
 
 
 
 Hold check
-1367 3
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-1369 0.097000 11 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_899.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_899.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-1371 0.097000 2.183000 2.280000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_8 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.addra[8]
+1031 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1033 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[11]_syn_298.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[11]_syn_298.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1035 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[1]_dup_10 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[0]
 
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_896.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_896.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-1409 0.203000 2.183000 2.386000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_9 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.addra[9]
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1073 1.837000 2.066000 3.903000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_71.d[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[17] u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[1]
 
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_899.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_899.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477
-1447 0.219000 2.183000 2.402000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_477.addra[2]
-
-
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-1485 0.137000 11 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_952.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_952.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-1487 0.137000 2.183000 2.320000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_24 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637.addrb[4]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_955.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_955.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-1525 0.143000 2.183000 2.326000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_29 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637.addrb[9]
-
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_952.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_952.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637
-1563 0.254000 2.183000 2.437000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_28 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_637.addrb[8]
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1113 1.849000 2.066000 3.915000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_71.b[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[17] u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[1]
 
 
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-1601 0.140000 11 3
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_932.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_932.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-1603 0.140000 2.246000 2.386000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_2 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513.addra[4]
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1153 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_358.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_358.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1155 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[2]_dup_16 u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[0]
 
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_935.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_935.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-1641 0.149000 2.246000 2.395000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_3 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513.addra[5]
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1193 2.534000 2.066000 4.600000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_86.d[0]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[22] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[1]
 
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_938.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_938.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513
-1679 0.178000 2.246000 2.424000 1 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_7 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_513.addra[9]
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1233 2.585000 2.066000 4.651000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_86.b[0]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[22] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[1]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1273 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[18]_syn_300.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[18]_syn_300.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1275 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[1]_dup_19 u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[0]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1313 2.059000 2.066000 4.125000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_29.b[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[5] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1353 2.067000 2.066000 4.133000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_29.d[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[5] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[1]
 
 
 
 Recovery check
-1717 3
-Endpoint: u_video_source/add0_syn_74
-1719 16.320000 1 1
-Timing path: rst_all_reg_syn_15.clk->u_video_source/add0_syn_74
-rst_all_reg_syn_15.clk
-u_video_source/add0_syn_74
-1721 16.320000 21.745000 5.425000 0 1
-rst_all u_video_source/add0_syn_74.sr
+1393 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+1395 15.628000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+1397 15.628000 21.745000 6.117000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224.sr
 
 
-Endpoint: u_video_source/axis_data_b[16]_syn_7
-1759 16.364000 1 1
-Timing path: rst_all_reg_syn_15.clk->u_video_source/axis_data_b[16]_syn_7
-rst_all_reg_syn_15.clk
-u_video_source/axis_data_b[16]_syn_7
-1761 16.364000 21.745000 5.381000 0 1
-rst_all u_video_source/axis_data_b[16]_syn_7.sr
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+1435 15.706000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+1437 15.706000 21.745000 6.039000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196.sr
 
 
-Endpoint: u_video_source/axis_valid_reg_syn_8
-1799 16.365000 1 1
-Timing path: rst_all_reg_syn_15.clk->u_video_source/axis_valid_reg_syn_8
-rst_all_reg_syn_15.clk
-u_video_source/axis_valid_reg_syn_8
-1801 16.365000 21.745000 5.380000 0 1
-rst_all u_video_source/axis_valid_reg_syn_8.sr
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+1475 15.887000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+1477 15.887000 21.745000 5.858000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205.sr
 
 
 
 Removal check
-1839 3
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_67
-1841 0.138000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_33.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_67
-u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_33.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_67
-1843 0.138000 2.236000 2.374000 0 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_24 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_67.sr
+1515 3
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+1517 0.227000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+1519 0.227000 2.236000 2.463000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_28 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233.sr
 
 
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg20_syn_67
-1881 0.138000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_33.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg20_syn_67
-u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_33.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg20_syn_67
-1883 0.138000 2.236000 2.374000 0 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_24 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg20_syn_67.sr
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+1557 0.243000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_53.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_53.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+1559 0.243000 2.220000 2.463000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_27 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195.sr
 
 
-Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_210
-1921 0.194000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_56.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_210
-u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_56.clk
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_210
-1923 0.194000 2.299000 2.493000 0 1
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_31 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_210.sr
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+1597 0.267000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+1599 0.267000 2.236000 2.503000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_28 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39.sr
 
 
 
 
 clock: u_hdmi_pll/u_pll.clkc[1]
-1961 266 144 4
+1637 264 142 4
 Setup check
-1971 3
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-1971 6.122000 2 2
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-1973 6.122000 10.230000 4.108000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70.b[0]
+1647 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1647 6.272000 2 2
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1649 6.272000 10.230000 3.958000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.b[0]
 
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_67.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-2007 6.643000 10.230000 3.587000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_shift_data[4] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70.c[0]
-
-
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-2041 6.122000 2 2
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-2043 6.122000 10.230000 4.108000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70.b[1]
-
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_67.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70
-2077 6.624000 10.230000 3.606000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_shift_data[5] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_70.c[1]
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1683 7.078000 10.230000 3.152000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/S_shift_data[4] u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.c[0]
 
 
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28
-2111 6.133000 2 2
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk->u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d_reg_syn_4.clk
-u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28
-2113 6.133000 10.230000 4.097000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28.d[0]
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1717 6.272000 2 2
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1719 6.272000 10.230000 3.958000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.b[1]
 
-Timing path: u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_26.clk->u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28
-u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_26.clk
-u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28
-2147 6.729000 10.230000 3.501000 1 1
-u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/S_shift_data[7] u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_28.c[0]
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1753 6.778000 10.230000 3.452000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/S_shift_data[5] u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.c[1]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+1787 6.313000 1 1
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+1789 6.313000 10.230000 3.917000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68.c[1]
 
 
 
 Hold check
-2181 3
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-2183 0.081000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_64.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u1_hdmi_tmds_encode/reg0_syn_64.clk
-u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-2185 0.081000 2.484000 2.565000 1 1
-u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_1[2] u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70.d[1]
-
-
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_64
-2221 0.081000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_64.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_64
-u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_64.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_64
-2223 0.081000 2.484000 2.565000 1 1
-u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[7] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_64.d[0]
-
-
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
-2259 0.188000 1 1
-Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_76.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
+1823 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
+1825 0.188000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_76.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_76.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
-2261 0.188000 2.291000 2.479000 1 1
-u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[0] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76.d[1]
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
+1827 0.188000 2.291000 2.479000 1 1
+u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[8] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.d[1]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+1863 0.197000 1 1
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even_reg_syn_8.clk->u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even_reg_syn_8.clk
+u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+1865 0.197000 2.291000 2.488000 0 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9.mi[0]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+1901 0.197000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_69.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_69.clk
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+1903 0.197000 2.291000 2.488000 1 1
+u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[6] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.d[1]
 
 
 
 Recovery check
-2297 3
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_73
-2299 1.090000 1 1
-Timing path: rst_all_reg_syn_19.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_73
-rst_all_reg_syn_19.clk
-u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_73
-2301 1.090000 5.866000 4.776000 0 1
-rst_all_dup_6 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_73.sr
+1939 3
+Endpoint: HDMI_D1_P_syn_2
+1941 0.823000 1 1
+Timing path: hdmi_rst_reg_syn_65.clk->HDMI_D1_P_syn_2
+hdmi_rst_reg_syn_65.clk
+HDMI_D1_P_syn_2
+1943 0.823000 5.881000 5.058000 0 1
+hdmi_rst_dup_15 HDMI_D1_P_syn_2.rst
 
 
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_67
-2337 1.090000 1 1
-Timing path: rst_all_reg_syn_19.clk->u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_67
-rst_all_reg_syn_19.clk
-u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_67
-2339 1.090000 5.866000 4.776000 0 1
-rst_all_dup_6 u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_67.sr
+Endpoint: HDMI_D2_P_syn_2
+1979 0.980000 1 1
+Timing path: hdmi_rst_reg_syn_69.clk->HDMI_D2_P_syn_2
+hdmi_rst_reg_syn_69.clk
+HDMI_D2_P_syn_2
+1981 0.980000 5.881000 4.901000 0 1
+hdmi_rst_dup_14 HDMI_D2_P_syn_2.rst
 
 
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-2375 1.115000 1 1
-Timing path: rst_all_reg_syn_19.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-rst_all_reg_syn_19.clk
-u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70
-2377 1.115000 5.866000 4.751000 0 1
-rst_all_dup_6 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_70.sr
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+2017 1.076000 1 1
+Timing path: hdmi_rst_reg_syn_69.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+hdmi_rst_reg_syn_69.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+2019 1.076000 5.866000 4.790000 0 1
+hdmi_rst_dup_14 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75.sr
 
 
 
 Removal check
-2413 3
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_76
-2415 0.982000 1 1
-Timing path: rst_all_reg_syn_21.clk->u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_76
-rst_all_reg_syn_21.clk
-u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_76
-2417 0.982000 2.483000 3.465000 0 1
-rst_all_dup_5 u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg1_syn_76.sr
+2055 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+2057 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_71.clk->u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+hdmi_rst_reg_syn_71.clk
+u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+2059 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_13 u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27.sr
 
 
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_30
-2453 0.983000 1 1
-Timing path: rst_all_reg_syn_21.clk->u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_30
-rst_all_reg_syn_21.clk
-u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_30
-2455 0.983000 2.483000 3.466000 0 1
-rst_all_dup_5 u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_30.sr
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+2095 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+hdmi_rst_reg_syn_67.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+2097 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_8 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.sr
 
 
-Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
-2491 0.983000 1 1
-Timing path: rst_all_reg_syn_21.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
-rst_all_reg_syn_21.clk
-u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76
-2493 0.983000 2.483000 3.466000 0 1
-rst_all_dup_5 u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_76.sr
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+2133 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+hdmi_rst_reg_syn_67.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+2135 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_8 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64.sr
 
 
 
+
+clock: u_sdram_pll/pll_inst.clkc[0]
+2173 0 0 0
+
+clock: u_sdram_pll/pll_inst.clkc[1]
+2181 32344 1270 2
+Setup check
+2191 3
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2191 0.068000 181 3
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2193 0.068000 8.896000 8.828000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2237 0.068000 8.896000 8.828000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[0]
+
+Timing path: u_sdram_adapter/reg6_syn_133.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_adapter/reg6_syn_133.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2281 0.301000 8.896000 8.595000 6 6
+u_sdram_adapter/cache_group_tag[16] u_sdram_adapter/reg6_syn_133.d[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[1]
+
+
+Endpoint: u_sdram_adapter/reg14_syn_116
+2325 0.086000 167 3
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk->u_sdram_adapter/reg14_syn_116
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk
+u_sdram_adapter/reg14_syn_116
+2327 0.086000 8.896000 8.810000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.d[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk->u_sdram_adapter/reg14_syn_116
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk
+u_sdram_adapter/reg14_syn_116
+2371 0.110000 8.896000 8.786000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.c[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_adapter/reg14_syn_116
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_adapter/reg14_syn_116
+2415 0.338000 8.896000 8.558000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.b[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+
+Endpoint: u_sdram_adapter/reg14_syn_113
+2459 0.086000 179 3
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk->u_sdram_adapter/reg14_syn_113
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk
+u_sdram_adapter/reg14_syn_113
+2461 0.086000 8.896000 8.810000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.d[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk->u_sdram_adapter/reg14_syn_113
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk
+u_sdram_adapter/reg14_syn_113
+2505 0.110000 8.896000 8.786000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.c[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_adapter/reg14_syn_113
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_adapter/reg14_syn_113
+2549 0.338000 8.896000 8.558000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.b[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+
+
+Hold check
+2593 3
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2595 0.176000 2 2
+Timing path: u_sdram_adapter/reg7_syn_177.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+u_sdram_adapter/reg7_syn_177.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2597 0.176000 2.187000 2.363000 1 1
+u_sdram_adapter/mem_rdata_reg[6] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31.c[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2631 0.456000 2.187000 2.643000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[2] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31.c[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2665 0.176000 2 2
+Timing path: u_sdram_adapter/reg7_syn_169.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+u_sdram_adapter/reg7_syn_169.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2667 0.176000 2.187000 2.363000 1 1
+u_sdram_adapter/mem_rdata_reg[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17.d[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2701 0.313000 2.187000 2.500000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17.d[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2735 0.183000 2 2
+Timing path: u_sdram_adapter/reg7_syn_189.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+u_sdram_adapter/reg7_syn_189.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2737 0.183000 2.171000 2.354000 1 1
+u_sdram_adapter/mem_rdata_reg[14] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59.c[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2771 0.556000 2.171000 2.727000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[2] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59.c[0]
+
+
+
+
+clock: u_sdram_pll/pll_inst.clkc[2]
+2807 0 0 0
 
 
 Timing group statistics: 
 	Clock constraints: 
 	  Clock Name                                  Min Period     Max Freq           Skew      Fanout            TNS
-	  u_hdmi_pll/u_pll.clkc[0] (25.0MHz)            23.680ns      42.230MHz        0.480ns       746        0.000ns
-	  u_hdmi_pll/u_pll.clkc[1] (125.0MHz)            6.910ns     144.718MHz        0.408ns        31        0.000ns
-	  hx4s20c_clk50m (50.0MHz)                       4.748ns     210.615MHz        0.066ns        15        0.000ns
+	  u_hdmi_pll/u_pll.clkc[0] (25.0MHz)            27.015ns      37.000MHz        0.326ns      2153        0.000ns
+	  u_sdram_pll/pll_inst.clkc[1] (150.0MHz)        6.598ns     151.561MHz        0.480ns       409        0.000ns
+	  hx4s20c_clk50m (50.0MHz)                       6.770ns     147.710MHz        0.138ns        49        0.000ns
+	  u_hdmi_pll/u_pll.clkc[1] (125.0MHz)            7.177ns     139.334MHz        0.408ns        28        0.000ns
 	Minimum input arrival time before clock: no constraint path
 	Maximum output required time after clock: no constraint path
 	Maximum combinational path delay: no constraint path
