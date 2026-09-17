@@ -26,7 +26,11 @@
 //     sdram_adapter used by P1-02 regressions.
 // ================================================================
 
-module p1_sdram_cached_adapter (
+module p1_sdram_cached_adapter #(
+    // Production P1-05A build disables diagnostic counters/checks from the
+    // 150 MHz timing cone. Unit/integration simulations keep the default 1.
+    parameter integer ENABLE_RUNTIME_DIAGNOSTICS = 1
+) (
     input  wire         clk,
     input  wire         rst_n,
 
@@ -253,48 +257,53 @@ module p1_sdram_cached_adapter (
             if (init_seen && !Sdr_init_done)
                 provider_fault <= 1'b1;
 
-            if (mem_rd_valid && mem_wr_valid)
-                contention_seen <= 1'b1;
-
-            if (rd_accept) begin
-                read_accept_count_debug <= read_accept_count_debug + 32'd1;
-                if (rd_accept_hit)
-                    read_cache_hit_count_debug <= read_cache_hit_count_debug + 32'd1;
-                else
-                    read_cache_miss_count_debug <= read_cache_miss_count_debug + 32'd1;
-            end
-
-            if (wr_accept)
-                write_accept_count_debug <= write_accept_count_debug + 32'd1;
-
-            if (issue_read_word)
-                app_read_word_count_debug <= app_read_word_count_debug + 32'd1;
-            if (issue_write_word)
-                app_write_word_count_debug <= app_write_word_count_debug + 32'd1;
-
-            if (App_rd_en && App_wr_en)
-                protocol_error <= 1'b1;
-
-            // A provider response is legal only while filling a read group.
+            // The provider response check is functional: an unsolicited or
+            // out-of-window provider response must still raise the sticky
+            // protocol error. The remaining counters/checks are diagnostics
+            // only and are excluded from the production 150 MHz timing cone.
             if (Sdr_rd_en && !read_response_legal)
                 protocol_error <= 1'b1;
 
-            // Track abstract accepted reads vs returned reads.  A cache hit
-            // schedules its response on the same edge as acceptance; a miss
-            // schedules its response when the fourth provider lane returns.
-            case ({rd_accept, (rd_accept_hit || final_group_response)})
-                2'b10: read_outstanding_debug <= read_outstanding_debug + 16'd1;
-                2'b01: begin
-                    if (read_outstanding_debug != 16'd0)
-                        read_outstanding_debug <= read_outstanding_debug - 16'd1;
-                end
-                default: read_outstanding_debug <= read_outstanding_debug;
-            endcase
+            if (ENABLE_RUNTIME_DIAGNOSTICS) begin
+                if (mem_rd_valid && mem_wr_valid)
+                    contention_seen <= 1'b1;
 
-            if ((rd_accept_hit || final_group_response) &&
-                (read_outstanding_debug == 16'd0) &&
-                !rd_accept)
-                protocol_error <= 1'b1;
+                if (rd_accept) begin
+                    read_accept_count_debug <= read_accept_count_debug + 32'd1;
+                    if (rd_accept_hit)
+                        read_cache_hit_count_debug <= read_cache_hit_count_debug + 32'd1;
+                    else
+                        read_cache_miss_count_debug <= read_cache_miss_count_debug + 32'd1;
+                end
+
+                if (wr_accept)
+                    write_accept_count_debug <= write_accept_count_debug + 32'd1;
+
+                if (issue_read_word)
+                    app_read_word_count_debug <= app_read_word_count_debug + 32'd1;
+                if (issue_write_word)
+                    app_write_word_count_debug <= app_write_word_count_debug + 32'd1;
+
+                // App_rd_en/App_wr_en are mutually exclusive by state. Keep
+                // this assertion in simulation/debug builds without allowing
+                // it to become a 150 MHz shared combinational cone.
+                if (App_rd_en && App_wr_en)
+                    protocol_error <= 1'b1;
+
+                case ({rd_accept, (rd_accept_hit || final_group_response)})
+                    2'b10: read_outstanding_debug <= read_outstanding_debug + 16'd1;
+                    2'b01: begin
+                        if (read_outstanding_debug != 16'd0)
+                            read_outstanding_debug <= read_outstanding_debug - 16'd1;
+                    end
+                    default: read_outstanding_debug <= read_outstanding_debug;
+                endcase
+
+                if ((rd_accept_hit || final_group_response) &&
+                    (read_outstanding_debug == 16'd0) &&
+                    !rd_accept)
+                    protocol_error <= 1'b1;
+            end
 
             // Cache-hit response: one cycle after abstract acceptance.
             if (rd_accept_hit) begin
@@ -352,7 +361,11 @@ module p1_sdram_cached_adapter (
 
                 ST_READ_FILL: begin
                     // Completion is handled by final_group_response above.
-                    if (read_issue_count > 3'd4 || read_resp_count > 3'd4)
+                    // The counters are structurally bounded by issue/read
+                    // qualification; keep the redundant assertion only in
+                    // diagnostic simulation builds.
+                    if (ENABLE_RUNTIME_DIAGNOSTICS &&
+                        (read_issue_count > 3'd4 || read_resp_count > 3'd4))
                         protocol_error <= 1'b1;
                 end
 

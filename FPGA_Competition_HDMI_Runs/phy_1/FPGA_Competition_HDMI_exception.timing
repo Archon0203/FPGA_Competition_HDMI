@@ -1,0 +1,46 @@
+Created by          : Tang Dynasty v6.2.168116
+                    : Copyright (c) 2012-2025 Anlogic Inc.
+Generated           : Thu Sep 17 19:42:04 2026
+
+Top Model           : p1_hx4s20c_sdram_hdmi_top
+Device              : EG4S20BG256
+Speed               : NA
+STA coverage        : 99.19%
+Constraint File     : D:/AnlogicProject/FPGA_Competition_HDMI/constraints/p1_hx4s20c_hdmi_board.sdc;
+Confidence          : Routed
+Check Corner        : Both (Slow and Fast)
+CRPR Enabled        : Yes
+Report Scheme       : 10 end point(s) per path group, 1 path(s) per end point
+
+
+Check Status
+-------------
+
+Corner   | Max      Min     
+------------------------------------
+Slow     | yes      yes     
+Fast     | yes      yes     
+
+MCP/SMD Summary
+--------------------
+
+		Max Check
+		--------------------
+		     Total    Dominated     Shadowed      Ignored   Constraint
+
+		Min Check
+		--------------------
+		     Total    Dominated     Shadowed      Ignored   Constraint
+
+Status of timing exceptions
+--------------------------------------------------
+
+MCP/SMD Details
+--------------------
+
+
+Details on timing exceptions
+--------------------------------------------------
+
+
+
