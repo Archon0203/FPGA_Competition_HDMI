@@ -1,0 +1,67 @@
+============================================================
+   Tang Dynasty, V6.2.168116
+   Copyright (c) 2012-2025 Anlogic Inc.
+   Executable = D:/Anlogic/TD_6.2.1_Engineer_6.2.168.116/bin/run.exe
+   Built at =   16:32:07 Jun 12 2025
+   Run by =     yyywx
+   Run Date =   Thu Sep 17 19:40:19 2026
+
+   Run on =     LAPTOP-5HMLASIN
+============================================================
+Copyright (c) 1998-2019 The OpenSSL Project.  All rights reserved.
+This product includes software developed by the OpenSSL Project
+for use in the OpenSSL Toolkit (http://www.openssl.org/)
+Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
+All rights reserved.
+This product includes cryptographic software written by Eric Young (eay@cryptsoft.com)
+HDL-5007 WARNING: concatenation with an unsized literal will be treated as 32 bits in ../../src/vendor/anlogic/apug011/enc_file/sdr_init_ref.enc.v(47)
+HDL-5007 WARNING: concatenation with an unsized literal will be treated as 32 bits in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(283)
+HDL-5007 WARNING: concatenation with an unsized literal will be treated as 32 bits in ../../src/vendor/anlogic/apug011/enc_file/sdr_init_ref.enc.v(47)
+HDL-5007 WARNING: concatenation with an unsized literal will be treated as 32 bits in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(283)
+HDL-5317 WARNING: input port '**' is not connected on this instance in ../../src/vendor/anlogic/apug011/enc_file/sdr_as_ram.enc.v(17)
+HDL-5007 WARNING: actual bit length ** differs from formal bit length *** for port '**' in ../../src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v(3307)
+HDL-5007 WARNING: actual bit length ** differs from formal bit length *** for port '**' in ../../src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v(3318)
+SYN-5013 WARNING: Undriven net: model "p1_hx4s20c_sdram_hdmi_top" / net "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_ba[1]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0)
+		the net's pin: pin "i1[1]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0)
+SYN-5013 WARNING: Undriven net: model "p1_hx4s20c_sdram_hdmi_top" / net "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_ba[0]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0)
+		the net's pin: pin "i1[0]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0)
+SYN-5025 WARNING: Using 0 for all undriven pins and nets
+USR-6136 CRITICAL-WARNING: 'derive_pll_clocks' is obsolete. Please use 'derive_clocks' instead, which handles more types of clock deriving resources. 
+Launching timing wizard will update this command automatically.
+SYN-6577 WARNING: The clock signal "u_apug011/u_sdr_as_ram/SDRAM_CLK" is added with the synthetic instruction (keep/mark_debug/dont_touch/max_fanout), which may create additional logic on this net
+SYN-6562 WARNING: The init value of "u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_transmitter_controller/u_iic_w11_d1024_fifo/u_logic_ramfifo_syn_327(../../src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v(0))" will be ignored since gate eram_init is set to off
+SYN-6562 WARNING: The init value of "u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/U_audio_sample_packet_2_channel/u_w96_d1024_fifo/u_logic_ramfifo_syn_497(../../src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v(0))" will be ignored since gate eram_init is set to off
+SYN-6562 WARNING: The init value of "u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_video_axi_stream_receiver/u_w24_d1024_fifo/u_logic_ramfifo_syn_353(../../src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v(0))" will be ignored since gate eram_init is set to off
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[0]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[1]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[2]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[3]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[4]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[5]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[6]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[7]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[8]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[9]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[10]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[11]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[12]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[13]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[14]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[15]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[16]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[17]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[18]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[19]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[20]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[21]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[22]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[23]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[24]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[25]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[26]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[27]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[28]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[29]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[30]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5011 WARNING: Undriven pin: model "p1_hx4s20c_sdram_hdmi_top" / inst "u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_rd_dout_reg[31]" in ../../src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v(0) / pin "clk"
+SYN-5025 WARNING: Using 0 for all undriven pins and nets

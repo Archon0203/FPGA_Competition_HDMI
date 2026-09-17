@@ -113,6 +113,28 @@ Hold TNS          0.000 ns
 
 **Timing caveat：整体 setup margin 仅 +0.068 ns。P1-05A 是“timing clean”，不是“timing 宽裕”。后续每次影响 active netlist 的修改必须重新 STA。**
 
+### 4.3A TD6.2.1 migration / timing optimization — OPEN
+
+官方要求已将工具链切换至 TD6.2.1。2026-09-17 对当前 P1-05A source baseline 做了 TD6.2.1 完整实现，旧网表 routed report 为：
+
+```text
+STA coverage 99.15%
+SWNS         -7.098 ns
+HWNS         +0.011 ns
+150 MHz SWNS -1.119 ns
+150 MHz HWNS +0.182 ns
+post-place LUT 7437 / 19600
+```
+
+其中 `-7.098 ns` 的 worst path 是 APUG011/internal SDRAM hard-I/O 的 `clk2 -> clk1` setup analysis；`150 MHz self-domain` 的软件时序负裕量主要落在 `p1_sdram_cached_adapter` 的 runtime diagnostic cone。硬件 routed timing 仍为正，但整体 margin 偏薄。
+
+当前 source tree 的优化 candidate：
+
+- production `p1_sdram_cached_adapter` 使用 `.ENABLE_RUNTIME_DIAGNOSTICS(0)`，将非数据通路的 debug counters / redundant assertions 从 150 MHz active cone 中剔除；默认参数仍为 `1`，因此现有 Questa 单测/集成 TB 不改变。
+- HDMI reset release 改在 50 MHz falling edge，避开 25 MHz pixel rising edge 附近的 removal 临界点；功能时序仍保持约 20 ms reset hold。
+
+**重新取得 `[S]` 的必要条件：** 使用 TD6.2.1 从 `read_design → synthesis → P&R → final STA` 完整重跑；确认 25/150/50/125 MHz 均无 setup/hold violation 后，才更新本节和最终 timing evidence。BitGen/真板重新验证后才能恢复当前工具链下的 `[B]` 结论。
+
 ### 4.4 Final post-Phy resource
 
 ```text

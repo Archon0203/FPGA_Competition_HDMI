@@ -2,7 +2,7 @@
 <Project Version="3" Minor="2" Path="D:/AnlogicProject/FPGA_Competition_HDMI">
     <Project_Created_Time></Project_Created_Time>
     <TD_Encoding>UTF-8</TD_Encoding>
-    <TD_Version>5.6.71036</TD_Version>
+    <TD_Version>6.2.168116</TD_Version>
     <UCode>00000000</UCode>
     <Name>FPGA_Competition_HDMI</Name>
     <HardWare>
@@ -249,10 +249,14 @@
         <Run Name="syn_1" Type="Synthesis" ConstraintSet="constraint_1" Description="" Active="true">
             <Strategy Name="Default_Synthesis_Strategy">
             </Strategy>
+            <UserParams>
+            </UserParams>
         </Run>
         <Run Name="phy_1" Type="PhysicalDesign" ConstraintSet="constraint_1" Description="" SynRun="syn_1" Active="true">
             <Strategy Name="Default_PhysicalDesign_Strategy">
             </Strategy>
+            <UserParams>
+            </UserParams>
         </Run>
     </Runs>
     <Project_Settings>

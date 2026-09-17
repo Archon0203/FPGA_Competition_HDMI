@@ -2,6 +2,8 @@
 
 当前 active baseline 为 **P1-05A internal SDRAM framebuffer → HDMI_B `[S][B] PASS / CLOSED`**。P1-04C 八色条 top 继续保留为 HDMI golden rollback。
 
+**当前工具链迁移：TD6.2.1。** P1-05A 的历史 closeout 证据来自 TD5.6.2；当前 source tree 已加入 TD6.2.1 timing-optimization candidate，等待重新 P&R/STA 后再更新 `[S]` 状态。
+
 根目录只使用一个 TD 工程：
 
 ```text
@@ -31,7 +33,7 @@ FPGA_Competition_HDMI/
 │  │  ├─ async_fifo.v
 │  │  ├─ sdram_arbiter.v
 │  │  ├─ sdram_adapter.v                   # P1-02 frozen random-word adapter
-│  │  ├─ p1_sdram_cached_adapter.v         # P1-05 sequential video adapter
+│  │  ├─ p1_sdram_cached_adapter.v         # P1-05 sequential adapter; production diagnostics compile-out
 │  │  ├─ line_prefetcher.v
 │  │  ├─ line_buffer_pingpong.v
 │  │  ├─ p1_framebuffer_pattern_writer.v

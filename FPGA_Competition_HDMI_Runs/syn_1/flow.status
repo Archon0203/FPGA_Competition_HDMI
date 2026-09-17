@@ -1,0 +1,23 @@
+Location         : D:\AnlogicProject\FPGA_Competition_HDMI\FPGA_Competition_HDMI_Runs\syn_1
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : p1_hx4s20c_sdram_hdmi_top
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : basic
+Setup            : WNS -5958ps  TNS  -468076ps  NUM_FEPS   286
+Hold             : WNS   556ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+--------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time  |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+--------------------------------------------------------------------------------------------------
+  optimize_gate  |    1     |   6s(60%)   |    6(60%)     |        275        |        275        
+  optimize_rtl   |    1     |   4s(40%)   |    4(40%)     |        187        |        205        
+  import_device  |    1     |   0s(0%)    |     0(0%)     |        83         |        83         
+    read_adc     |    1     |   0s(0%)    |     0(0%)     |        160        |        160        
+    read_sdc     |    1     |   0s(0%)    |     0(0%)     |        160        |        160        
+--------------------------------------------------------------------------------------------------
+      total      |    5     |     10s     |      10       |        275        |        275        
+--------------------------------------------------------------------------------------------------
