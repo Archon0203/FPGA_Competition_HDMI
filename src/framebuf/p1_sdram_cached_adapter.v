@@ -26,7 +26,11 @@
 //     sdram_adapter used by P1-02 regressions.
 // ================================================================
 
-module p1_sdram_cached_adapter (
+module p1_sdram_cached_adapter #(
+    // Production builds can remove diagnostic-only logic from the 150 MHz
+    // timing cone while simulation keeps the checks enabled by default.
+    parameter integer ENABLE_RUNTIME_DIAGNOSTICS = 1
+) (
     input  wire         clk,
     input  wire         rst_n,
 
@@ -264,26 +268,28 @@ module p1_sdram_cached_adapter (
             if (init_seen && !Sdr_init_done)
                 provider_fault <= 1'b1;
 
-            if (mem_rd_valid && mem_wr_valid)
-                contention_seen <= 1'b1;
-
-            if (rd_accept)
-                read_accept_count_debug <= read_accept_count_debug + 32'd1;
-
-            if (wr_accept)
-                write_accept_count_debug <= write_accept_count_debug + 32'd1;
-
-            if (issue_read_word)
-                app_read_word_count_debug <= app_read_word_count_debug + 32'd1;
-            if (issue_write_word)
-                app_write_word_count_debug <= app_write_word_count_debug + 32'd1;
-
-            if (App_rd_en && App_wr_en)
-                protocol_error <= 1'b1;
-
             // A provider response is legal only while filling a read group.
             if (Sdr_rd_en && !read_response_legal)
                 protocol_error <= 1'b1;
+
+            if (ENABLE_RUNTIME_DIAGNOSTICS) begin
+                if (mem_rd_valid && mem_wr_valid)
+                    contention_seen <= 1'b1;
+
+                if (rd_accept)
+                    read_accept_count_debug <= read_accept_count_debug + 32'd1;
+
+                if (wr_accept)
+                    write_accept_count_debug <= write_accept_count_debug + 32'd1;
+
+                if (issue_read_word)
+                    app_read_word_count_debug <= app_read_word_count_debug + 32'd1;
+                if (issue_write_word)
+                    app_write_word_count_debug <= app_write_word_count_debug + 32'd1;
+
+                if (App_rd_en && App_wr_en)
+                    protocol_error <= 1'b1;
+            end
 
             // Capture provider read data in order.
             if (read_response_legal) begin
@@ -333,16 +339,18 @@ module p1_sdram_cached_adapter (
 
                 ST_READ_DECIDE: begin
                     if (read_req_cache_hit) begin
-                        read_cache_hit_count_debug <=
-                            read_cache_hit_count_debug + 32'd1;
+                        if (ENABLE_RUNTIME_DIAGNOSTICS)
+                            read_cache_hit_count_debug <=
+                                read_cache_hit_count_debug + 32'd1;
                         // Complete the cache-hit response in a separate state.
                         // This places a register boundary after the 19-bit tag
                         // compare, keeping cache_group_tag out of the wide
                         // mem_rdata write-enable cone.
                         state          <= ST_READ_HIT;
                     end else if (provider_available) begin
-                        read_cache_miss_count_debug <=
-                            read_cache_miss_count_debug + 32'd1;
+                        if (ENABLE_RUNTIME_DIAGNOSTICS)
+                            read_cache_miss_count_debug <=
+                                read_cache_miss_count_debug + 32'd1;
                         miss_lane       <= read_req_addr[1:0];
                         read_group_base <= {read_req_addr[20:2], 2'b00};
                         cache_valid     <= 1'b0;
@@ -366,7 +374,8 @@ module p1_sdram_cached_adapter (
                  */
                 ST_READ_FILL: begin
                     // Completion is handled by final_group_response above.
-                    if (read_issue_count > 3'd4 || read_resp_count > 3'd4)
+                    if (ENABLE_RUNTIME_DIAGNOSTICS &&
+                        (read_issue_count > 3'd4 || read_resp_count > 3'd4))
                         protocol_error <= 1'b1;
                 end
 
