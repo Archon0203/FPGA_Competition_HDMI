@@ -63,7 +63,7 @@ module p1_sdram_cached_adapter (
     output reg          protocol_error,
     output reg          provider_fault,
     output reg          contention_seen,
-    output reg  [15:0]  read_outstanding_debug,
+    output wire [15:0]  read_outstanding_debug,
     output reg  [31:0]  read_accept_count_debug,
     output reg  [31:0]  write_accept_count_debug,
     output reg  [31:0]  app_read_word_count_debug,
@@ -72,11 +72,13 @@ module p1_sdram_cached_adapter (
     output reg  [31:0]  read_cache_miss_count_debug
 );
 
-    localparam [1:0] ST_IDLE      = 2'd0;
-    localparam [1:0] ST_READ_FILL = 2'd1;
-    localparam [1:0] ST_WRITE     = 2'd2;
+    localparam [2:0] ST_IDLE        = 3'd0;
+    localparam [2:0] ST_READ_DECIDE = 3'd1;
+    localparam [2:0] ST_READ_FILL   = 3'd2;
+    localparam [2:0] ST_WRITE       = 3'd3;
+    localparam [2:0] ST_READ_HIT    = 3'd4;
 
-    reg [1:0] state;
+    reg [2:0] state;
 
     // ------------------------------------------------------------
     // Provider availability / health.
@@ -100,12 +102,14 @@ module p1_sdram_cached_adapter (
     reg [31:0] cache_data2;
     reg [31:0] cache_data3;
 
-    wire [18:0] incoming_group_tag = mem_rd_addr[20:2];
-    wire        incoming_cache_hit = cache_valid &&
-                                     (incoming_group_tag == cache_group_tag);
+    // Register the abstract address before checking the cache or driving the
+    // APUG011 application port.  The async read FIFO's RAM output otherwise
+    // formed a single 150 MHz path through cache comparison and the controller
+    // request logic.  One outstanding abstract read preserves ordering.
+    reg [20:0] read_req_addr;
 
-    // One abstract read is active on a miss while the complete provider group
-    // is fetched.  Cache hits can be accepted every cycle once back in IDLE.
+    // One abstract read is active while a cache hit is returned or a complete
+    // provider group is fetched.
     reg [1:0]  miss_lane;
     reg [20:0] read_group_base;
     reg [2:0]  read_issue_count;
@@ -119,15 +123,22 @@ module p1_sdram_cached_adapter (
 
     wire can_accept_read = (state == ST_IDLE) &&
                            Sdr_init_done &&
-                           !provider_fault &&
-                           mem_rd_valid &&
-                           (incoming_cache_hit || provider_available);
+                           !provider_fault;
 
     assign mem_rd_ready = can_accept_read;
 
     wire rd_accept = mem_rd_valid && mem_rd_ready;
-    wire rd_accept_hit  = rd_accept && incoming_cache_hit;
-    wire rd_accept_miss = rd_accept && !incoming_cache_hit;
+
+    wire read_req_cache_hit = cache_valid &&
+                              (read_req_addr[20:2] == cache_group_tag);
+
+    // The request slice permits only one abstract read at a time.  Deriving
+    // this debug value from its two read states avoids a 16-bit diagnostic
+    // add/subtract cone feeding the 150 MHz controller error logic.
+    wire read_outstanding_active = (state == ST_READ_DECIDE) ||
+                                   (state == ST_READ_FILL) ||
+                                   (state == ST_READ_HIT);
+    assign read_outstanding_debug = {15'd0, read_outstanding_active};
 
     function [31:0] cache_lane_data;
         input [1:0] lane;
@@ -221,6 +232,7 @@ module p1_sdram_cached_adapter (
             cache_data2                 <= 32'd0;
             cache_data3                 <= 32'd0;
 
+            read_req_addr               <= 21'd0;
             miss_lane                   <= 2'd0;
             read_group_base             <= 21'd0;
             read_issue_count            <= 3'd0;
@@ -237,7 +249,6 @@ module p1_sdram_cached_adapter (
             protocol_error              <= 1'b0;
             provider_fault              <= 1'b0;
             contention_seen             <= 1'b0;
-            read_outstanding_debug      <= 16'd0;
             read_accept_count_debug     <= 32'd0;
             write_accept_count_debug    <= 32'd0;
             app_read_word_count_debug   <= 32'd0;
@@ -256,13 +267,8 @@ module p1_sdram_cached_adapter (
             if (mem_rd_valid && mem_wr_valid)
                 contention_seen <= 1'b1;
 
-            if (rd_accept) begin
+            if (rd_accept)
                 read_accept_count_debug <= read_accept_count_debug + 32'd1;
-                if (rd_accept_hit)
-                    read_cache_hit_count_debug <= read_cache_hit_count_debug + 32'd1;
-                else
-                    read_cache_miss_count_debug <= read_cache_miss_count_debug + 32'd1;
-            end
 
             if (wr_accept)
                 write_accept_count_debug <= write_accept_count_debug + 32'd1;
@@ -278,29 +284,6 @@ module p1_sdram_cached_adapter (
             // A provider response is legal only while filling a read group.
             if (Sdr_rd_en && !read_response_legal)
                 protocol_error <= 1'b1;
-
-            // Track abstract accepted reads vs returned reads.  A cache hit
-            // schedules its response on the same edge as acceptance; a miss
-            // schedules its response when the fourth provider lane returns.
-            case ({rd_accept, (rd_accept_hit || final_group_response)})
-                2'b10: read_outstanding_debug <= read_outstanding_debug + 16'd1;
-                2'b01: begin
-                    if (read_outstanding_debug != 16'd0)
-                        read_outstanding_debug <= read_outstanding_debug - 16'd1;
-                end
-                default: read_outstanding_debug <= read_outstanding_debug;
-            endcase
-
-            if ((rd_accept_hit || final_group_response) &&
-                (read_outstanding_debug == 16'd0) &&
-                !rd_accept)
-                protocol_error <= 1'b1;
-
-            // Cache-hit response: one cycle after abstract acceptance.
-            if (rd_accept_hit) begin
-                mem_rvalid_reg <= 1'b1;
-                mem_rdata_reg  <= cache_lane_data(mem_rd_addr[1:0]);
-            end
 
             // Capture provider read data in order.
             if (read_response_legal) begin
@@ -334,11 +317,9 @@ module p1_sdram_cached_adapter (
                     read_resp_count  <= 3'd0;
 
                     // Strict display-read priority, matching sdram_arbiter.
-                    if (rd_accept_miss) begin
-                        miss_lane       <= mem_rd_addr[1:0];
-                        read_group_base <= {mem_rd_addr[20:2], 2'b00};
-                        cache_valid     <= 1'b0;
-                        state           <= ST_READ_FILL;
+                    if (rd_accept) begin
+                        read_req_addr <= mem_rd_addr;
+                        state         <= ST_READ_DECIDE;
                     end else if (wr_accept) begin
                         // One-entry registered write request slice.
                         write_group_base  <= {mem_wr_addr[20:2], 2'b00};
@@ -350,6 +331,39 @@ module p1_sdram_cached_adapter (
                     end
                 end
 
+                ST_READ_DECIDE: begin
+                    if (read_req_cache_hit) begin
+                        read_cache_hit_count_debug <=
+                            read_cache_hit_count_debug + 32'd1;
+                        // Complete the cache-hit response in a separate state.
+                        // This places a register boundary after the 19-bit tag
+                        // compare, keeping cache_group_tag out of the wide
+                        // mem_rdata write-enable cone.
+                        state          <= ST_READ_HIT;
+                    end else if (provider_available) begin
+                        read_cache_miss_count_debug <=
+                            read_cache_miss_count_debug + 32'd1;
+                        miss_lane       <= read_req_addr[1:0];
+                        read_group_base <= {read_req_addr[20:2], 2'b00};
+                        cache_valid     <= 1'b0;
+                        state           <= ST_READ_FILL;
+                    end
+                end
+
+                ST_READ_HIT: begin
+                    // The tag comparison and this data mux are now separated
+                    // by the state register; response timing remains a single
+                    // pulse and ordering is unchanged.
+                    mem_rvalid_reg <= 1'b1;
+                    mem_rdata_reg  <= cache_lane_data(read_req_addr[1:0]);
+                    state          <= ST_IDLE;
+                end
+
+                /*
+                 * Keep the miss path in the following state.  This comment is
+                 * intentionally adjacent to ST_READ_HIT so the two mutually
+                 * exclusive response paths remain easy to audit.
+                 */
                 ST_READ_FILL: begin
                     // Completion is handled by final_group_response above.
                     if (read_issue_count > 3'd4 || read_resp_count > 3'd4)

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" RunTime="2026-09-12T16:05:25.608095">
+<Project Version="3" Minor="2" RunTime="2026-09-18T19:20:44">
     <Project_Created_Time></Project_Created_Time>
     <TD_Encoding>UTF-8</TD_Encoding>
-    <TD_Version>5.6.71036</TD_Version>
+    <TD_Version>6.2.168116</TD_Version>
     <UCode>00000000</UCode>
     <Name>FPGA_Competition_HDMI</Name>
     <HardWare>
