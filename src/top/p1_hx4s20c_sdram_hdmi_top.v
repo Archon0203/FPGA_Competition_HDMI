@@ -60,11 +60,11 @@ module p1_hx4s20c_sdram_hdmi_top (
 
     // ============================================================
     // P1-04C golden HDMI reset sequencing (~20 ms after PLL lock).
-    // Deassert on the falling edge of the 50 MHz source clock so reset release
-    // is deliberately away from the 25 MHz pixel rising edge. TD6.2.1 showed
-    // the pixel-domain removal check at only ~11 ps before this phase change.
-    // Reset assertion semantics are otherwise unchanged; only the release
-    // phase is moved.
+    // Release on the rising edge of the 50 MHz source clock.  This is the
+    // board-proven phase used by the HDMI reference design and leaves the
+    // required 4 ns recovery window before the 125 MHz serial clock.  Releasing
+    // on the falling edge creates a 2 ns recovery window and fails the serial
+    // PHY reset check in TD6.2.1.
     // ============================================================
     reg [19:0] hdmi_rst_cnt;
     reg        hdmi_rst;
@@ -74,7 +74,7 @@ module p1_hx4s20c_sdram_hdmi_top (
         hdmi_rst     = 1'b1;
     end
 
-    always @(negedge clk) begin
+    always @(posedge clk) begin
         if (!hdmi_pll_lock) begin
             hdmi_rst_cnt <= 20'd0;
             hdmi_rst     <= 1'b1;

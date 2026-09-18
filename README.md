@@ -22,7 +22,7 @@ SDC     : constraints/p1_hx4s20c_hdmi_board.sdc
 
 P1-04C 八色条仍保留为 HDMI golden rollback；P1-05A 则是当前 **framebuffer golden baseline**。
 
-> **TD6.2.1 migration note (2026-09-17):** 官方要求已切换到 TD6.2.1。TD6.2.1 的旧 source baseline 已完成一次完整 P&R，当前报告的 routed `HWNS=+0.011 ns`，但 `SWNS=-7.098 ns`；150 MHz 同域为 `SWNS=-1.119 ns / HWNS=+0.182 ns`。本包包含两项针对性 RTL 优化候选：生产版关闭 `p1_sdram_cached_adapter` 的运行时诊断计数/冗余断言，并将 HDMI reset 的释放相位从 50 MHz 上升沿移到下降沿，以避开 25 MHz pixel-domain removal 临界点。**这两项修改尚未在本环境重新运行 TD6.2.1 P&R/BitGen，因此不得把它们标成新的 `[S]` 或 `[B]` 证据；上一版 TD5.6.2 的 P1-05A closeout 证据仍然有效，但仅代表当时的工具链/网表。**
+> **TD6.2.1 migration note (2026-09-17):** 官方要求已切换到 TD6.2.1。旧 source baseline 的报告曾出现 routed `HWNS=+0.011 ns`、`SWNS=-7.098 ns`，150 MHz 同域 `SWNS=-1.119 ns / HWNS=+0.182 ns`。当前源代码保留 production 版诊断逻辑裁剪，并将 HDMI reset 释放恢复为官方例程使用的 50 MHz 上升沿；下降沿实验会使 125 MHz serial-domain recovery 变差。**这些修改仍需在本地 TD6.2.1 重新 P&R/BitGen 验证，不能把历史结果标成新的 `[S]` 或 `[B]` 证据。**
 
 ## P1-05A 证据摘要
 

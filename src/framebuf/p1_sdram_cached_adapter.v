@@ -111,6 +111,10 @@ module p1_sdram_cached_adapter #(
     // formed a single 150 MHz path through cache comparison and the controller
     // request logic.  One outstanding abstract read preserves ordering.
     reg [20:0] read_req_addr;
+    // Register the tag result with the request.  Keeping the 19-bit compare
+    // out of the following state transition removes the critical read-address
+    // to state-register path in the 150 MHz domain.
+    reg        read_req_cache_hit_reg;
 
     // One abstract read is active while a cache hit is returned or a complete
     // provider group is fetched.
@@ -132,9 +136,6 @@ module p1_sdram_cached_adapter #(
     assign mem_rd_ready = can_accept_read;
 
     wire rd_accept = mem_rd_valid && mem_rd_ready;
-
-    wire read_req_cache_hit = cache_valid &&
-                              (read_req_addr[20:2] == cache_group_tag);
 
     // The request slice permits only one abstract read at a time.  Deriving
     // this debug value from its two read states avoids a 16-bit diagnostic
@@ -164,15 +165,13 @@ module p1_sdram_cached_adapter #(
     assign App_rd_en   = issue_read_word;
     assign App_rd_addr = read_group_base + {{18{1'b0}}, read_issue_count};
 
-    // Accept a returned provider word only when it belongs to the current
-    // in-flight group.  Same-cycle issue+response is tolerated even though the
-    // official core has non-zero latency.
-    wire [3:0] issued_after_this_cycle =
-        {1'b0, read_issue_count} + (issue_read_word ? 4'd1 : 4'd0);
-
+    // Accept a returned provider word only after the corresponding application
+    // read has been issued.  APUG011 has registered read latency, so the
+    // response check intentionally uses the registered issue count.  This
+    // keeps Sdr_init_ref_vld/Sdr_busy out of every cache-data write enable.
     wire read_response_legal = (state == ST_READ_FILL) &&
                                Sdr_rd_en &&
-                               ({1'b0, read_resp_count} < issued_after_this_cycle) &&
+                               ({1'b0, read_resp_count} < {1'b0, read_issue_count}) &&
                                (read_resp_count < 3'd4);
 
     wire final_group_response = read_response_legal &&
@@ -237,6 +236,7 @@ module p1_sdram_cached_adapter #(
             cache_data3                 <= 32'd0;
 
             read_req_addr               <= 21'd0;
+            read_req_cache_hit_reg      <= 1'b0;
             miss_lane                   <= 2'd0;
             read_group_base             <= 21'd0;
             read_issue_count            <= 3'd0;
@@ -325,6 +325,8 @@ module p1_sdram_cached_adapter #(
                     // Strict display-read priority, matching sdram_arbiter.
                     if (rd_accept) begin
                         read_req_addr <= mem_rd_addr;
+                        read_req_cache_hit_reg <= cache_valid &&
+                                                  (mem_rd_addr[20:2] == cache_group_tag);
                         state         <= ST_READ_DECIDE;
                     end else if (wr_accept) begin
                         // One-entry registered write request slice.
@@ -338,7 +340,11 @@ module p1_sdram_cached_adapter #(
                 end
 
                 ST_READ_DECIDE: begin
-                    if (read_req_cache_hit) begin
+                    // The tag result was registered with the request in
+                    // ST_IDLE. Branching on that register removes the wide
+                    // address comparator from this state transition while
+                    // preserving the original one-cycle hit/miss latency.
+                    if (read_req_cache_hit_reg) begin
                         if (ENABLE_RUNTIME_DIAGNOSTICS)
                             read_cache_hit_count_debug <=
                                 read_cache_hit_count_debug + 32'd1;
