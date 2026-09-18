@@ -2,7 +2,7 @@
 
 > 2026 全国大学生嵌入式芯片与系统设计竞赛 · FPGA 创新设计赛道 · 安路选题一  
 > 平台：HX4S20C / EG4S20BG256  
-> 开发工具：Anlogic TD 5.6.2 / V5.6.71036；QuestaSim 10.7c
+> 开发工具：Anlogic TD 6.2.1；QuestaSim 10.7c
 
 ## 当前稳定基线
 
@@ -21,6 +21,8 @@ SDC     : constraints/p1_hx4s20c_hdmi_board.sdc
 当前真板稳定显示固定 SDRAM framebuffer：四周白边、红/绿/蓝/黄四象限、中央洋红竖条和青色横条。最终 BitGen 上板后画面持续稳定，无可见抖动、抽搐、撕裂或移动黑线。
 
 P1-04C 八色条仍保留为 HDMI golden rollback；P1-05A 则是当前 **framebuffer golden baseline**。
+
+> **TD6.2.1 migration note (2026-09-17):** 官方要求已切换到 TD6.2.1。TD6.2.1 的旧 source baseline 已完成一次完整 P&R，当前报告的 routed `HWNS=+0.011 ns`，但 `SWNS=-7.098 ns`；150 MHz 同域为 `SWNS=-1.119 ns / HWNS=+0.182 ns`。本包包含两项针对性 RTL 优化候选：生产版关闭 `p1_sdram_cached_adapter` 的运行时诊断计数/冗余断言，并将 HDMI reset 的释放相位从 50 MHz 上升沿移到下降沿，以避开 25 MHz pixel-domain removal 临界点。**这两项修改尚未在本环境重新运行 TD6.2.1 P&R/BitGen，因此不得把它们标成新的 `[S]` 或 `[B]` 证据；上一版 TD5.6.2 的 P1-05A closeout 证据仍然有效，但仅代表当时的工具链/网表。**
 
 ## P1-05A 证据摘要
 

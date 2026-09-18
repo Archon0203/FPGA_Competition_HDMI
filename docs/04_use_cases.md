@@ -40,6 +40,8 @@ P1-05A 已 `[S][B] PASS / CLOSED`。真板稳定显示：
 
 当前 TD5.6.2 已 0 setup / 0 hold，WNS `+0.068 ns`，因此可以正式作为稳定 baseline；但 150 MHz timing margin 较薄。答辩和开发记录应表述为“timing closed”，不要表述为“有较大频率余量”。
 
+**TD6.2.1 迁移说明：** 官方要求已切换到 TD6.2.1。当前 source tree 正在进行针对新工具链的 timing optimization；在重新取得 TD6.2.1 final STA 前，不将新的 source candidate 宣称为新的 timing-closed 证据。P1-05A 的功能演示仍以历史真板 framebuffer golden baseline 为依据。
+
 ## 4. 下一演示：P1-05B 真图片播放
 
 ```text

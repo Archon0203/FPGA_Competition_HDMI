@@ -67,6 +67,12 @@ BitGen       = PASS
 
 **Timing caution：150 MHz closure 只有约 68 ps setup margin。P1-05A 可以标 `[S]`，但后续不能把它当作宽裕的性能余量。任何影响 active design 的修改都需要重新 STA。**
 
+### TD6.2.1 migration status
+
+官方要求当前工具链切换为 TD6.2.1。旧 P1-05A `[S]` 证据仍然是 TD5.6.2 historical closeout；本轮已针对 TD6.2.1 的 routed timing report 加入 source-level optimization candidate，但尚未重新取得新的 `[S]`。
+
+优化重点保持在两处：production cached-adapter diagnostics compile-out，以及 HDMI reset release phase 调整。不得通过 false-path/clock-group 隐藏 150 MHz same-domain violation；重新跑 TD6.2.1 后，只有在 final STA clean 时才能更新 `[S]`。
+
 ### 3.4 资源 — ACCEPTED WITH FOLLOW-UP
 
 ```text

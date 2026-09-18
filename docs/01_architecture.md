@@ -145,6 +145,17 @@ TNS           0
 
 150 MHz domain：Min Period `6.598 ns`，Max Freq `151.561 MHz`。因此 P1-05A 已达到 `[S]`，但 68 ps 的整体 setup margin 很薄。**后续 P1-05B 每次影响 active design 的修改都必须重新 P&R + STA；不得把本次 closure 当作可继承裕量。**
 
+### 6.1 TD6.2.1 migration timing candidate
+
+官方要求将工具链切换到 TD6.2.1 后，旧 source baseline 的 routed report 出现工具模型与硬件路径裕量分离：overall `SWNS=-7.098 ns`、`HWNS=+0.011 ns`；150 MHz self-domain 为 `SWNS=-1.119 ns`、`HWNS=+0.182 ns`。当前不把 SWNS 负值通过 false-path/clock-group 掩盖；150 MHz same-domain path 仍按真实 synchronous path 分析。
+
+本轮 source-level 优化只做两项低风险修改：
+
+1. `p1_sdram_cached_adapter` 增加 `ENABLE_RUNTIME_DIAGNOSTICS` 参数。仿真默认 `1`，保留原有计数器/冗余协议断言；P1-05A board top 设置为 `0`，使这些非数据通路逻辑不进入生产 150 MHz timing cone。provider response legality check 仍保留。
+2. `p1_hx4s20c_sdram_hdmi_top` 将 HDMI reset 的**释放**从 50 MHz 上升沿改为下降沿。这样保持约 20 ms reset hold 的功能语义，同时将释放相位从 25 MHz pixel rising-edge 附近移开；TD6.2.1 旧网表中该 pixel-domain removal check 只有约 11 ps 硬件裕量。
+
+上述两项修改尚未取得新的 TD6.2.1 P&R、BitGen 或真板证据，因此状态仍为 candidate，不覆盖 P1-05A 历史 closeout。
+
 ## 7. 资源边界
 
 Post-Phy：LUT 9977/19600、REG 2825/19600、BRAM9K 10/64、BRAM32K 0/16、PLL 2/4。

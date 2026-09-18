@@ -59,7 +59,12 @@ module p1_hx4s20c_sdram_hdmi_top (
     );
 
     // ============================================================
-    // P1-04C golden HDMI reset sequencing (~20 ms after PLL lock)
+    // P1-04C golden HDMI reset sequencing (~20 ms after PLL lock).
+    // Deassert on the falling edge of the 50 MHz source clock so reset release
+    // is deliberately away from the 25 MHz pixel rising edge. TD6.2.1 showed
+    // the pixel-domain removal check at only ~11 ps before this phase change.
+    // Reset assertion semantics are otherwise unchanged; only the release
+    // phase is moved.
     // ============================================================
     reg [19:0] hdmi_rst_cnt;
     reg        hdmi_rst;
@@ -69,7 +74,7 @@ module p1_hx4s20c_sdram_hdmi_top (
         hdmi_rst     = 1'b1;
     end
 
-    always @(posedge clk) begin
+    always @(negedge clk) begin
         if (!hdmi_pll_lock) begin
             hdmi_rst_cnt <= 20'd0;
             hdmi_rst     <= 1'b1;
@@ -260,7 +265,12 @@ module p1_hx4s20c_sdram_hdmi_top (
     // P1-05A uses a sequential-read optimized adapter here.  The frozen
     // P1-02 sdram_adapter remains in the repository and keeps its regression
     // status; it is intentionally not modified for framebuffer bandwidth.
-    p1_sdram_cached_adapter u_sdram_adapter (
+    p1_sdram_cached_adapter #(
+        // ChipWatcher/unit regressions retain the module default diagnostics;
+        // the board build removes those counters/assertions from the 150 MHz
+        // timing cone because they are not part of the framebuffer data path.
+        .ENABLE_RUNTIME_DIAGNOSTICS(0)
+    ) u_sdram_adapter (
         .clk                     (sdr_clk_150m),
         .rst_n                   (sdr_rst_n),
         .mem_wr_valid            (mem_wr_valid),
