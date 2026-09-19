@@ -59,8 +59,8 @@ module line_buffer_pingpong #(
     // Deliberately no reset/clear on pixel RAM arrays.
     // Ready/ownership metadata is reset instead; unread RAM contents are never
     // exposed. This coding style preserves the opportunity for TD to infer ERAM.
-    reg [23:0] bank0 [0:MAX_LINE_PIXELS-1];
-    reg [23:0] bank1 [0:MAX_LINE_PIXELS-1];
+    (* ram_style = "block", ramstyle = "M9K" *) reg [23:0] bank0 [0:MAX_LINE_PIXELS-1];
+    (* ram_style = "block", ramstyle = "M9K" *) reg [23:0] bank1 [0:MAX_LINE_PIXELS-1];
 
     reg        ready0, ready1;
     reg [15:0] line0, line1;

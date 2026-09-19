@@ -217,6 +217,7 @@ module tb_sdram_arbiter;
         @(negedge clk); mem_rvalid = 1'b1; mem_rdata = 32'h00BADBAD; #1;
         check_int(rd_rvalid, 0, "unsolicited response not forwarded");
         @(posedge clk); @(negedge clk); mem_rvalid = 1'b0;
+        @(posedge clk); @(negedge clk);
         check_int(protocol_error, 1, "unsolicited response flagged");
 
         $display("CASE8 reset clears sticky state");

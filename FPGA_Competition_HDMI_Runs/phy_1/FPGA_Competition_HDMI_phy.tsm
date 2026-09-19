@@ -1,200 +1,707 @@
 eagle_s20
-13 639 43 519 562 92256 9 0
--0.460 0.260 p1_apug011_td_top eagle_s20 EG4S20BG256 Detail NA 7 4
-clock: p1_refclk_25m
-15 0 0 0
-
-clock: u_apug011_ref_pll/pll_inst.clkc[0]
-25 0 0 0
-
-clock: u_apug011_ref_pll/pll_inst.clkc[1]
-33 92256 562 2
+13 2817 2191 1033 16130 590644 0 0
+0.068 0.131 p1_hx4s20c_sdram_hdmi_top eagle_s20 EG4S20BG256 Detail NA 10 6
+clock: hx4s20c_clk50m
+13 1782 136 2
 Setup check
-43 3
-Endpoint: u_arbiter/protocol_error_reg_syn_280
-43 -0.460000 2279 3
-Timing path: u_bist/reg1_syn_23.clk->u_arbiter/protocol_error_reg_syn_280
-u_bist/reg1_syn_23.clk
-u_arbiter/protocol_error_reg_syn_280
-45 -0.460000 8.762000 9.222000 7 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+23 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+23 13.230000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+25 13.230000 23.470000 10.240000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
-Timing path: u_bist/reg1_syn_23.clk->u_arbiter/protocol_error_reg_syn_280
-u_bist/reg1_syn_23.clk
-u_arbiter/protocol_error_reg_syn_280
-97 -0.460000 8.762000 9.222000 7 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+79 13.456000 23.470000 10.014000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
-Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_arbiter/protocol_error_reg_syn_280
-u_arbiter/protocol_error_reg_syn_262.clk
-u_arbiter/protocol_error_reg_syn_280
-149 -0.460000 8.762000 9.222000 7 10
-u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
-u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
-u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
-u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_arbiter/protocol_error_reg_syn_280.d[0]
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405
+133 13.579000 23.470000 9.891000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_405.mi[0]
 
 
-Endpoint: u_adapter/reg8_syn_93
-201 -0.301000 2056 3
-Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_93
-u_bist/reg1_syn_23.clk
-u_adapter/reg8_syn_93
-203 -0.301000 8.762000 9.063000 6 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+185 13.238000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+187 13.238000 23.470000 10.232000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
 
-Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_93
-u_bist/reg1_syn_23.clk
-u_adapter/reg8_syn_93
-255 -0.301000 8.762000 9.063000 6 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+241 13.464000 23.470000 10.006000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
 
-Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_adapter/reg8_syn_93
-u_arbiter/protocol_error_reg_syn_262.clk
-u_adapter/reg8_syn_93
-307 -0.273000 8.762000 9.035000 6 10
-u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
-u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
-u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
-u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_93.ce
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403
+295 13.587000 23.470000 9.883000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_403.mi[0]
 
 
-Endpoint: u_adapter/reg8_syn_86
-359 -0.176000 2056 3
-Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_86
-u_bist/reg1_syn_23.clk
-u_adapter/reg8_syn_86
-361 -0.176000 8.762000 8.938000 6 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.d[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+347 13.678000 14 3
+Timing path: reg1_syn_93.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_93.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+349 13.678000 23.470000 9.792000 3 9
+hdmi_rst_cnt[7] lt0_syn_70.a[0]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
 
-Timing path: u_bist/reg1_syn_23.clk->u_adapter/reg8_syn_86
-u_bist/reg1_syn_23.clk
-u_adapter/reg8_syn_86
-413 -0.176000 8.762000 8.938000 6 10
-u_bist/state[0] u_arbiter/protocol_error_reg_syn_287.a[1]
-u_bist/rd_addr_n u_arbiter/protocol_error_reg_syn_221.b[1]
-u_arbiter/protocol_error_reg_syn_19 u_bist/state_b[2]_syn_130.a[0]
-u_arbiter/protocol_error_reg_syn_91 u_adapter/reg8_syn_76.c[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+Timing path: reg1_syn_96.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_96.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+403 13.904000 23.470000 9.566000 3 9
+hdmi_rst_cnt[8] lt0_syn_70.a[1]
+lt0_syn_10 lt0_syn_73.fci
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
 
-Timing path: u_arbiter/protocol_error_reg_syn_262.clk->u_adapter/reg8_syn_86
-u_arbiter/protocol_error_reg_syn_262.clk
-u_adapter/reg8_syn_86
-465 -0.148000 8.762000 8.910000 6 10
-u_adapter/tag_rd_ptr[0] u_arbiter/protocol_error_reg_syn_226.d[1]
-u_arbiter/protocol_error_reg_syn_31 u_arbiter/protocol_error_reg_syn_254.b[1]
-u_arbiter/protocol_error_reg_syn_33 u_adapter/reg8_syn_79.a[1]
-u_bist/state_b[2]_syn_5 u_adapter/reg8_syn_76.b[0]
-u_arbiter/mem_rd_ready_syn_2[1] u_adapter/read_outstanding_debug[0]_syn_105.e[1]
-u_adapter/read_outstanding_debug[0]_syn_90 u_adapter/read_outstanding_debug[0]_syn_106.fci
-u_adapter/read_outstanding_debug[0]_syn_94 u_adapter/read_outstanding_debug[0]_syn_107.fci
-u_adapter/read_outstanding_debug[0]_syn_98 u_adapter/read_outstanding_debug[0]_syn_108.fci
-u_adapter/read_outstanding_debug[0]_syn_102 u_adapter/read_outstanding_debug[0]_syn_109.fci
-u_adapter/outstanding_next[16] u_adapter/reg8_syn_86.ce
+Timing path: reg1_syn_90.clk->u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+reg1_syn_90.clk
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401
+457 14.027000 23.470000 9.443000 3 8
+hdmi_rst_cnt[9] lt0_syn_73.a[0]
+lt0_syn_14 lt0_syn_76.fci
+lt0_syn_18 lt0_syn_79.fci
+lt0_syn_22 lt0_syn_82.fci
+lt0_syn_26 lt0_syn_85.fci
+lt0_syn_30 lt0_syn_88.fci
+hdmi_rst_n1 hdmi_rst_reg_syn_59.d[0]
+hdmi_rst_reg_syn_3 u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_401.mi[0]
 
 
 
 Hold check
-517 3
-Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
-519 0.260000 1 1
-Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
-u_apug011/u_sdr_as_ram/u2_wrrd/reg13_syn_49.clk
-u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31
-521 0.260000 2.107000 2.367000 0 1
-u_apug011/u_sdr_as_ram/u2_wrrd/app_wr_addr_2d[0] u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.mi[1]
+509 3
+Endpoint: reg1_syn_72
+511 1.065000 5 3
+Timing path: reg1_syn_75.clk->reg1_syn_72
+reg1_syn_75.clk
+reg1_syn_72
+513 1.065000 3.016000 4.081000 1 2
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_72
+reg1_syn_72.clk
+reg1_syn_72
+553 1.080000 3.016000 4.096000 1 2
+hdmi_rst_cnt[3] add0_syn_123.a[0]
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_72
+reg1_syn_72.clk
+reg1_syn_72
+593 1.298000 3.016000 4.314000 2 3
+hdmi_rst_cnt[2] add0_syn_122.b[1]
+add0_syn_104 add0_syn_123.fci
+hdmi_rst_cnt_b2[3] reg1_syn_72.mi[1]
 
 
-Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
-555 0.314000 1 1
-Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
-u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_71.clk
-u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69
-557 0.314000 2.044000 2.358000 0 1
-u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_en_sft[4] u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_69.mi[1]
+Endpoint: reg1_syn_93
+635 1.089000 9 3
+Timing path: reg1_syn_93.clk->reg1_syn_93
+reg1_syn_93.clk
+reg1_syn_93
+637 1.089000 3.001000 4.090000 1 2
+hdmi_rst_cnt[7] add0_syn_124.a[0]
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
+
+Timing path: reg1_syn_96.clk->reg1_syn_93
+reg1_syn_96.clk
+reg1_syn_93
+677 1.157000 3.001000 4.158000 1 2
+hdmi_rst_cnt[8] add0_syn_124.b[0]
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
+
+Timing path: reg1_syn_75.clk->reg1_syn_93
+reg1_syn_75.clk
+reg1_syn_93
+717 1.320000 3.001000 4.321000 2 3
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+add0_syn_108 add0_syn_124.fci
+hdmi_rst_cnt_b2[7] reg1_syn_93.mi[1]
 
 
-Endpoint: u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
-591 0.314000 1 1
-Timing path: u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk->u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
-u_apug011/u_sdr_as_ram/u2_wrrd/reg10_syn_31.clk
-u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31
-593 0.314000 2.044000 2.358000 0 1
-u_apug011/u_sdr_as_ram/u2_wrrd/app_rd_addr_3d[1] u_apug011/u_sdr_as_ram/u2_wrrd/reg11_syn_31.mi[0]
+Endpoint: reg1_syn_75
+759 1.199000 5 3
+Timing path: reg1_syn_75.clk->reg1_syn_75
+reg1_syn_75.clk
+reg1_syn_75
+761 1.199000 3.001000 4.200000 1 2
+hdmi_rst_cnt[4] add0_syn_123.b[0]
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_75
+reg1_syn_72.clk
+reg1_syn_75
+801 1.233000 3.001000 4.234000 1 2
+hdmi_rst_cnt[3] add0_syn_123.a[0]
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
+
+Timing path: reg1_syn_72.clk->reg1_syn_75
+reg1_syn_72.clk
+reg1_syn_75
+841 1.439000 3.001000 4.440000 2 3
+hdmi_rst_cnt[2] add0_syn_122.b[1]
+add0_syn_104 add0_syn_123.fci
+hdmi_rst_cnt_b2[4] reg1_syn_75.mi[1]
 
 
 
 
-clock: u_apug011_ref_pll/pll_inst.clkc[2]
-629 0 0 0
+clock: u_hdmi_pll/u_pll.clkc[0]
+883 556254 14582 4
+Setup check
+893 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+893 12.985000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436
+895 12.985000 21.936000 8.951000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_559.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_166 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8436.e[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+939 12.988000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660
+941 12.988000 21.936000 8.948000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_557.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_170 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8660.e[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+985 12.990000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_504.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632
+987 12.990000 21.936000 8.946000 4 4
+hdmi_rst_dup_20 u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_372.b[1]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_1 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_1609.a[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_38 u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_557.d[0]
+u_sdram_hdmi_pipeline/u_line_buffer/bank1_n1_syn_170 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_8632.e[0]
+
+
+
+Hold check
+1031 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1033 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[11]_syn_298.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[11]_syn_298.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1035 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[1]_dup_10 u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[0]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1073 1.837000 2.066000 3.903000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_71.d[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[17] u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914
+1113 1.849000 2.066000 3.915000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_71.b[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[17] u_sdram_hdmi_pipeline/u_line_buffer/ramread1_syn_10914.b[1]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1153 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_358.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_line_buffer/reg0_syn_358.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1155 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[2]_dup_16 u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[0]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1193 2.534000 2.066000 4.600000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_86.d[0]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[22] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768
+1233 2.585000 2.066000 4.651000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_86.b[0]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[22] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_11768.c[1]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1273 0.131000 5 3
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[18]_syn_300.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[18]_syn_300.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1275 0.131000 2.066000 2.197000 1 1
+u_sdram_hdmi_pipeline/u_line_buffer/fill_count[1]_dup_19 u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[0]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_67.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1313 2.059000 2.066000 4.125000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[1] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_29.b[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[5] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk->u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg2_syn_70.clk
+u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840
+1353 2.067000 2.066000 4.133000 2 2
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/rd_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_29.d[1]
+u_sdram_hdmi_pipeline/u_read_cdc/resp_fifo_dout[5] u_sdram_hdmi_pipeline/u_line_buffer/ramread0_syn_6840.b[1]
+
+
+
+Recovery check
+1393 3
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+1395 15.628000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224
+1397 15.628000 21.745000 6.117000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2224.sr
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+1435 15.706000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196
+1437 15.706000 21.745000 6.039000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2196.sr
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+1475 15.887000 1 1
+Timing path: u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk->u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+u_sdram_hdmi_pipeline/u_line_buffer/pixel_data_b1[3]_syn_394.clk
+u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205
+1477 15.887000 21.745000 5.858000 0 1
+hdmi_rst_dup_30 u_sdram_hdmi_pipeline/u_line_buffer/reg6_syn_2205.sr
+
+
+
+Removal check
+1515 3
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+1517 0.227000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233
+1519 0.227000 2.236000 2.463000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_28 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_gen/reg4_syn_233.sr
+
+
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+1557 0.243000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_53.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_53.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195
+1559 0.243000 2.220000 2.463000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_27 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg8_syn_195.sr
+
+
+Endpoint: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+1597 0.267000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk->u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+u_apug092_tx/u_core_wrapper/u_apug092_core/u0_reset_sync/O_sync_reset_reg_syn_44.clk
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39
+1599 0.267000 2.236000 2.503000 0 1
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_edid_wrapper/u_iic_master_wrapper/u_iic_receiver_controller/I_rst_dup_28 u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u_hdmi_island_data_assemble/reg15_syn_39.sr
+
+
+
+
+clock: u_hdmi_pll/u_pll.clkc[1]
+1637 264 142 4
+Setup check
+1647 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1647 6.272000 2 2
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1649 6.272000 10.230000 3.958000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.b[0]
+
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1683 7.078000 10.230000 3.152000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/S_shift_data[4] u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.c[0]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1717 6.272000 2 2
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1719 6.272000 10.230000 3.958000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.b[1]
+
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+1753 6.778000 10.230000 3.452000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/S_shift_data[5] u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.c[1]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+1787 6.313000 1 1
+Timing path: _al_n1_syn_1007.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+_al_n1_syn_1007.clk
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68
+1789 6.313000 10.230000 3.917000 1 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_load_en_2d u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_68.c[1]
+
+
+
+Hold check
+1823 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
+1825 0.188000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_76.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_76.clk
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63
+1827 0.188000 2.291000 2.479000 1 1
+u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[8] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_63.d[1]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+1863 0.197000 1 1
+Timing path: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even_reg_syn_8.clk->u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even_reg_syn_8.clk
+u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9
+1865 0.197000 2.291000 2.488000 0 1
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/S_odd_even u_apug092_tx/u_eg_hdmi_phy/u2_lane_lvds_8_1/reg0_syn_9.mi[0]
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+1901 0.197000 1 1
+Timing path: u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_69.clk->u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+u_apug092_tx/u_core_wrapper/u_apug092_core/u_hdmi_tx_controller_wrapper/u0_hdmi_tmds_encode/reg0_syn_69.clk
+u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65
+1903 0.197000 2.291000 2.488000 1 1
+u_apug092_tx/u_eg_hdmi_phy/I_tmds_channel_0[6] u_apug092_tx/u_eg_hdmi_phy/u0_lane_lvds_8_1/reg1_syn_65.d[1]
+
+
+
+Recovery check
+1939 3
+Endpoint: HDMI_D1_P_syn_2
+1941 0.823000 1 1
+Timing path: hdmi_rst_reg_syn_65.clk->HDMI_D1_P_syn_2
+hdmi_rst_reg_syn_65.clk
+HDMI_D1_P_syn_2
+1943 0.823000 5.881000 5.058000 0 1
+hdmi_rst_dup_15 HDMI_D1_P_syn_2.rst
+
+
+Endpoint: HDMI_D2_P_syn_2
+1979 0.980000 1 1
+Timing path: hdmi_rst_reg_syn_69.clk->HDMI_D2_P_syn_2
+hdmi_rst_reg_syn_69.clk
+HDMI_D2_P_syn_2
+1981 0.980000 5.881000 4.901000 0 1
+hdmi_rst_dup_14 HDMI_D2_P_syn_2.rst
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+2017 1.076000 1 1
+Timing path: hdmi_rst_reg_syn_69.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+hdmi_rst_reg_syn_69.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75
+2019 1.076000 5.866000 4.790000 0 1
+hdmi_rst_dup_14 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_75.sr
+
+
+
+Removal check
+2055 3
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+2057 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_71.clk->u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+hdmi_rst_reg_syn_71.clk
+u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27
+2059 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_13 u_apug092_tx/u_eg_hdmi_phy/u3_lane_lvds_8_1/reg1_syn_27.sr
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+2095 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+hdmi_rst_reg_syn_67.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69
+2097 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_8 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_69.sr
+
+
+Endpoint: u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+2133 0.982000 1 1
+Timing path: hdmi_rst_reg_syn_67.clk->u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+hdmi_rst_reg_syn_67.clk
+u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64
+2135 0.982000 2.483000 3.465000 0 1
+hdmi_rst_dup_8 u_apug092_tx/u_eg_hdmi_phy/u1_lane_lvds_8_1/reg1_syn_64.sr
+
+
+
+
+clock: u_sdram_pll/pll_inst.clkc[0]
+2173 0 0 0
+
+clock: u_sdram_pll/pll_inst.clkc[1]
+2181 32344 1270 2
+Setup check
+2191 3
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2191 0.068000 181 3
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2193 0.068000 8.896000 8.828000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2237 0.068000 8.896000 8.828000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[0]
+
+Timing path: u_sdram_adapter/reg6_syn_133.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+u_sdram_adapter/reg6_syn_133.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29
+2281 0.301000 8.896000 8.595000 6 6
+u_sdram_adapter/cache_group_tag[16] u_sdram_adapter/reg6_syn_133.d[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_sdram_adapter/reg12_syn_108.a[0]
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_en u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.a[1]
+
+
+Endpoint: u_sdram_adapter/reg14_syn_116
+2325 0.086000 167 3
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk->u_sdram_adapter/reg14_syn_116
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk
+u_sdram_adapter/reg14_syn_116
+2327 0.086000 8.896000 8.810000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.d[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk->u_sdram_adapter/reg14_syn_116
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk
+u_sdram_adapter/reg14_syn_116
+2371 0.110000 8.896000 8.786000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.c[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_adapter/reg14_syn_116
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_adapter/reg14_syn_116
+2415 0.338000 8.896000 8.558000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.b[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_116.a[1]
+
+
+Endpoint: u_sdram_adapter/reg14_syn_113
+2459 0.086000 179 3
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk->u_sdram_adapter/reg14_syn_113
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld_reg_syn_11.clk
+u_sdram_adapter/reg14_syn_113
+2461 0.086000 8.896000 8.810000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/init_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.d[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+Timing path: u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk->u_sdram_adapter/reg14_syn_113
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld_reg_syn_5.clk
+u_sdram_adapter/reg14_syn_113
+2505 0.110000 8.896000 8.786000 6 6
+u_apug011/u_sdr_as_ram/u1_init_ref/ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/ref_over_reg_syn_5.c[0]
+u_apug011/u_sdr_as_ram/u2_wrrd/Sdr_init_ref_vld u_apug011/u_sdr_as_ram/u2_wrrd/reg12_syn_40.a[1]
+u_sdram_adapter/issue_read_word u_sdram_adapter/reg19_syn_127.a[0]
+u_sdram_adapter/lt3_syn_21 u_sdram_adapter/reg19_syn_121.a[0]
+u_sdram_adapter/final_group_response u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.a[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk->u_sdram_adapter/reg14_syn_113
+u_sdram_hdmi_pipeline/u_read_cdc/u_req_fifo/ramread0_syn_70.clk
+u_sdram_adapter/reg14_syn_113
+2549 0.338000 8.896000 8.558000 6 6
+u_sdram_hdmi_pipeline/u_read_cdc/req_stage_addr[18] u_sdram_adapter/reg6_syn_133.c[1]
+u_sdram_adapter/protocol_error_n_syn_12 u_sdram_adapter/reg6_syn_133.a[0]
+u_sdram_adapter/rd_accept_syn_445 u_sdram_adapter/reg12_syn_114.a[1]
+u_sdram_adapter/rd_accept_syn_447 u_sdram_adapter/reg12_syn_111.a[1]
+u_sdram_adapter/rd_accept_syn_467 u_apug011/u_sdr_as_ram/u2_wrrd/reg9_syn_49.b[1]
+u_sdram_adapter/rd_accept_syn_469 u_sdram_adapter/reg14_syn_113.a[1]
+
+
+
+Hold check
+2593 3
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2595 0.176000 2 2
+Timing path: u_sdram_adapter/reg7_syn_177.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+u_sdram_adapter/reg7_syn_177.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2597 0.176000 2.187000 2.363000 1 1
+u_sdram_adapter/mem_rdata_reg[6] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31.c[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31
+2631 0.456000 2.187000 2.643000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[2] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_31.c[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2665 0.176000 2 2
+Timing path: u_sdram_adapter/reg7_syn_169.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+u_sdram_adapter/reg7_syn_169.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2667 0.176000 2.187000 2.363000 1 1
+u_sdram_adapter/mem_rdata_reg[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17.d[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg1_syn_29.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17
+2701 0.313000 2.187000 2.500000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[3] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_17.d[0]
+
+
+Endpoint: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2735 0.183000 2 2
+Timing path: u_sdram_adapter/reg7_syn_189.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+u_sdram_adapter/reg7_syn_189.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2737 0.183000 2.171000 2.354000 1 1
+u_sdram_adapter/mem_rdata_reg[14] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59.c[1]
+
+Timing path: u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk->u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/reg5_syn_64.clk
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59
+2771 0.556000 2.171000 2.727000 1 1
+u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/wr_ptr[2] u_sdram_hdmi_pipeline/u_read_cdc/u_resp_fifo/ramread0_syn_59.c[0]
+
+
+
+
+clock: u_sdram_pll/pll_inst.clkc[2]
+2807 0 0 0
 
 
 Timing group statistics: 
 	Clock constraints: 
 	  Clock Name                                  Min Period     Max Freq           Skew      Fanout            TNS
-	  u_apug011_ref_pll/pll_inst.clkc[1] (150.0MHz)        7.126ns     140.331MHz        0.480ns       241       -1.357ns
+	  u_hdmi_pll/u_pll.clkc[0] (25.0MHz)            27.015ns      37.000MHz        0.326ns      2153        0.000ns
+	  u_sdram_pll/pll_inst.clkc[1] (150.0MHz)        6.598ns     151.561MHz        0.480ns       409        0.000ns
+	  hx4s20c_clk50m (50.0MHz)                       6.770ns     147.710MHz        0.138ns        49        0.000ns
+	  u_hdmi_pll/u_pll.clkc[1] (125.0MHz)            7.177ns     139.334MHz        0.408ns        28        0.000ns
 	Minimum input arrival time before clock: no constraint path
 	Maximum output required time after clock: no constraint path
 	Maximum combinational path delay: no constraint path

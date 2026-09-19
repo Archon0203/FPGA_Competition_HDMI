@@ -1,0 +1,69 @@
+P1-02B TD5.6.2 candidate-2 closure evidence
+Date: 2026-09-01
+Evidence source: external validation result returned after candidate-2 verification.
+
+RTL regression:
+- sdram_arbiter: PASS checks=39
+- sdram_adapter: PASS checks=61
+- sdram_arbiter_adapter_chain: PASS checks=42
+- P0 media chain: PASS checks=1698
+- p1_apug011_bist: PASS checks=9
+- official APUG011: PASS checks=24
+  - tCK violations=0
+  - tRCD violations=0
+  - App read-DM violations=0
+  - physical READ DQM violations=0
+  - addr5=0x11223344
+  - addr8=0xA5A55A5A
+
+TD5.6.2 / V5.6.71036:
+- SynOpt PASS, ERROR=0
+- PhyOpt place+route PASS, ERROR=0
+- BitGen PASS
+- Device=EG4S20BG256
+- TOP=p1_apug011_td_top
+- SDC=constraints/p1_apug011_td.sdc
+- 150 MHz target unchanged (6.666 ns)
+- EG_PHY_PLL recognized
+- EG_PHY_SDRAM_2M_32 recognized/legalized as physical internal SDRAM macro
+
+Final timing for u_apug011_ref_pll/pll_inst.clkc[1]:
+- target period=6.666 ns
+- setup errors=0
+- setup WNS=+0.059 ns
+- setup TNS=0.000 ns
+- minimum period=6.607 ns
+- maximum frequency=151.355 MHz
+- hold errors=0
+- minimum hold slack=+0.260 ns
+- hold TNS=0.000 ns
+
+Old setup-failing paths:
+- 9/9 removed
+
+New worst legal setup path:
+- source=u_adapter/provider_fault_reg_syn_12.clk
+- destination=u_bist/reg1_syn_28
+- launch=capture=clkc[1]
+- logic level=6
+- data path delay=8.762 ns
+- slack=+0.059 ns
+
+Resources:
+- LUT=283 (1.44%)
+- REG=243 (1.24%)
+- LE=377
+- PLL=1 (25%)
+- GCLK=1 (6.25%)
+- BRAM=0
+- BRAM32K=0
+
+Warnings:
+- HDL-5007 x2: vendor encrypted_text(0), unsized literal concatenation
+- SYN-5055 x10: kept-net merge informational warnings
+- syn_1 ERROR=0
+- phy_1 ERROR=0
+
+Closure decision:
+P1-02A [C-sub] PASS
+P1-02B [S] PASS

@@ -11,7 +11,7 @@
 //           - 读优先；当前 4-word 组完成后才允许切换读/写方向
 // 作者   : FPGA 竞赛团队
 // 日期   : 2026-09-01
-// 版本   : v0.3  ([U] PASS checks=61；strict chain [C-sub] PASS checks=42；P1-02A official chain [C-sub] PASS checks=24)
+// 版本   : v0.4  (150 MHz timing cleanup candidate-2；v0.3 historical regressions PASS，v0.4 待回归)
 // 时钟域 : 与 APUG011 Sdr_clk 相同。跨域由后续 system_top/CDC 层处理。
 //
 // APUG011 v1.2 依据：
@@ -188,10 +188,6 @@ module sdram_adapter #(
         end
     endfunction
 
-    wire [16:0] outstanding_next = {1'b0, read_outstanding_debug}
-                                 + (rd_accept       ? 17'd1 : 17'd0)
-                                 - (response_target ? 17'd1 : 17'd0);
-
     integer i;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -247,11 +243,28 @@ module sdram_adapter #(
             if (response_target && (read_outstanding_debug == 16'd0) && !rd_accept)
                 protocol_error <= 1'b1;
 
-            if (outstanding_next[16]) begin
-                protocol_error <= 1'b1;
-            end else begin
-                read_outstanding_debug <= outstanding_next[15:0];
-            end
+            // read_outstanding_debug only tracks accepted P0 target words,
+            // not the four APUG011 micro-group words.  The previous v0.3
+            // implementation formed a 17-bit add/subtract result every cycle
+            // and then inspected the carry/borrow bit.  After the BIST
+            // request-slice/arbiter cleanup reduced the TD5.6.2 setup failures
+            // from nine endpoints to three, this remaining project-owned
+            // arithmetic is the next low-risk cone to remove.
+            //
+            // Underflow is already detected explicitly above.  Overflow is
+            // structurally impossible here: APUG011 reads are serialized into
+            // 4-word groups and the response-tag FIFO bounds in-flight read
+            // words well below 16'hffff.  Use the equivalent 2-event state
+            // update so the counter input depends only on a single increment
+            // or decrement path.
+            case ({rd_accept, response_target})
+                2'b10: read_outstanding_debug <= read_outstanding_debug + 16'd1;
+                2'b01: begin
+                    if (read_outstanding_debug != 16'd0)
+                        read_outstanding_debug <= read_outstanding_debug - 16'd1;
+                end
+                default: read_outstanding_debug <= read_outstanding_debug;
+            endcase
 
             // Tag FIFO push/pop. Official APUG011 has non-zero latency, so a
             // response while the FIFO is empty is intentionally treated as bad.

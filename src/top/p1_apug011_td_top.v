@@ -43,7 +43,15 @@ module p1_apug011_td_top (
 
     wire rst_n = PLL_LOCK;
 
-    // BIST <-> arbiter
+    // BIST <-> registered request slice <-> arbiter
+    //
+    // The BIST FSM intentionally uses decoded state outputs.  Driving those
+    // outputs directly through arbiter+adapter created the only failing 150 MHz
+    // setup cone in the TD5.6.2 P1-02B harness.  A one-entry valid/ready slice
+    // is a protocol-preserving boundary: BIST observes acceptance by the slice,
+    // while the slice holds request type/address/data stable until the arbiter
+    // accepts it.  This affects only the TD/BIST harness, not the frozen P0
+    // memory contract or the project arbiter/adapter interfaces.
     wire        bist_wr_valid;
     wire [20:0] bist_wr_addr;
     wire [31:0] bist_wr_data;
@@ -53,6 +61,53 @@ module p1_apug011_td_top (
     wire        bist_rd_ready;
     wire        bist_rd_rvalid;
     wire [31:0] bist_rd_rdata;
+
+    reg         req_slice_valid;
+    reg         req_slice_is_read;
+    reg  [20:0] req_slice_addr;
+    reg  [31:0] req_slice_wdata;
+
+    wire        arb_wr_valid = req_slice_valid && !req_slice_is_read;
+    wire [20:0] arb_wr_addr  = req_slice_addr;
+    wire [31:0] arb_wr_data  = req_slice_wdata;
+    wire        arb_wr_ready;
+    wire        arb_rd_valid = req_slice_valid && req_slice_is_read;
+    wire [20:0] arb_rd_addr  = req_slice_addr;
+    wire        arb_rd_ready;
+
+    assign bist_wr_ready = !req_slice_valid && bist_wr_valid && !bist_rd_valid;
+    assign bist_rd_ready = !req_slice_valid && bist_rd_valid;
+
+    wire req_slice_accept = (arb_wr_valid && arb_wr_ready) ||
+                            (arb_rd_valid && arb_rd_ready);
+
+    always @(posedge clk_sdr_150m or negedge rst_n) begin
+        if (!rst_n) begin
+            req_slice_valid   <= 1'b0;
+            req_slice_is_read <= 1'b0;
+            req_slice_addr    <= 21'd0;
+            req_slice_wdata   <= 32'd0;
+        end else begin
+            if (req_slice_accept)
+                req_slice_valid <= 1'b0;
+
+            // Only capture while empty. BIST never asserts read and write in
+            // the same cycle; read wins defensively if that invariant is ever
+            // violated by a future harness revision.
+            if (!req_slice_valid) begin
+                if (bist_rd_valid) begin
+                    req_slice_valid   <= 1'b1;
+                    req_slice_is_read <= 1'b1;
+                    req_slice_addr    <= bist_rd_addr;
+                end else if (bist_wr_valid) begin
+                    req_slice_valid   <= 1'b1;
+                    req_slice_is_read <= 1'b0;
+                    req_slice_addr    <= bist_wr_addr;
+                    req_slice_wdata   <= bist_wr_data;
+                end
+            end
+        end
+    end
 
     // arbiter <-> adapter
     wire        mem_wr_valid;
@@ -76,13 +131,13 @@ module p1_apug011_td_top (
     ) u_arbiter (
         .clk                    (clk_sdr_150m),
         .rst_n                  (rst_n),
-        .wr_valid               (bist_wr_valid),
-        .wr_addr                (bist_wr_addr),
-        .wr_data                (bist_wr_data),
-        .wr_ready               (bist_wr_ready),
-        .rd_valid               (bist_rd_valid),
-        .rd_addr                (bist_rd_addr),
-        .rd_ready               (bist_rd_ready),
+        .wr_valid               (arb_wr_valid),
+        .wr_addr                (arb_wr_addr),
+        .wr_data                (arb_wr_data),
+        .wr_ready               (arb_wr_ready),
+        .rd_valid               (arb_rd_valid),
+        .rd_addr                (arb_rd_addr),
+        .rd_ready               (arb_rd_ready),
         .rd_rvalid              (bist_rd_rvalid),
         .rd_rdata               (bist_rd_rdata),
         .mem_wr_valid           (mem_wr_valid),
