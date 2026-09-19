@@ -131,7 +131,7 @@ post-place LUT 7437 / 19600
 当前 source tree 的优化 candidate：
 
 - production `p1_sdram_cached_adapter` 使用 `.ENABLE_RUNTIME_DIAGNOSTICS(0)`，将非数据通路的 debug counters / redundant assertions 从 150 MHz active cone 中剔除；默认参数仍为 `1`，因此现有 Questa 单测/集成 TB 不改变。
-- HDMI reset release 改在 50 MHz falling edge，避开 25 MHz pixel rising edge 附近的 removal 临界点；功能时序仍保持约 20 ms reset hold。
+- HDMI reset release 使用官方例程的 50 MHz rising edge；下降沿实验缩短了 125 MHz serial-domain recovery window，已恢复上升沿实现，功能时序仍保持约 20 ms reset hold。
 
 **重新取得 `[S]` 的必要条件：** 使用 TD6.2.1 从 `read_design → synthesis → P&R → final STA` 完整重跑；确认 25/150/50/125 MHz 均无 setup/hold violation 后，才更新本节和最终 timing evidence。BitGen/真板重新验证后才能恢复当前工具链下的 `[B]` 结论。
 

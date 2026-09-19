@@ -81,7 +81,12 @@ module sdram_arbiter #(
     // A zero-latency downstream model is legal: a response on the same cycle
     // as the first accepted request is therefore accepted.
     wire response_legal = mem_rvalid &&
-                          ((rd_outstanding != 16'd0) || rd_accept);
+                           ((rd_outstanding != 16'd0) || rd_accept);
+
+    // Sample an unsolicited-response event before updating the sticky status.
+    // This keeps the response filter combinational, while isolating the
+    // adapter's response-state cone from the diagnostic register feedback.
+    reg response_error_pending;
 
     assign rd_rvalid = response_legal;
     assign rd_rdata  = mem_rdata;
@@ -98,6 +103,7 @@ module sdram_arbiter #(
         if (!rst_n) begin
             rd_outstanding          <= 16'd0;
             protocol_error          <= 1'b0;
+            response_error_pending  <= 1'b0;
             contention_seen         <= 1'b0;
             read_accept_count_debug <= 32'd0;
             write_accept_count_debug<= 32'd0;
@@ -115,9 +121,11 @@ module sdram_arbiter #(
                 protocol_error <= 1'b1;
 
             // Drop unsolicited responses instead of forwarding garbage into the
-            // display path; keep a sticky error for board/debug observability.
-            if (mem_rvalid && !response_legal)
+            // display path.  Report the sampled event on the following clock;
+            // protocol_error is sticky, so board diagnostics retain it.
+            if (response_error_pending)
                 protocol_error <= 1'b1;
+            response_error_pending <= mem_rvalid && !response_legal;
 
             case ({rd_accept, response_legal})
                 2'b10: rd_outstanding <= rd_outstanding + 16'd1;

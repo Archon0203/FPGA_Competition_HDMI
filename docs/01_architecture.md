@@ -152,7 +152,7 @@ TNS           0
 本轮 source-level 优化只做两项低风险修改：
 
 1. `p1_sdram_cached_adapter` 增加 `ENABLE_RUNTIME_DIAGNOSTICS` 参数。仿真默认 `1`，保留原有计数器/冗余协议断言；P1-05A board top 设置为 `0`，使这些非数据通路逻辑不进入生产 150 MHz timing cone。provider response legality check 仍保留。
-2. `p1_hx4s20c_sdram_hdmi_top` 将 HDMI reset 的**释放**从 50 MHz 上升沿改为下降沿。这样保持约 20 ms reset hold 的功能语义，同时将释放相位从 25 MHz pixel rising-edge 附近移开；TD6.2.1 旧网表中该 pixel-domain removal check 只有约 11 ps 硬件裕量。
+2. `p1_hx4s20c_sdram_hdmi_top` 的 HDMI reset **释放**使用 50 MHz 上升沿，与官方板级例程一致。曾尝试下降沿来避开 25 MHz pixel rising-edge removal 临界点，但 TD6.2.1 报告显示它缩短了 125 MHz serial-domain recovery window，因此已恢复上升沿实现。
 
 上述两项修改尚未取得新的 TD6.2.1 P&R、BitGen 或真板证据，因此状态仍为 candidate，不覆盖 P1-05A 历史 closeout。
 
