@@ -1,99 +1,74 @@
 # 基于 EG4S20 的 HDMI 多媒体播放系统
 
+这是一个面向校园、园区信息发布和应急广播场景的 FPGA HDMI 多媒体终端。项目目标是在安路 HX4S20C / EG4S20BG256 上完成从 TF/FAT32/BMP 或帧序列数据到 internal SDRAM framebuffer，再到 HDMI 显示输出的完整链路，不依赖外部 CPU 或 MCU。
 
- > **P1 当前证据（2026-09-01）**：P1-01 v0.3 已完成：`sdram_adapter [U]` **PASS(61)**，strict arbiter→adapter chain `[C-sub]` **PASS(42)**。P1-02A 已完成：QuestaSim 10.7c 下 official protected APUG011 + official IS42 model **PASS(24)**，P0-09 同轮重新 **PASS(1698)**。P1-02B 的 TD 6.2.1 native-source 组织已经解决 protected-core black-box 问题：主工程 `syn_1` 已完整完成 read_design/opt_rtl/opt_gate 并生成 gate DB；`sdr_as_ram/sdr_init_ref/sdr_wrrd`、`EG_PHY_PLL/EG_LOGIC_BUFG` 与 `EG_PHY_SDRAM_2M_32` 均被识别。当前综合后 setup 仍失败（报告 WNS=-5958 ps，115 endpoints；hold 通过），而 `phy_1` 因 run worker 卡在初始化尚未产出有效 P&R，因此 **仍不能标 `[S]`**。TD 6.2.1 已明确提示 `derive_pll_clocks` obsolete，本 candidate 将 SDC 更新为 `derive_clocks`，必须重新 Syn Opt 后再以 P&R 后 timing 为准。
+当前稳定基线是 **P1-05A：internal SDRAM framebuffer → HDMI_B**。它使用固定的 640×480 RGB888 诊断图案验证 SDRAM、CDC、行预取、ping-pong line buffer 和 HDMI 输出链路；TF/FAT32/BMP 播放属于下一阶段 P1-05B，尚未作为已完成能力对外宣称。
 
-> 2026 全国大学生嵌入式芯片与系统设计竞赛 · FPGA 创新设计赛道 · 安路选题一  
-> 平台：HX4S20C / EG4S20BG256  
-> 作品定位：校园/园区信息发布与应急广播终端；运行时不依赖外部 CPU/MCU。
+## 当前工程入口
 
-## 当前工程状态
+| 项目 | 配置 |
+|---|---|
+| FPGA | HX4S20C / EG4S20BG256 |
+| TD 工程 | `FPGA_Competition_HDMI.al` |
+| 当前顶层 | `src/top/p1_hx4s20c_sdram_hdmi_top.v` |
+| HDMI rollback top | `src/top/p1_hx4s20c_hdmi_board_top.v` |
+| 管脚约束 | `constraints/p1_hx4s20c_hdmi_board.adc` |
+| 时序约束 | `constraints/p1_hx4s20c_hdmi_board.sdc` |
+| 综合/实现工具 | Anlogic TD 6.2.1 |
+| 仿真工具 | QuestaSim 10.7c |
 
-状态证据统一使用：`[U] UNIT PASS`、`[C-sub] SUB-CHAIN PASS`、`[C] CHAIN PASS`、`[S] TD SYNTH/P&R PASS`、`[B] BOARD PASS`、`[L] LONG-RUN PASS`。
+P1-05A 保留 P1-04C 已验证的 HDMI_B 管脚、50 MHz → 25/125 MHz PLL、APUG092/PHY、复位和 EDID 边界。当前状态、证据等级和最新时序结果以 [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md) 为准；README 不复制详细 timing、资源和回归表格。
+
+## 快速开始
+
+### 使用 TD
+
+1. 用 TD 6.2.1 打开 `FPGA_Competition_HDMI.al`。
+2. 确认顶层为 `p1_hx4s20c_sdram_hdmi_top`，并使用 `constraints/` 下的 ADC/SDC。
+3. 依次执行综合、布局布线、STA；需要生成 bitstream 时再执行 BitGen。
+4. 任何 RTL、约束或工程设置变更后，都必须重新完成实现和 STA，不能直接继承旧报告的裕量。
+
+TD 自动生成的 run 目录和报告用于本地分析，按 [`CONTRIBUTING.md`](CONTRIBUTING.md) 的规则处理，不要用 `git add .` 将生成物批量提交。
+
+### 使用 QuestaSim
+
+从仓库根目录进入 `sim_work`，再运行相对路径脚本。例如：
+
+```powershell
+cd sim_work
+vsim -c -do ../sim_tb/framebuf/run_p1_sdram_cached_adapter.do
+vsim -c -do ../sim_tb/framebuf/run_p1_sdram_cached_adapter_apug011_official.do
+vsim -c -do ../sim_tb/integration/run_p1_sdram_hdmi_cached_chain.do
+```
+
+回归脚本应输出 `PASS`。APUG011 受保护模型可能产生供应商源文件自身的 warning；是否通过以测试平台的检查结果为准。更多仿真入口见 [`sim_tb/README.md`](sim_tb/README.md) 及各子目录 README。
+
+## 代码结构
 
 ```text
-P0-01 ~ P0-07             [U]
-P0-08 framebuffer chain   [C-sub]
-P0-09 full media chain    [C]  (checks=1698)
-P0                         Implementation Freeze v1.0
-P1-01 v0.3               [U] / [C-sub] (61 / 42 checks)
-P1-02A official core      [C-sub] (24 checks)
-P1-02B TD integration      —  (Syn Opt completed; setup failing; P&R pending)
-TD final build             尚无 [S]
-Hardware                   尚无 [B]/[L]
+FPGA_Competition_HDMI/
+├─ FPGA_Competition_HDMI.al       # 唯一 TD 工程
+├─ src/                            # RTL、顶层和厂商 IP 封装
+├─ constraints/                    # ADC/SDC 及实验约束
+├─ sim_tb/                         # QuestaSim testbench 和回归脚本
+├─ ip/                             # 工程 IP 资源
+├─ tools/                          # 辅助工具
+└─ docs/                           # 权威文档、开发记录和历史资料
 ```
 
-P0 `[C]` 只证明纯 RTL + mock SDRAM 的端到端媒体链；不等于 APUG011/APUG092、TD 完整构建或真板通过。
+模块职责、时钟域和数据链路见 [`docs/01_architecture.md`](docs/01_architecture.md)。
 
-## 四份权威文档
+## 权威文档
 
-- `docs/01_architecture.md`：P0→P4 系统架构、冻结边界、vendor/CDC 红线；
-- `docs/02_implementation_goals.md`：实现目标、内容格式、最终验收边界；
-- `docs/03_plan_and_status.md`：**唯一进度/模块状态权威**，含 `[U]/[C]/[S]/[B]/[L]` 证据；
-- `docs/04_use_cases.md`：信息发布、应急广播、交互与答辩使用场景。
+项目说明与开发口径分开维护：
 
-`docs/old/` 仅保存历史资料，不作为当前架构或状态依据。
+- [`docs/01_architecture.md`](docs/01_architecture.md)：系统架构、模块边界、时钟/CDC 和冻结边界。
+- [`docs/02_implementation_goals.md`](docs/02_implementation_goals.md)：阶段目标、验收条件和禁止越级的证据要求。
+- [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md)：唯一的进度、验证结果和状态等级权威。
+- [`docs/04_use_cases.md`](docs/04_use_cases.md)：产品场景、演示顺序和当前对外表述。
 
-## 当前主数据链
+开发过程记录、候选方案和阶段复盘统一放在 [`docs/develop_records/`](docs/develop_records/)；历史文档放在 `docs/olds/`，不作为当前状态依据。
 
-```text
-TF/FAT32 → BMP → RGB888
-               ↓
-      framebuffer_writer
-               ↓
-      frame_buffer_manager
-               ↓
-        sdram_arbiter
-               ↓
-        sdram_adapter            (P1-01; [U]，strict chain 已 [C-sub])
-               ↓
-   APUG011 sdr_as_ram / EG SDRAM (P1 vendor boundary)
-               ↓
-        line_prefetcher
-               ↓
-     line_buffer_pingpong
-               ↓
-      display-order RGB888
-               ↓
-  APUG092 HDMI path（后续 P1）
-```
+## 参与开发
 
-P1-01 的 `sdram_adapter` 根据 APUG011 v1.2 application-side 语义实现：21-bit/32-bit、读写互斥、init/refresh/busy 门控、4-word 地址组、`Sdr_rd_en` 返回。为保持 P0 任意单 word 地址契约，adapter 将每个抽象 word 转换为一个 4-word 对齐 micro-group；写入用 `App_wr_dm` 屏蔽另外 3 words，读取只返回目标 lane。
-
-## 仿真
-
-P0 冻结回归：
-
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/integration/run_p0_media_chain.do
-```
-
-P1-01（当前仿真环境：QuestaSim 10.7c）：
-
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/framebuf/run_sdram_adapter.do
-vsim -c -do ../sim_tb/framebuf/run_sdram_arbiter_adapter_chain.do
-```
-
-当前已实测 `tb_sdram_adapter` **PASS (checks=61)**，`sdram_adapter v0.3` 正式为 `[U]`；`tb_sdram_arbiter_adapter_chain` **PASS (checks=42)**，因此 arbiter→adapter→strict APUG011-like model 为 `[C-sub]`。
-
-P1-02A 已实测 **PASS (checks=24)**：125 MHz/180° model-safe 下 tCK/tRCD=0 violation，App read-DM/physical READ DQM 均 0 violation，addr5/addr8 正确读回 `0x11223344/0xA5A55A5A`。因此 official protected APUG011 behavioral chain 正式 `[C-sub]`。P1-02B 当前把官方原始 `clk_pll.v`、`global_def.v`（TD Global Include）、三个独立 protected `.enc.v`、`apug011_core_wrapper` 与 `EG_PHY_SDRAM_2M_32` 接入 TD-only harness；25 MHz ref 只是官方 reference harness，不是最终 HX4S20C 50 MHz board clock。旧 `apug011_td_compile_unit.v` 已停用且不进入 TD source。
-
-P1-02B TD candidate 先验证 BIST：
-
-```powershell
-cd sim_work
-vsim -c -do ../sim_tb/top/run_p1_apug011_bist.do
-```
-
-随后用 **TD 6.2.1 Engineer 168116** 打开根目录 `FPGA_Competition_HDMI.al`。本 candidate 的 TOP 是 `p1_apug011_td_top`，只使用 `constraints/p1_apug011_td.sdc` 的 25 MHz reference-clock/PLL 约束，**不绑定任何板级 ADC/pin**。先重新跑 Synthesis/Syn Opt（本版 SDC 已改用 TD6.2.1 的 `derive_clocks`），再跑 Physical Design/P&R；只有 P&R 后 timing/resource/PLL/`EG_PHY_SDRAM_2M_32`/constraints 均确认通过才给 SDRAM backend 标 `[S]`。
-
-## 工程规则
-
-- `FPGA_Competition_HDMI.al` 只列可综合 RTL；testbench/mock 不进入 TD synthesis source；
-- APUG011/APUG092/PLL/IO/管脚必须来自官方资料，禁止猜 vendor 端口和约束；
-- P0 已冻结；vendor 时序差异优先由 P1 adapter/wrapper 吸收；
-- `.git/` 只由本地仓库维护，不应随项目覆盖包复制；
-- 每次迭代：代码/文档/`.al` → QuestaSim 10.7c / TD 验证 → 依据证据提升状态 → PR/review。
+分支、提交、仿真和文档规则见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，仓库目录边界见 [`STRUCTURE.md`](STRUCTURE.md)。提交前请至少完成受影响模块的 QuestaSim 回归，并在 PR 中记录结果；涉及 active design 的修改还必须附 TD6.2.1 实现和 STA 结果。

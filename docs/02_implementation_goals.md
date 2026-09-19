@@ -1,97 +1,142 @@
 # 02 · 实现目标与验收边界
 
-## 1. 作品定位
+## 1. 最终作品目标
 
-作品名称：**《基于 EG4S20 的 HDMI 多媒体播放系统——校园/园区信息发布与应急广播终端》**。
-
-目标是在 HX4S20C（EG4S20BG256）上，用 FPGA 完成媒体读取、缓存、显示处理、交互与 HDMI 音视频输出，**系统运行时不依赖外部 CPU/MCU**。PC 工具只用于赛前/部署前的内容制备，例如把素材转换成 BMP、`.vseq` 或字库，不参与设备运行时控制和算法处理。
-
-硬件基线：EG4S20BG256，约 19,600 LUT / 19,600 FF，片内 SDRAM 2M×32 bit（约 8 MB），板载 TF、HDMI、50 MHz 时钟和交互外设。
-
-## 2. 必做目标
-
-| 目标 | 实现口径 | 最终证据 |
-|---|---|---|
-| 媒体读取 | TF/SD 读取图片；FAT32 8.3 文件索引；24-bit BMP 解析 | 真卡 `[B]` |
-| 帧缓存 | 图片 A/B 双缓冲；后台加载与前台显示互斥；帧边界切换 | P0 `[C]` + 真 SDRAM `[B]` |
-| 稳定显示 | 640×480@60 基线；active line 连续，无 underflow/撕裂 | TD `[S]` + HDMI `[B]` + 长稳 `[L]` |
-| HDMI 正式输出 | RGB888 → APUG092 → EG PHY → HDMI | `[B]` |
-| 基础音频 | HDMI 测试音/提示音，后续可接 PCM | `[B]` |
-| 人机交互 | 按键/拨码完成切换、播放状态、参数、应急模式 | 集成 `[C]` + `[B]` |
-| 工程规范 | P0/P1 架构、CDC、官方约束、资源/时序报告、可重复回归 | `[S]` |
-
-P0 已经证明了“文件流到稳定 RGB 行”的纯 RTL 基础链；后续工作的核心不是重复写这一链，而是把它接入真实 vendor/board 环境。
-
-## 3. 高优先级加分目标
-
-按“对展示价值 / 资源 / 风险”的综合性价比排序：
-
-| 优先级 | 功能 | 现有基础 | 计划阶段 |
-|---|---|---|---|
-| 高 | OSD/字幕：时间、状态栏、滚动标语 | `osd_overlay [U]` | P2 |
-| 高 | 亮度/对比度实时调节并显示参数 | `image_enhance [U]` + `menu_fsm [U]` | P2 |
-| 高 | 图片/短视频缩放到 640×480 | `image_scaler [U]` | P2/P3 |
-| 中 | 图片淡入淡出/擦拭转场 | `transition [U]` | P2 |
-| 中 | 音频振幅/简易频带可视化 | `audio_visual [U]` | P2 |
-| 中 | YUV444 `.vseq` 短视频片段 | `vseq_reader/vseq_yuv_unpack/color_space [U]` | P3 |
-| 低/可选 | YUV420、省带宽格式、SDIO、720p | 有部分 `[U]` 组件，但无完整链 | P4 |
-
-## 4. 内容格式与数据目标
-
-### 4.1 图片
-
-P0 基线固定为：
-
-- BMP 24-bit、BI_RGB、bottom-up；
-- 行尾 4-byte padding；
-- RGB 存储格式 `0x00RRGGBB`；
-- 输出基线 640×480，可在 P2 加缩放适配不同源尺寸。
-
-### 4.2 FAT32 / TF
-
-基线目标：512-byte sector、SDHC/SDXC、8.3 short filename、fragmented FAT chain。当前 `fat32_file_reader` 已支持碎片链和 file-size 终止，但 `fat32_scan` 只覆盖根目录第一 sector；真正“任意卡插入即可播放”的鲁棒性必须到板级继续扩展和验证。
-
-### 4.3 短视频
-
-不实现 H.264/HEVC/MP4 压缩解码。短视频采用：
+在 HX4S20C / EG4S20BG256 上实现无外部 CPU/MCU 的 HDMI 多媒体信息发布终端：
 
 ```text
-PC 离线转帧 → .vseq 原始帧序列 → FPGA 读取/缓存/颜色转换/缩放/显示
+TF/FAT32
+  ↓
+BMP / frame sequence
+  ↓
+internal SDRAM framebuffer
+  ↓
+real-time display pipeline
+  ↓
+APUG092 HDMI video/audio
+  ↓
+HDMI display
 ```
 
-当前工具 `tools/video_to_vseq.py` 默认可生成 YUV444；现有 `vseq_reader` + `vseq_yuv_unpack` + `color_space` 均已 `[U]`，但完整视频播放链还没有 `[C]`。
+## 2. 当前已成立证据
 
-建议 P3 先做 YUV444 低分辨率短片，避免在 P1/P2 之前同时引入 SD 带宽、YUV420 去交错和复杂帧调度。
+- P0 media core：`[C] PASS(1698)`；
+- P1-02B APUG011 internal SDRAM backend：150 MHz `[S]`；
+- P1-04C HDMI_B：`[B] PASS`；
+- **P1-05A internal SDRAM framebuffer → HDMI_B：`[S][B] PASS / CLOSED`。**
 
-## 5. 明确不承诺的能力
+## 3. P1-05A 验收结果
 
-这些不是“失败项”，而是主动缩小范围以保证比赛工程稳定：
+### 3.1 功能目标 — PASS
 
-- **不做实时 H.264/HEVC/MP4 解码**；答辩称“短视频片段 / 原始帧序列播放”。
-- **不承诺 1080p**；640×480@60 是正式基线，720p60 仅 P4 验证。
-- 不做 GPU 风格窗口系统、任意透明混合、抗锯齿 UI、完整频谱 FFT。
-- 不为追求功能数量修改已冻结 P0 契约。
-- 不猜 vendor primitive、PLL、APUG011/APUG092 端口、HDMI 差分 pin 或 IOSTANDARD。
-- 单板基线稳定前，不把多 FPGA 扩展当成主线依赖。
+真实 internal SDRAM 存放完整 640×480 RGB888 固定帧，经 APUG011 读回、CDC、整行预取、ping-pong line buffer 后，通过 P1-04C HDMI boundary 输出。
 
-## 6. 质量目标
+真板最终稳定显示：8 px 白边、红/绿/蓝/黄四象限、中央洋红竖条、中央青色横条；无移动黑线、无可见抖动、抽搐或撕裂。
 
-项目“完成”必须由证据驱动，而不是由代码存在驱动：
+### 3.2 Questa — PASS
 
-- 模块级：有自检 TB 并达到 `[U]`；
-- 子链/整链：多模块真实握手组合达到 `[C-sub]` / `[C]`；
-- 工具链：TD synthesis/P&R 通过，timing/resource/RAM inference/clock constraints 人工检查后才 `[S]`；
-- 真板：真实 SDRAM、TF、HDMI、音频和交互完成后才 `[B]`；
-- 稳定性：连续运行至少 2h，并反复切换媒体无掉线/花屏/撕裂后才 `[L]`。
+```text
+p1_framebuffer_pattern_writer      PASS(259)
+p1_sdram_read_cdc_bridge           PASS(13)
+hdmi_framebuffer_scanout           PASS(35)
+p1_sdram_hdmi_pipeline             PASS(258)
+p1_sdram_cached_adapter            PASS(58)
+p1_sdram_hdmi_cached_chain         PASS(260), pixels=256, underflow=0
+cached adapter + official APUG011  PASS(24)
+```
 
-最终演示最低成功线是：**单板 640×480 稳定出图 + 真 TF 图片播放 + 无撕裂切换 + HDMI 音频/提示音 + 交互/应急模式 + TD/资源/时序证据完整**。
+protected APUG011 compatibility 保持 tCK/tRCD/DQM/readback/protocol health 全部通过；vendor source 自身的已知 Questa warning 不作为项目 RTL fail。
 
-## 7. PC 工具目标
+### 3.3 TD5.6.2 — PASS
 
-现有工具继续作为“内容制备工具”而非运行时计算：
+```text
+Setup errors = 0
+Hold errors  = 0
+Setup WNS    = +0.068 ns
+Hold WHS     = +0.131 ns
+TNS          = 0
+BitGen       = PASS
+```
 
-- `video_to_vseq.py`：原始帧序列打包/回读校验；
-- `make_sd_card.py`：生成最小 FAT32 测试镜像；
-- `gen_font.py`：生成 8×16 OSD 字模。
+| Clock | Min Period | Max Freq | TNS |
+|---|---:|---:|---:|
+| 25 MHz pixel | 27.015 ns | 37.000 MHz | 0 |
+| 150 MHz SDRAM | 6.598 ns | 151.561 MHz | 0 |
+| 50 MHz board | 6.770 ns | 147.710 MHz | 0 |
+| 125 MHz serial | 7.177 ns | 139.334 MHz | 0 |
 
-工具输出必须可被 RTL testbench 或真板读取验证，不能只“生成成功”就视为系统功能完成。
+**Timing caution：150 MHz closure 只有约 68 ps setup margin。P1-05A 可以标 `[S]`，但后续不能把它当作宽裕的性能余量。任何影响 active design 的修改都需要重新 STA。**
+
+### TD6.2.1 migration status
+
+官方要求当前工具链切换为 TD6.2.1。旧 P1-05A `[S]` 证据仍然是 TD5.6.2 historical closeout；本轮已针对 TD6.2.1 的 routed timing report 加入 source-level optimization candidate，但尚未重新取得新的 `[S]`。
+
+优化重点保持在两处：production cached-adapter diagnostics compile-out，以及 HDMI reset release phase 调整。不得通过 false-path/clock-group 隐藏 150 MHz same-domain violation；重新跑 TD6.2.1 后，只有在 final STA clean 时才能更新 `[S]`。
+
+### 3.4 资源 — ACCEPTED WITH FOLLOW-UP
+
+```text
+LUT      9977 / 19600 = 50.90%
+REG      2825 / 19600 = 14.41%
+BRAM9K     10 / 64    = 15.62%
+BRAM32K     0 / 16
+DSP         1 / 29
+PLL         2 / 4
+GCLK        2 / 16
+```
+
+资源足以进入 P1-05B，但 LUT 已超过一半。line buffer 的 ERAM 映射优化仍可作为后续资源回收手段；在没有资源压力前不破坏已收敛的 P1-05A baseline。
+
+## 4. 下一目标：P1-05B TF/BMP
+
+P1-05B 在 P1-05A display path 不变的前提下加入：
+
+- TF card initialization / block read；
+- FAT32；
+- 24-bit BI_RGB BMP；
+- framebuffer_writer；
+- A/B framebuffer；
+- frame-boundary swap；
+- 手动/自动切图。
+
+只有 P1-05B 真板通过后，才能对外表述“TF→SDRAM→HDMI 基础图片播放完成”。
+
+### P1-05B 验收约束
+
+1. 不破坏 P1-05A framebuffer baseline；
+2. 新增模块先 `[U]`，再 provider-realistic chain；
+3. combined TD 必须重新 0 setup/hold violation；
+4. 特别监控 150 MHz WNS，不能接受负裕量；
+5. 真板必须完成真实 TF/BMP 图像显示与 frame-boundary swap；
+6. 资源变化必须记录 LUT/REG/BRAM/PLL/GCLK。
+
+## 5. 分辨率演进
+
+```text
+640×480 : P1-05A stable baseline
+1280×720: 独立 timing optimization
+1920×1080 / 双板: P4 feasibility
+```
+
+720p 旧 75/375 MHz candidate 已 STA FAIL，不与当前 640×480 baseline 混用。
+
+## 6. 后续 Presentation
+
+P1-05B `[B]` 后再推进：OSD/字幕、转场、亮度/对比度、HDMI audio、音频可视化、应急画面。
+
+## 7. 状态等级
+
+| 等级 | 定义 |
+|---|---|
+| `[U]` | 单模块 Questa PASS |
+| `[C-sub]` | 真实模块子链 PASS |
+| `[C]` | 阶段端到端 RTL chain PASS |
+| `[S]` | TD synthesis + P&R + timing PASS |
+| `[B]` | 真板目标功能 PASS |
+| `[L]` | 长稳/压力/恢复 PASS |
+
+不得用“代码完成”“SynOpt 成功”“BitGen 成功”跨级替代真实证据。
+
+## 8. Golden boundary 冻结要求
+
+P1-05B 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI PLL、APUG092/EG PHY、reset/EDID/IIC divider、640×480 timing，以及 P1-05A 已证明的 cached-adapter/CDC/prefetch/scanout 行为。若必须修改，必须说明原因并重新取得对应 Questa、STA 和 board 证据。

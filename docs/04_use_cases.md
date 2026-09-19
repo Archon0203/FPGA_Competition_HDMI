@@ -2,142 +2,129 @@
 
 ## 1. 产品场景
 
-项目对外定义为：**校园/园区信息发布与应急广播终端**。
+项目定位：**校园/园区信息发布与应急广播终端**。最终由 FPGA 独立完成 TF 读取、文件解析、framebuffer、显示处理、HDMI 音视频与交互，不依赖外部 CPU/MCU。
 
-它不是“为了播放 HDMI 而播放 HDMI”的实验工程，而是一台没有外部 CPU 的专用信息终端：平时轮播公告、活动图片和短视频片段，叠加状态/时间/滚动文字；发生紧急情况时，通过硬件控制立即切换到高优先级应急画面并联动提示音、蜂鸣器和状态灯。
+## 2. 当前已验证演示
 
-一句话答辩口径：
+### P1-04C · HDMI link baseline
 
-> “一块 EG4S20 完成媒体读取、缓存、显示处理、HDMI 音视频、交互与应急切换；运行时不依赖外部处理器，利用 FPGA 的并行和确定性实现稳定的信息发布终端。”
+HX4S20C HDMI_B `[B] PASS`，稳定八色条，证明 50 MHz board clock、HDMI PLL、APUG092、EG PHY、pin 与 monitor lock。
 
-## 2. 四种使用模式
+### P1-05A · SDRAM framebuffer baseline
 
-### 2.1 常规信息发布
-
-- TF 卡保存公告 BMP、活动图片和后续 `.vseq` 短视频片段；
-- 自动轮播，也可按键上/下一项；
-- 内容切换只在帧边界生效，避免撕裂；
-- 顶部显示模式/序号/播放状态，底部滚动标语；
-- 可播放轻量背景音或测试音。
-
-### 2.2 管理员交互
-
-- 播放/暂停、上/下一张、图片/短片模式切换；
-- 亮度、对比度等参数调节；
-- OSD 开关、转场档位；
-- 数码管/LED 给出本机状态，避免调试时只依赖 HDMI 画面。
-
-现有 `key_filter / sw_filter / menu_fsm / seg_driver / dual_led / beep` 均已 `[U]`，但它们和正式 HDMI/媒体主链的整机整合属于 P2。
-
-### 2.3 应急广播
-
-应急事件拥有最高视觉优先级：
+P1-05A 已 `[S][B] PASS / CLOSED`。真板稳定显示：
 
 ```text
-用户触发
++--------------------------------------------------+
+|                    WHITE BORDER                  |
+|      RED                 |       GREEN           |
+|---------------------- CYAN ----------------------|
+|      BLUE                |       YELLOW          |
++--------------------------------------------------+
+                         ^
+                   MAGENTA vertical bar
+```
+
+该演示真实证明：
+
+- internal SDRAM 可写入完整 640×480 RGB888 framebuffer；
+- APUG011 sequential read bandwidth 足以支撑当前 640×480 raster；
+- 150↔25 MHz ordered CDC 有效；
+- line prefetch + ping-pong line buffer 可持续供数；
+- framebuffer RGB 可通过冻结的 P1-04C HDMI cadence 稳定输出；
+- 最终 bitstream 无可见抖动、抽搐、撕裂或移动黑线。
+
+这个测试图与经典四色标志在视觉上有巧合，但项目中它的定义是 **deterministic framebuffer diagnostic pattern**，用于同时验证象限、RGB 组合、frame border、水平/垂直中心线和地址顺序，不作为品牌 Logo 使用。
+
+## 3. P1-05A timing caveat
+
+当前 TD5.6.2 已 0 setup / 0 hold，WNS `+0.068 ns`，因此可以正式作为稳定 baseline；但 150 MHz timing margin 较薄。答辩和开发记录应表述为“timing closed”，不要表述为“有较大频率余量”。
+
+**TD6.2.1 迁移说明：** 官方要求已切换到 TD6.2.1。当前 source tree 正在进行针对新工具链的 timing optimization；在重新取得 TD6.2.1 final STA 前，不将新的 source candidate 宣称为新的 timing-closed 证据。P1-05A 的功能演示仍以历史真板 framebuffer golden baseline 为依据。
+
+## 4. 下一演示：P1-05B 真图片播放
+
+```text
+TF
+ ↓
+FAT32
+ ↓
+BMP
+ ↓
+SDRAM A/B framebuffer
+ ↓
+P1-05A display pipeline
+ ↓
+HDMI
+```
+
+目标：真实 BMP、手动切图、自动轮播、frame-boundary swap、不撕裂。
+
+只有 P1-05B 真板通过后，才能对外表述“TF→SDRAM→HDMI 图片播放完成”。
+
+## 5. 常规信息发布
+
+最终：TF 保存公告 BMP、海报和短视频帧序列；自动轮播/按键切换；OSD 显示序号、模式、状态；可选 HDMI 提示音。
+
+## 6. 应急广播
+
+```text
+Emergency trigger
    ↓
-app_scenario emergency
-   ├─ 切换到固定应急页/应急媒体
-   ├─ 大字警示 OSD
-   ├─ HDMI 提示音
-   ├─ 蜂鸣器
-   └─ LED 状态
+local emergency framebuffer
+   ├─ full-screen warning
+   ├─ high-priority OSD
+   ├─ HDMI alert tone
+   ├─ beep
+   └─ LED status
 ```
 
-应急页优先使用本地固定 ROM/已加载安全画面，不把“能否及时显示”依赖于此刻 SD 卡是否正好完成读取。
+应急页优先使用已准备好的本地 framebuffer，不依赖当前 TF 请求即时完成。
 
-演示时强调“确定性切换”，但延迟必须以真板实测为准；在没有数据前不宣传未经测量的“微秒级端到端响应”。
+## 7. 技术展示顺序
 
-### 2.4 技术演示模式
+1. P0 RTL media chain `[C]`；
+2. P1-02 APUG011 150 MHz `[S]`；
+3. P1-04C HDMI `[B]`；
+4. P1-05A SDRAM framebuffer `[S][B]`；
+5. P1-05B TF/BMP `[B]`（取得后）；
+6. OSD/audio/transition 等扩展。
 
-用于答辩向评委展示 FPGA 的可观察性：
+## 8. UI 分层
 
-- OSD 显示当前 buffer、媒体序号、参数档位；
-- 音频振幅柱显示实时 sample envelope；
-- 可演示图片 A/B 无撕裂 swap；
-- 可展示 TD resource/timing 与 RTL 仿真回归证据（当前工具为 QuestaSim 10.7c）；
-- 后续可加入“原图/增强”“无转场/转场”对比。
-
-## 3. UI 分层
-
-旧 UI 文档曾把图层叫 P0/P1/P2/P3，这会和现在的系统阶段 P0/P1 冲突，因此统一改名为 **UI-L0~UI-L3**：
-
-| 优先级 | 名称 | 内容 |
+| Priority | Layer | Content |
 |---|---|---|
-| UI-L3 | Emergency | 全屏警示页/大字，最高优先级 |
-| UI-L2 | Text/OSD | 状态栏、时间、滚动标语、参数面板 |
-| UI-L1 | Audio Visual | 低资源音频振幅/柱状可视化 |
-| UI-L0 | Base Media | 图片或短视频，经缩放/增强/转场后的基础画面 |
+| UI-L3 | Emergency | 全屏应急警示 |
+| UI-L2 | Text/OSD | 状态栏、时间、滚动文字、参数 |
+| UI-L1 | Audio Visual | 振幅/频带 |
+| UI-L0 | Base Media | BMP/短视频基础画面 |
 
-组合规则：每层给出 `cover + pixel`，逐像素从高到低选择，不引入窗口管理或复杂 alpha：
+P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把固定测试源替换为真实 TF/BMP 内容。
+
+## 9. 分辨率边界
 
 ```text
-pixel_out = UI-L3 ? emergency_pixel :
-            UI-L2 ? osd_pixel       :
-            UI-L1 ? audio_pixel     :
-                    base_pixel;
+640×480 : 当前稳定 baseline
+1280×720: 独立 timing optimization
+1920×1080 / 双板: P4 feasibility
 ```
 
-建议 640×480 布局：顶部约 24 行状态栏、底部约 24 行滚动标语，内容区保持整洁；应急模式时 UI-L3 覆盖普通信息。
+当前便携屏没有 input timing OSD，面板是否把 640×480 输入内部缩放为 1920×1080 全屏暂无法直接确认；色块边缘轻微 halo 也暂记为显示器 scaler/锐化/面板响应的非阻塞观察项。
 
-## 4. 内容与素材口径
+## 10. 当前对外口径
 
-### 图片
+### 可以说
 
-- 24-bit BMP；
-- 用于公告、活动海报、应急页；
-- 允许预先离线制作内容，但读取/解析/缓存/显示在 FPGA 内完成。
+- P0 media core 已通过 RTL chain；
+- APUG011 backend 已通过 150 MHz TD；
+- P1-04C HDMI_B 已真板通过；
+- **P1-05A 已完成 internal SDRAM framebuffer → HDMI 的 Questa、TD timing、BitGen 和真板闭环；**
+- 当前 combined STA 为 0 setup / 0 hold，WNS +0.068 ns；
+- 真板显示稳定，无可见 tearing/jitter/scanline underflow。
 
-### 短视频片段
+### 还不能说
 
-答辩统一称“**短视频片段 / 原始帧序列**”，不要说“MP4 解码”。推荐演示低分辨率 YUV444 `.vseq`，由 PC 在赛前离线转换，FPGA 负责帧读取、缓存、颜色转换、缩放和显示。
-
-### 音频
-
-P2 先保证 HDMI 测试音/提示音，再考虑预采样 PCM。音频可视化优先做振幅包络/少量频带，不把完整 FFT 当成基线。
-
-## 5. 建议现场演示脚本
-
-1. **上电基线**：640×480 HDMI 稳定显示默认公告；LED/数码管显示运行状态。
-2. **媒体读取**：从 TF 加载多张 BMP，展示图片 A/B 切换无撕裂。
-3. **交互**：手动上/下一张、播放/暂停，调整亮度/对比度，OSD 同步显示参数。
-4. **加分表现**：滚动标语、淡入/擦拭、音频振幅柱；若 P3 已通过，再播放 `.vseq` 短视频片段。
-5. **应急模式**：一键进入应急整屏，HDMI 提示音 + beep/LED 联动；再退出回常规模式。
-6. **工程证据**：展示 P0 `checks=1698`、既有 36/36 RTL 回归、QuestaSim 10.7c P1 回归、TD timing/resource、长稳计时记录。
-
-演示顺序始终让“稳定基础功能”先于“加分特效”，即使某个扩展临时失效也不能影响主链展示。
-
-## 6. 与竞赛评分点的对应
-
-| 评分方向 | 场景中的可见证据 |
-|---|---|
-| 核心多媒体功能 | TF → 文件 → buffer → HDMI；图片轮播/短片 |
-| 稳定性 | A/B frame swap、整行 line buffer、2h 长稳、快速切换 |
-| 音频 | HDMI 提示音/背景音 |
-| 工程规范 | P0/P1 架构、状态证据、TD/约束/资源报告 |
-| 图层/字幕 | UI-L2 状态栏与滚动标语 |
-| 转场 | 图片淡入/擦拭 |
-| 缩放 | 不同源分辨率适配 640×480 |
-| 实时参数 + OSD | 亮度/对比度与参数面板 |
-| 音频可视化 | UI-L1 振幅柱/简易频带 |
-
-## 7. 答辩边界
-
-可以明确说：
-
-- “全程无外部 CPU/MCU”；
-- “P0 纯 RTL 媒体链已经 `[C]`”；
-- “正式 HDMI 使用安路 APUG092，正式 SDRAM 使用 APUG011”；
-- “640×480@60 是稳定基线”；
-- “短视频是离线转成原始帧序列，运行时仍由 FPGA 自主读取、处理和显示”。
-
-在没有对应 `[S]/[B]/[L]` 证据前不要说：
-
-- “TD 时序已经收敛”；
-- “真 SDRAM/真 TF/HDMI 已经跑通”；
-- “720p 已稳定”；
-- “1080p 支持”；
-- “MP4/H.264 实时解码”；
-- “整条 SD→显示链微秒级”。
-
-对外所有性能数字最终以真板记录、TD 报告和可重复测试为准。
+- TF→SDRAM→HDMI 已完成；
+- 720p 已支持；
+- 1080p 已支持；
+- P1-05A 已取得 `[L]` 长稳等级。
