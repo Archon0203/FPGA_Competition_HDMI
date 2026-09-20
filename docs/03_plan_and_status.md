@@ -183,3 +183,26 @@ IO          7
 目标：TF/FAT32/BMP → SDRAM framebuffer → HDMI，恢复 A/B framebuffer 与 frame-boundary swap。
 
 进入条件已经满足。P1-05B 第一原则是**复用并保护 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
+
+### P1-05B-01 写入侧媒体 loader — `[U] PASS`
+
+`p1_media_framebuffer_loader` 已将冻结的 P0 `fat32_file_reader -> bmp_parser/bmp_pixel_stream -> framebuffer_writer` 封装为 P1 150 MHz abstract SDRAM write source，并通过：
+
+```text
+fragmented FAT32 sector provider
+ -> p1_media_framebuffer_loader
+ -> sdram_arbiter
+ -> p1_sdram_cached_adapter
+ -> mock APUG011 application port
+```
+
+ModelSim 10.6d：
+
+```text
+PASS: p1_media_framebuffer_loader fragmented BMP -> cached APUG011 chain
+checks=225, app_writes=816
+```
+
+测试覆盖 17×12、24-bit BI_RGB、BGR/bottom-up、每行 1-byte padding、`data_offset=54` 与 FAT cluster `3 -> 7 -> EOC`，并检查每一个 provider memory word 的独立 RGB golden。P0 full chain 亦回归 `PASS(1698)`；cached adapter 单测回归 `PASS(58)`。
+
+此项仅为 `[U]`：当前 loader 未接入 active board top；真实 TF physical reader 到 150 MHz write domain 的 CDC/provider wrapper、640×480 真 BMP 写入、A/B frame swap、combined TD6.2.1 STA 及 board evidence 均未完成。不得据此宣称 P1-05B 或 TF→HDMI 已完成。
