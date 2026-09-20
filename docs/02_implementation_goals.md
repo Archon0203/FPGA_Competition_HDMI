@@ -99,6 +99,8 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 - frame-boundary swap；
 - 手动/自动切图。
 
+当前第一项子证据：`p1_media_framebuffer_loader` 已 `[U] PASS`。它把 P0 FAT32/BMP/framebuffer writer 连接至 P1 cached APUG011 写后端的抽象接口；fragmented BMP provider-realistic chain 为 `PASS(225)`。该证据不包含真实 TF physical reader CDC、active board top、TD6.2.1 或真板显示。
+
 只有 P1-05B 真板通过后，才能对外表述“TF→SDRAM→HDMI 基础图片播放完成”。
 
 ### P1-05B 验收约束

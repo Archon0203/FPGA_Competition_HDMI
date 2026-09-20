@@ -37,6 +37,7 @@ FPGA_Competition_HDMI/
 │  │  ├─ line_prefetcher.v
 │  │  ├─ line_buffer_pingpong.v
 │  │  ├─ p1_framebuffer_pattern_writer.v
+│  │  ├─ p1_media_framebuffer_loader.v      # P1-05B [U] media -> abstract SDRAM write source
 │  │  ├─ p1_sdram_read_cdc_bridge.v
 │  │  └─ p1_sdram_hdmi_pipeline.v
 │  ├─ display/
@@ -55,6 +56,7 @@ FPGA_Competition_HDMI/
 │  ├─ framebuf/
 │  ├─ display/
 │  └─ integration/
+│     └─ tb_p1_media_framebuffer_loader.v   # P1-05B provider-realistic write-side [U]
 ├─ ip/
 ├─ tools/
 └─ data/                                   # 默认不入仓库

@@ -30,3 +30,15 @@ p1_sdram_hdmi_pipeline
 `run_p1_sdram_hdmi_cached_chain.do` → `PASS(260), pixels=256, app_reads=328, hits=243, misses=82, underflow=0`。
 
 该链补上理想 one-cycle memory TB 无法覆盖的 provider latency / 4-word grouping / sustained-bandwidth 场景，是 P1-05A 真板消除移动扫描线 underflow 的关键 regression。
+
+### P1-05B media write-side loader
+
+```text
+fragmented FAT32 sector provider
+ -> p1_media_framebuffer_loader
+ -> sdram_arbiter
+ -> p1_sdram_cached_adapter
+ -> mock APUG011 application port
+```
+
+`run_p1_media_framebuffer_loader.do` 已 `PASS(225)`，验证真实 BMP 的 BGR/bottom-up/padding/fat-fragmentation 语义、非法 signature 拒绝，最终写到 cached APUG011 provider memory。该测试只覆盖写入侧，不改变或替代 P1-05A HDMI/read path。

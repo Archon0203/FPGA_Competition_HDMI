@@ -36,6 +36,20 @@ P1-05 sequential-video adapter；P1-02 `sdram_adapter.v` 不改。
 
 完整 cached provider chain：`PASS(260), pixels=256, underflow=0`；official APUG011 compatibility：`PASS(24)`。
 
+## P1-05B candidate additions
+
+### `p1_media_framebuffer_loader.v`
+
+P1-05B 写入侧封装：`FAT32 file reader -> BMP parser/pixel stream -> framebuffer_writer -> abstract mem_wr`。该模块复用 P0 已冻结的媒体契约，默认只接受 640×480、24-bit BI_RGB bottom-up BMP，并保持 P1-05A HDMI/read/display path 不变。
+
+该模块当前为 `[U] PASS`；对应 provider-realistic ModelSim 入口为：
+
+```text
+sim_tb/integration/run_p1_media_framebuffer_loader.do
+```
+
+回归覆盖 fragmented FAT32、BMP BGR/bottom-up/padding、非法 signature 拒绝，以及 `sdram_arbiter -> p1_sdram_cached_adapter -> mock APUG011`；结果为 `PASS(225)`。真实 TF physical reader 与该 150 MHz write-domain loader 之间仍必须使用显式 CDC/provider wrapper，不能直接跨域连接。
+
 ## P1-05A final timing note
 
 combined STA：0 setup / 0 hold，WNS `+0.068 ns`。该余量较薄，后续改动必须重新 STA。
