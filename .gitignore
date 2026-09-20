@@ -43,3 +43,5 @@ data/
 .lock.f
 *.al.back
 log/
+
+FPGA_Competition_HDMI_Runs/

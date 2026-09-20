@@ -183,7 +183,6 @@
             </File>
             <File Path="src/top/p1_hx4s20c_sdram_hdmi_top.v">
                 <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
