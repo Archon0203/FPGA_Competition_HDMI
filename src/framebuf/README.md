@@ -50,9 +50,9 @@ sim_tb/integration/run_p1_media_framebuffer_loader.do
 
 回归覆盖 fragmented FAT32、BMP BGR/bottom-up/padding、非法 signature 拒绝，以及 `sdram_arbiter -> p1_sdram_cached_adapter -> mock APUG011`；结果为 `PASS(225)`。真实 TF physical reader 与该 150 MHz write-domain loader 之间仍必须使用显式 CDC/provider wrapper，不能直接跨域连接。
 
-## P1-05A final timing note
+## Current TD6.2.1 timing note
 
-combined STA：0 setup / 0 hold，WNS `+0.068 ns`。该余量较薄，后续改动必须重新 STA。
+TD6.2.1 final routed STA（2026-09-21）：0 setup / 0 hold，SWNS `+0.599 ns`、HWNS `+0.003 ns`，coverage `99.17%`。硬件最小裕量仅 3 ps，任何后续改动必须重新 P&R/STA。当前 run 仍有两个 SDRAM location warning 和一条 local clock routing warning。
 
 ## 规则
 

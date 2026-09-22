@@ -16,4 +16,20 @@ Required validation on the official environment:
 - BitGen
 - HX4S20C board validation
 
-Until those are complete, the previous P1-05A `[S][B] CLOSED` evidence remains the TD5.6.2 historical baseline, not a new TD6.2.1 closure claim.
+At package creation time, the previous P1-05A `[S][B] CLOSED` evidence remained the TD5.6.2 historical baseline, not a new TD6.2.1 closure claim. The subsequent official-environment result is recorded below.
+
+## Subsequent official-environment verification — 2026-09-21
+
+The official TD6.2.1 environment later completed the package validation for the active P1-05A top. The routed final report is `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt`:
+
+```text
+Generated       2026-09-21 11:40:27
+STA coverage    99.17%
+SWNS            +0.599 ns
+STNS            0.000 ns
+HWNS            +0.003 ns
+HTNS            0.000 ns
+violating endpoints: setup 0, hold 0
+```
+
+BitGen generated `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`. This establishes the current TD6.2.1 routed `[S]` result. No new TD6.2.1 board observation is recorded here, so the `[B]` evidence remains the historical P1-05A framebuffer demonstration. The run still reports two unhonored `u_internal_sdram` initial locations and one clock net using local routing resources; these warnings remain open implementation risks.

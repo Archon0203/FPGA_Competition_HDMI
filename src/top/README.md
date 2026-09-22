@@ -14,7 +14,7 @@ P1-04C `[B] PASS`，固定八色条。HDMI 无信号时优先回退该 top。
 p1_hx4s20c_sdram_hdmi_top.v
 ```
 
-P1-05A 已 `[S][B] PASS / CLOSED`：
+P1-05A 当前 TD6.2.1 routed `[S] PASS`；历史真板 `[B] PASS`，TD6.2.1 bitstream 尚待重新上板复测：
 
 - 保留 P1-04C HDMI PLL / reset / EDID / APUG092 / EG PHY / pin；
 - 增加 official APUG011 PLL（25→150/shifted）；
@@ -24,7 +24,7 @@ P1-05A 已 `[S][B] PASS / CLOSED`：
 - line prefetch / ping-pong scanout；
 - 只在 safe frame boundary 把 RGB data 从 golden bars 切换到 SDRAM。
 
-最终 combined STA 0 setup/hold，WNS `+0.068 ns`；最终 bitstream 真板稳定显示完整 framebuffer。
+TD6.2.1 final STA 为 0 setup/hold，SWNS `+0.599 ns`、HWNS `+0.003 ns`；BitGen 已生成 bitstream。当前文档不把本轮 TD6.2.1 build 写成新的真板通过证据。
 
 ## Vendor wrapper
 

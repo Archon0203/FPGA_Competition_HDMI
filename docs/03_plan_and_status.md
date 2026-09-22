@@ -16,7 +16,7 @@
 
 ## 2. 文档维护约束
 
-主要当前文档固定为：
+主要当前文档包括：
 
 ```text
 README.md
@@ -25,9 +25,13 @@ docs/01_architecture.md
 docs/02_implementation_goals.md
 docs/03_plan_and_status.md
 docs/04_use_cases.md
+docs/05_line_A_media_plan.md
+docs/06_line_B_framebuffer_plan.md
+docs/07_line_C_presentation_plan.md
+docs/08_three_line_integration_flow.md
 ```
 
-阶段调试过程、候选实现和复盘允许追加到 `docs/develop_records/`；不要在 `docs/` 根目录新增其它当前设计文档。`docs/olds/` 只读。
+`docs/01~04` 是四份权威文档；`docs/05~08` 是并列的三线计划与集成流程文档。阶段调试过程、候选实现和复盘追加到 `docs/develop_records/`；`docs/olds/` 只读。
 
 ## 3. 已收口基础证据
 
@@ -62,7 +66,7 @@ P1-02B final WNS `+0.059 ns`。
 
 P1-04A 720p 75/375 MHz 为历史 STA FAIL；P1-04B 为 TD 可实现但 board 无 HDMI；P1-04C 对齐 official startup 后成为 HDMI golden baseline。
 
-## 4. P1-05A 最终状态 — CLOSED
+## 4. P1-05A 状态
 
 ### 4.1 目标
 
@@ -79,43 +83,45 @@ P1-04A 720p 75/375 MHz 为历史 STA FAIL；P1-04B 为 TD 可实现但 board 无
 | `p1_sdram_cached_adapter` | `[U]` | PASS(58), reads=8, app_reads=8, hits=6, misses=2 |
 | cached provider chain | `[C-sub]` | PASS(260), pixels=256, underflow=0 |
 | cached adapter + official APUG011 | `[C-sub]` | PASS(24) |
-| combined TD5.6.2 | `[S]` | 0 setup / 0 hold, WNS +0.068 ns, WHS +0.131 ns |
-| final BitGen + HX4S20C board | `[B]` | 完整 framebuffer 稳定显示，无可见撕裂/抖动/移动黑线 |
+| combined TD5.6.2 | `[S]` | 历史 closeout：0 setup / 0 hold, WNS +0.068 ns, WHS +0.131 ns |
+| TD6.2.1 routed final + BitGen | `[S]` | 2026-09-21 report：0 setup / 0 hold，SWNS +0.599 ns，HWNS +0.003 ns；bitstream 已生成 |
+| HX4S20C board | `[B]` | 历史 framebuffer 稳定显示，无可见撕裂/抖动/移动黑线；TD6.2.1 bitstream 尚待复测 |
 
-因此：
+因此，当前证据应写为：
 
 ```text
-P1-05A [S] PASS
-P1-05A [B] PASS
-P1-05A CLOSED
+P1-05A TD6.2.1 [S] PASS
+P1-05A historical [B] PASS
+P1-05A TD6.2.1 board re-test pending
 ```
 
 未取得 `[L]`，所以暂不声称长时间压力/掉电恢复等级。
 
-### 4.3 Final TD timing
+### 4.3 TD6.2.1 final timing
 
 ```text
-STA coverage      98.69%
-Setup errors      0
-Hold errors       0
-Setup WNS        +0.068 ns
-Setup TNS         0.000 ns
-Hold WHS         +0.131 ns
-Hold TNS          0.000 ns
+Generated         2026-09-21 11:40:27
+STA coverage      99.17%
+Setup violations  0
+Hold violations   0
+SWNS              +0.599 ns
+STNS              0.000 ns
+HWNS              +0.003 ns
+HTNS              0.000 ns
 ```
 
-| Clock | Target | Min Period | Max Freq | TNS |
+| Clock | Target | R-Period | R-Freq | SWNS / HWNS |
 |---|---:|---:|---:|---:|
-| `u_hdmi_pll/u_pll.clkc[0]` | 25 MHz | 27.015 ns | 37.000 MHz | 0 |
-| `u_sdram_pll/pll_inst.clkc[1]` | 150 MHz | 6.598 ns | 151.561 MHz | 0 |
-| `hx4s20c_clk50m` | 50 MHz | 6.770 ns | 147.710 MHz | 0 |
-| `u_hdmi_pll/u_pll.clkc[1]` | 125 MHz | 7.177 ns | 139.334 MHz | 0 |
+| `u_hdmi_pll/u_pll.clkc[0]` | 25 MHz | 21.022 ns | 47.569 MHz | +9.489 / +0.003 ns |
+| `u_sdram_pll/pll_inst.clkc[1]` | 150.015 MHz | 5.914 ns | 169.090 MHz | +0.752 / +0.067 ns |
+| `hx4s20c_clk50m` | 50 MHz | 9.784 ns | 102.208 MHz | +10.216 / +0.648 ns |
+| `u_hdmi_pll/u_pll.clkc[1]` | 125 MHz | 6.802 ns | 147.016 MHz | +0.599 / +0.285 ns |
 
-**Timing caveat：整体 setup margin 仅 +0.068 ns。P1-05A 是“timing clean”，不是“timing 宽裕”。后续每次影响 active netlist 的修改必须重新 STA。**
+**Timing caveat：当前硬件最小 hold 裕量为 +0.003 ns（3 ps）。P1-05A 是“当前 routed STA 无违例”，不是“时序裕量宽裕”。后续每次影响 active netlist 的修改必须重新 STA。**
 
-### 4.3A TD6.2.1 migration / timing optimization — OPEN
+### 4.3A TD6.2.1 实现记录与 warning
 
-官方要求已将工具链切换至 TD6.2.1。2026-09-17 对当前 P1-05A source baseline 做了 TD6.2.1 完整实现，旧网表 routed report 为：
+官方要求已将工具链切换至 TD6.2.1。此前 2026-09-17 的负 SWNS 是预优化历史结果：
 
 ```text
 STA coverage 99.15%
@@ -126,30 +132,35 @@ HWNS         +0.011 ns
 post-place LUT 7437 / 19600
 ```
 
-其中 `-7.098 ns` 的 worst path 是 APUG011/internal SDRAM hard-I/O 的 `clk2 -> clk1` setup analysis；`150 MHz self-domain` 的软件时序负裕量主要落在 `p1_sdram_cached_adapter` 的 runtime diagnostic cone。硬件 routed timing 仍为正，但整体 margin 偏薄。
+其中 `-7.098 ns` 和 `-1.119 ns` 只用于说明优化前问题，不代表当前 2026-09-21 routed result。
 
-当前 source tree 的优化 candidate：
+当前 source tree 已采用的优化：
 
 - production `p1_sdram_cached_adapter` 使用 `.ENABLE_RUNTIME_DIAGNOSTICS(0)`，将非数据通路的 debug counters / redundant assertions 从 150 MHz active cone 中剔除；默认参数仍为 `1`，因此现有 Questa 单测/集成 TB 不改变。
 - HDMI reset release 使用官方例程的 50 MHz rising edge；下降沿实验缩短了 125 MHz serial-domain recovery window，已恢复上升沿实现，功能时序仍保持约 20 ms reset hold。
 
-**重新取得 `[S]` 的必要条件：** 使用 TD6.2.1 从 `read_design → synthesis → P&R → final STA` 完整重跑；确认 25/150/50/125 MHz 均无 setup/hold violation 后，才更新本节和最终 timing evidence。BitGen/真板重新验证后才能恢复当前工具链下的 `[B]` 结论。
+当前 TD6.2.1 已完成 `read_design → synthesis → P&R → final STA → BitGen`，并满足 `[S]`。但以下 warning 仍须保留在风险清单中：
 
-### 4.4 Final post-Phy resource
+1. `u_internal_sdram` 的两个初始 location `(12, 12)`、`(164, 288)` 未被采用，ECO placement 移动了实例；
+2. 1 条时钟网使用 local routing resource，目标为 `u_sdram_pll/pll_inst.clkc[2] -> SDRAM_CLK`。
+
+这些 warning 当前没有形成 final STA violation；后续若修改 ADC/布局约束或时钟资源，必须重新生成 report 并重新评估。
+
+### 4.4 Current post-route resource
 
 ```text
-LUT      9977 / 19600 = 50.90%
-REG      2825 / 19600 = 14.41%
-LE      10440
-DSP         1 / 29
+LUT      7416 / 19600 = 37.84%
+REG      2554 / 19600 = 13.03%
+LE       7891
+DSP         1 / 29    = 3.45%
 BRAM9K     10 / 64    = 15.62%
 BRAM32K     0 / 16
-PLL         2 / 4
-GCLK        2 / 16
-IO          7
+PLL         2 / 4     = 50.00%
+GCLK        2 / 16    = 12.50%
+IO          7 / 188   = 3.72%
 ```
 
-资源风险：LUT 已使用约一半；line-buffer ERAM 化仍是候选优化项，但不在 P1-05A closeout 后立即重构。
+TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.1 routed netlist。当前 LUT 约 37.84%，但 local clock routing warning 和 3 ps hold 裕量仍是实现风险。
 
 ### 4.5 Board result
 
@@ -161,7 +172,7 @@ IO          7
 移动彩色窄线      -> sustained provider bandwidth underflow
 ```
 
-最终 bitstream 上板后未观察到抖动、抽搐、撕裂或移动黑线。
+历史 bitstream 上板后未观察到抖动、抽搐、撕裂或移动黑线；本次 TD6.2.1 bitstream 尚无新的上板观察记录。
 
 详细实现与调试过程见：`docs/develop_records/P1-05A_CLOSEOUT_20260912.md`。
 
@@ -182,7 +193,7 @@ IO          7
 
 目标：TF/FAT32/BMP → SDRAM framebuffer → HDMI，恢复 A/B framebuffer 与 frame-boundary swap。
 
-进入条件已经满足。P1-05B 第一原则是**复用并保护 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
+P1-05B 的独立功能开发进入条件已经满足；active top 集成仍须先完成 TD6.2.1 bitstream 的 P1-05A 真板复测。P1-05B 第一原则是**复用并保护 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
 
 ### P1-05B-01 写入侧媒体 loader — `[U] PASS`
 
@@ -205,4 +216,4 @@ checks=225, app_writes=816
 
 测试覆盖 17×12、24-bit BI_RGB、BGR/bottom-up、每行 1-byte padding、`data_offset=54` 与 FAT cluster `3 -> 7 -> EOC`，并检查每一个 provider memory word 的独立 RGB golden。P0 full chain 亦回归 `PASS(1698)`；cached adapter 单测回归 `PASS(58)`。
 
-此项仅为 `[U]`：当前 loader 未接入 active board top；真实 TF physical reader 到 150 MHz write domain 的 CDC/provider wrapper、640×480 真 BMP 写入、A/B frame swap、combined TD6.2.1 STA 及 board evidence 均未完成。不得据此宣称 P1-05B 或 TF→HDMI 已完成。
+此项仅为 `[U]`：当前 loader 未接入 active board top；真实 TF physical reader 到 150 MHz write domain 的 CDC/provider wrapper、640×480 真 BMP 写入、A/B frame swap、P1-05B active top 的 combined TD6.2.1 STA 及 board evidence 均未完成。当前 TD6.2.1 report 对应 P1-05A active top，不能作为 P1-05B 的实现证据。不得据此宣称 P1-05B 或 TF→HDMI 已完成。

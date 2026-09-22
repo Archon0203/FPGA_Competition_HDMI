@@ -67,6 +67,13 @@ FPGA_Competition_HDMI/
 - [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md)：唯一的进度、验证结果和状态等级权威。
 - [`docs/04_use_cases.md`](docs/04_use_cases.md)：产品场景、演示顺序和当前对外表述。
 
+三线并行开发与逐步集成按以下文档执行：
+
+- [`docs/05_line_A_media_plan.md`](docs/05_line_A_media_plan.md)：A 线 TF/FAT32/BMP 与媒体输入；
+- [`docs/06_line_B_framebuffer_plan.md`](docs/06_line_B_framebuffer_plan.md)：B 线 framebuffer/SDRAM/CDC；
+- [`docs/07_line_C_presentation_plan.md`](docs/07_line_C_presentation_plan.md)：C 线显示处理、交互和音频；
+- [`docs/08_three_line_integration_flow.md`](docs/08_three_line_integration_flow.md)：三线接口、分支和集成门禁。
+
 开发过程记录、候选方案和阶段复盘统一放在 [`docs/develop_records/`](docs/develop_records/)；历史文档放在 `docs/olds/`，不作为当前状态依据。
 
 ## 参与开发
