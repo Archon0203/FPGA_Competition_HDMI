@@ -1,13 +1,13 @@
 # 01 · 系统架构（P0 → P4）
 
-> 本文是当前架构权威。当前板级稳定基线已经从 P1-04C HDMI 八色条推进到 **P1-05A internal SDRAM framebuffer → HDMI_B `[S][B] PASS / CLOSED`**；P1-04C 继续作为 HDMI rollback baseline。
+> 本文是当前架构权威。功能与历史真板基线为 P1-05A internal SDRAM framebuffer → HDMI_B；当前 active top 已在 TD6.2.1 完成 routed STA/BitGen，P1-04C 继续作为 HDMI rollback baseline。TD6.2.1 真板复测尚未记录，不能把历史 `[B]` 证据误写成当前工具链的板级证据。
 
 ## 1. 总体阶段
 
 | 阶段 | 职责 | 当前证据 |
 |---|---|---|
 | P0 · Media Core | 文件流、BMP、framebuffer、抽象 SDRAM、整行预取、连续 RGB888 | `[C]` |
-| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A `[S][B] CLOSED` |
+| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S]`，历史 `[B]` |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
 | P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
 | P4 · Stretch | 720p 优化、1080p/双板、SDIO | feasibility |
@@ -131,9 +131,9 @@ axis_data -> SDRAM framebuffer RGB
 
 这使存储链失败仍可观察 HDMI fallback，而不会破坏 link cadence。
 
-## 6. P1-05A final timing boundary
+## 6. P1-05A timing boundary
 
-TD5.6.2 combined implementation：
+TD5.6.2 combined implementation（历史 closeout）：
 
 ```text
 Setup errors  0
@@ -145,22 +145,41 @@ TNS           0
 
 150 MHz domain：Min Period `6.598 ns`，Max Freq `151.561 MHz`。因此 P1-05A 已达到 `[S]`，但 68 ps 的整体 setup margin 很薄。**后续 P1-05B 每次影响 active design 的修改都必须重新 P&R + STA；不得把本次 closure 当作可继承裕量。**
 
-### 6.1 TD6.2.1 migration timing candidate
+### 6.1 TD6.2.1 current routed result
 
-官方要求将工具链切换到 TD6.2.1 后，旧 source baseline 的 routed report 出现工具模型与硬件路径裕量分离：overall `SWNS=-7.098 ns`、`HWNS=+0.011 ns`；150 MHz self-domain 为 `SWNS=-1.119 ns`、`HWNS=+0.182 ns`。当前不把 SWNS 负值通过 false-path/clock-group 掩盖；150 MHz same-domain path 仍按真实 synchronous path 分析。
+报告 `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 于 2026-09-21 11:40:27 生成，Top 为 `p1_hx4s20c_sdram_hdmi_top`，工具为 TD 6.2.168116。该报告为 routed/final STA，coverage `99.17%`，所有报告端点均无 setup/hold violation：
+
+```text
+SWNS (setup)  +0.599 ns
+STNS           0.000 ns
+HWNS (hold)   +0.003 ns
+HTNS           0.000 ns
+violating endpoints  0 / 0
+```
+
+相关时钟域的报告值为：25 MHz `SWNS=+9.489 ns/HWNS=+0.003 ns`，150 MHz `+0.752/+0.067 ns`，50 MHz `+10.216/+0.648 ns`，125 MHz `+0.599/+0.285 ns`。这里的 `HWNS=+0.003 ns` 是当前最小硬件 hold 裕量，不能表述为“时序裕量充足”。
+
+此前 TD6.2.1 预优化报告中的 overall `SWNS=-7.098 ns`、150 MHz `SWNS=-1.119 ns` 是历史问题记录，不再代表当前 routed result。当前约束使用 `derive_clocks`；未使用 false path 掩盖 150 MHz 同域逻辑。两条 APUG011 相位相关硬宏边界例外仍按约束文件限制在 clkc[2]↔clkc[1] 方向。
 
 本轮 source-level 优化只做两项低风险修改：
 
 1. `p1_sdram_cached_adapter` 增加 `ENABLE_RUNTIME_DIAGNOSTICS` 参数。仿真默认 `1`，保留原有计数器/冗余协议断言；P1-05A board top 设置为 `0`，使这些非数据通路逻辑不进入生产 150 MHz timing cone。provider response legality check 仍保留。
 2. `p1_hx4s20c_sdram_hdmi_top` 的 HDMI reset **释放**使用 50 MHz 上升沿，与官方板级例程一致。曾尝试下降沿来避开 25 MHz pixel rising-edge removal 临界点，但 TD6.2.1 报告显示它缩短了 125 MHz serial-domain recovery window，因此已恢复上升沿实现。
 
-上述两项修改尚未取得新的 TD6.2.1 P&R、BitGen 或真板证据，因此状态仍为 candidate，不覆盖 P1-05A 历史 closeout。
+上述 source-level 修改已在当前 TD6.2.1 routed run 中得到实现和时序结果，BitGen 也已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`。但本次记录未包含 TD6.2.1 bitstream 的新真板观察，因此 `[B]` 仍引用历史 P1-05A board baseline，不能升级为当前工具链的板级复测结论。
 
-## 7. 资源边界
+当前 run 仍记录以下 critical warning，需在后续约束/实现复盘中单独处理：
 
-Post-Phy：LUT 9977/19600、REG 2825/19600、BRAM9K 10/64、BRAM32K 0/16、PLL 2/4。
+- `u_internal_sdram` 两个初始 location 未被接受，ECO placement 已移动实例；
+- 1 条时钟网使用 local routing resource，目标为 `u_sdram_pll/pll_inst.clkc[2] -> SDRAM_CLK`。
 
-资源尚可继续推进，但 LUT 已使用约 50.9%。此前 `ram_style` 尝试没有显著增加 BRAM 使用，line-buffer ERAM 化作为后续资源优化项保留；不要在 P1-05A closeout 后立即重构已稳定路径，除非 P1-05B 资源/时序确实要求。
+## 7. 当前 TD6.2.1 资源边界
+
+当前 post-route area report：LUT `7416/19600 = 37.84%`、REG `2554/19600 = 13.03%`、BRAM9K `10/64 = 15.62%`、BRAM32K `0/16`、DSP `1/29 = 3.45%`、PLL `2/4 = 50%`、GCLK `2/16 = 12.5%`。
+
+TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.1 routed netlist。
+
+资源尚可继续推进，当前 LUT 使用率约 37.84%。此前 `ram_style` 尝试没有显著增加 BRAM 使用，line-buffer ERAM 化作为后续资源优化项保留；不要在 P1-05A closeout 后立即重构已稳定路径，除非 P1-05B 资源/时序确实要求。
 
 ## 8. P1-05A 冻结边界
 

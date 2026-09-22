@@ -5,7 +5,7 @@
 - P0 已冻结 media-core RTL；
 - P1-02 APUG011 SDRAM backend；
 - P1-04C HDMI board golden rollback；
-- **P1-05A SDRAM framebuffer→HDMI stable baseline `[S][B] CLOSED`**。
+- **P1-05A SDRAM framebuffer→HDMI：TD6.2.1 routed `[S] PASS`，历史真板 `[B] PASS`**。
 
 当前 active TD TOP：
 

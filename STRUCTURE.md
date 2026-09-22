@@ -1,8 +1,8 @@
 # 项目目录结构
 
-当前 active baseline 为 **P1-05A internal SDRAM framebuffer → HDMI_B `[S][B] PASS / CLOSED`**。P1-04C 八色条 top 继续保留为 HDMI golden rollback。
+当前 active baseline 为 **P1-05A internal SDRAM framebuffer → HDMI_B**。TD6.2.1 routed implementation/timing/BitGen 已通过；P1-05A 真板画面是历史 golden baseline，TD6.2.1 bitstream 尚待重新上板复测。P1-04C 八色条 top 继续保留为 HDMI golden rollback。
 
-**当前工具链迁移：TD6.2.1。** P1-05A 的历史 closeout 证据来自 TD5.6.2；当前 source tree 已加入 TD6.2.1 timing-optimization candidate，等待重新 P&R/STA 后再更新 `[S]` 状态。
+**当前工具链：TD6.2.1。** 2026-09-21 final routed report 为 coverage 99.17%、SWNS +0.599 ns、STNS 0、HWNS +0.003 ns、HTNS 0，setup/hold 违例端点 0；BitGen 已完成。硬件最小裕量仅 3 ps，且仍有两个 SDRAM location warning 和一条 local clock routing warning。
 
 根目录只使用一个 TD 工程：
 
@@ -21,6 +21,10 @@ FPGA_Competition_HDMI/
 │  ├─ 02_implementation_goals.md     # 目标与验收边界
 │  ├─ 03_plan_and_status.md          # 唯一进度/状态权威
 │  ├─ 04_use_cases.md                # 场景与演示口径
+│  ├─ 05_line_A_media_plan.md        # A 线计划
+│  ├─ 06_line_B_framebuffer_plan.md   # B 线计划
+│  ├─ 07_line_C_presentation_plan.md  # C 线计划
+│  ├─ 08_three_line_integration_flow.md # 三线集成流程
 │  ├─ develop_records/               # 开发过程记录，可追加，不替代 01~04
 │  │  └─ P1-05A_CLOSEOUT_20260912.md # 本阶段实现/调试/timing 复盘
 │  ├─ evidence/                      # 历史验证证据
@@ -96,10 +100,10 @@ APUG092 的 `axis_user/axis_valid/axis_last` 仍来自 P1-04C free-running sourc
 `constraints/p1_hx4s20c_hdmi_board.sdc`：
 
 - 50 MHz root clock；
-- `derive_pll_clocks`；
+- `derive_clocks`（TD6.2.1；旧命令只保留在历史/实验约束）；
 - 25 MHz pixel 与 150 MHz SDRAM 明确声明为异步 clock groups，仅通过既有 CDC FIFO/synchronizer 通信。
 
-最终 combined STA：0 setup / 0 hold，WNS `+0.068 ns`，WHS `+0.131 ns`。该裕量较薄，任何 active RTL/SDC 修改后必须重新实现和 STA。
+当前 TD6.2.1 final STA：0 setup / 0 hold，SWNS `+0.599 ns`，HWNS `+0.003 ns`，coverage `99.17%`。BitGen 已完成；TD6.2.1 真板复测仍待进行。任何 active RTL/SDC 修改后必须重新实现和 STA。
 
 ## Board pin
 
@@ -117,4 +121,4 @@ P1-05A 没有增加 external board pin。
 
 ## 文档组织规则
 
-主要当前文档固定为根 `README.md`、`STRUCTURE.md` 与 `docs/01~04`。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。
+主要当前文档包括根 `README.md`、`STRUCTURE.md`、`CONTRIBUTING.md`、`docs/01~04` 四份权威文档，以及并列的 `docs/05~08` 三线计划/集成流程文档。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。

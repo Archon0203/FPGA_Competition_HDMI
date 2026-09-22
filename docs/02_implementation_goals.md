@@ -23,7 +23,7 @@ HDMI display
 - P0 media core：`[C] PASS(1698)`；
 - P1-02B APUG011 internal SDRAM backend：150 MHz `[S]`；
 - P1-04C HDMI_B：`[B] PASS`；
-- **P1-05A internal SDRAM framebuffer → HDMI_B：`[S][B] PASS / CLOSED`。**
+- **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；历史真板 `[B] PASS`。**
 
 ## 3. P1-05A 验收结果
 
@@ -31,7 +31,7 @@ HDMI display
 
 真实 internal SDRAM 存放完整 640×480 RGB888 固定帧，经 APUG011 读回、CDC、整行预取、ping-pong line buffer 后，通过 P1-04C HDMI boundary 输出。
 
-真板最终稳定显示：8 px 白边、红/绿/蓝/黄四象限、中央洋红竖条、中央青色横条；无移动黑线、无可见抖动、抽搐或撕裂。
+历史真板验证稳定显示：8 px 白边、红/绿/蓝/黄四象限、中央洋红竖条、中央青色横条；无移动黑线、无可见抖动、抽搐或撕裂。该 `[B]` 证据对应历史 P1-05A bitstream，不代表本次 TD6.2.1 bitstream 已完成板级复测。
 
 ### 3.2 Questa — PASS
 
@@ -47,7 +47,7 @@ cached adapter + official APUG011  PASS(24)
 
 protected APUG011 compatibility 保持 tCK/tRCD/DQM/readback/protocol health 全部通过；vendor source 自身的已知 Questa warning 不作为项目 RTL fail。
 
-### 3.3 TD5.6.2 — PASS
+### 3.3 TD5.6.2 — historical PASS
 
 ```text
 Setup errors = 0
@@ -67,25 +67,35 @@ BitGen       = PASS
 
 **Timing caution：150 MHz closure 只有约 68 ps setup margin。P1-05A 可以标 `[S]`，但后续不能把它当作宽裕的性能余量。任何影响 active design 的修改都需要重新 STA。**
 
-### TD6.2.1 migration status
+### 3.4 TD6.2.1 current routed result
 
-官方要求当前工具链切换为 TD6.2.1。旧 P1-05A `[S]` 证据仍然是 TD5.6.2 historical closeout；本轮已针对 TD6.2.1 的 routed timing report 加入 source-level optimization candidate，但尚未重新取得新的 `[S]`。
-
-优化重点保持在两处：production cached-adapter diagnostics compile-out，以及 HDMI reset release phase 调整。不得通过 false-path/clock-group 隐藏 150 MHz same-domain violation；重新跑 TD6.2.1 后，只有在 final STA clean 时才能更新 `[S]`。
-
-### 3.4 资源 — ACCEPTED WITH FOLLOW-UP
+当前工具链为 TD6.2.1。2026-09-21 的 `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 已完成 routed final STA，Top 为 `p1_hx4s20c_sdram_hdmi_top`，coverage `99.17%`：
 
 ```text
-LUT      9977 / 19600 = 50.90%
-REG      2825 / 19600 = 14.41%
-BRAM9K     10 / 64    = 15.62%
-BRAM32K     0 / 16
-DSP         1 / 29
-PLL         2 / 4
-GCLK        2 / 16
+SWNS +0.599 ns    STNS 0.000 ns
+HWNS +0.003 ns    HTNS 0.000 ns
+setup/hold violating endpoints: 0 / 0
 ```
 
-资源足以进入 P1-05B，但 LUT 已超过一半。line buffer 的 ERAM 映射优化仍可作为后续资源回收手段；在没有资源压力前不破坏已收敛的 P1-05A baseline。
+相关 25/150/50/125 MHz 域均为非负 setup/hold 结果；BitGen 已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`。因此当前 TD6.2.1 实现可记为 `[S] PASS`。这不等价于新工具链的 `[B]`：当前文档仍只拥有历史 P1-05A 真板 framebuffer 证据，TD6.2.1 bitstream 尚待重新下载和观察。
+
+优化重点保持在两处：production cached-adapter diagnostics compile-out，以及 HDMI reset release phase 调整。当前 SDC 使用 `derive_clocks`，未用 false-path/clock-group 隐藏 150 MHz 同域逻辑；仅对 APUG011 相位相关硬宏边界保留受限例外。
+
+当前实现仍有 3 条 critical warning：两个 `u_internal_sdram` 初始位置未被采用，以及 1 条 `u_sdram_pll/pll_inst.clkc[2] -> SDRAM_CLK` 时钟网使用 local routing resource。它们不构成当前 STA violation，但必须作为实现风险记录。
+
+### 3.5 资源 — ACCEPTED WITH FOLLOW-UP
+
+```text
+LUT      7416 / 19600 = 37.84%
+REG      2554 / 19600 = 13.03%
+BRAM9K     10 / 64    = 15.62%
+BRAM32K     0 / 16
+DSP         1 / 29     = 3.45%
+PLL         2 / 4      = 50.00%
+GCLK        2 / 16     = 12.50%
+```
+
+资源足以进入 P1-05B，当前 LUT 使用率约 37.84%。line buffer 的 ERAM 映射优化仍可作为后续资源回收手段；在没有资源压力前不破坏已收敛的 P1-05A baseline。
 
 ## 4. 下一目标：P1-05B TF/BMP
 

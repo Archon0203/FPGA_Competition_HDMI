@@ -17,7 +17,7 @@
 4. 每个 src/ 模块必须有对应 sim_tb/tb_*.v，仿真输出 PASS；贴结果到 PR。
 5. 不提交生成物：*.bit、*.db、*.area、sim_work/ 产物、data/ 均不入库。
 6. 网络：连不上 GitHub 先配代理 git config http.proxy http://127.0.0.1:7890。
-7. 文档组织：当前有效设计文档只维护 `docs/01_architecture.md` ~ `docs/04_use_cases.md`；旧版 `01~12` 文档只留在 `docs/olds/`，不再更新；开发过程记录统一放 `docs/develop_records/`，不要混入 `docs/` 根目录。
+7. 文档组织：`docs/01_architecture.md` ~ `docs/04_use_cases.md` 是四份权威文档；`docs/05_line_A_media_plan.md` ~ `docs/08_three_line_integration_flow.md` 是并列的三线计划与集成流程文档。旧版文档只留在 `docs/olds/`，不再更新；开发过程记录统一放 `docs/develop_records/`。
 
 ## 快速开始
 ```powershell

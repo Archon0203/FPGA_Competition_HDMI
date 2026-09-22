@@ -22,11 +22,11 @@ ADC：
 SDC：
 
 - 50 MHz board root clock；
-- `derive_pll_clocks`；
-- TD5.6.2 实际 generated-clock 名称：25 MHz `u_hdmi_pll/u_pll.clkc[0]`、150 MHz `u_sdram_pll/pll_inst.clkc[1]`；
+- `derive_clocks`（TD6.2.1 推荐命令；旧 `derive_pll_clocks` 仅见于历史/实验约束）；
+- TD6.2.1 final report 中的 generated-clock 名称：25 MHz `u_hdmi_pll/u_pll.clkc[0]`、150 MHz `u_sdram_pll/pll_inst.clkc[1]`；
 - 25 MHz pixel 与 150 MHz SDRAM 声明为 asynchronous groups，只通过项目内显式 FIFO/synchronizer 跨域；
 - 不对 150 MHz same-domain timing 使用 false path。
 
-P1-05A final combined STA：0 setup / 0 hold，WNS `+0.068 ns`，WHS `+0.131 ns`。由于余量较薄，active RTL/SDC 任何修改后都必须重新实现和检查 timing report。
+当前 TD6.2.1 final routed STA：0 setup / 0 hold，SWNS `+0.599 ns`、HWNS `+0.003 ns`，coverage `99.17%`。硬件最小裕量仅 3 ps，active RTL/SDC 任何修改后都必须重新实现和检查 timing report。当前 run 仍有两个 SDRAM location warning 和一条 local clock routing warning。
 
 其他 SDC/ADC 为历史或实验文件，不代表当前 active build。
