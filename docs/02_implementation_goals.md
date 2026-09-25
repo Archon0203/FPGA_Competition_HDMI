@@ -126,15 +126,28 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 
 ```text
 640×480 : P1-05A stable baseline
-1280×720: 独立 timing optimization
-1920×1080 / 双板: P4 feasibility
+1280×720: required presentation target / independent timing gate
+1920×1080 / dual-board: challenge target / separate feasibility gate
 ```
 
 720p 旧 75/375 MHz candidate 已 STA FAIL，不与当前 640×480 baseline 混用。
 
+## 5.1 双板目标边界
+
+双板部署采用主从结构：主板负责最终 HDMI 视频/音频时序、UI/OSD、缩放、转场和输出；从板负责 TF/FAT32/BMP、视频读取、媒体预取和帧/行/tile 数据生产。板间控制使用 SPI，数据面使用待验证的 source-synchronous GPIO 链路；以太网只作为控制、调试或压缩数据后备链路。
+
+1080p60 需要 148.5 MHz pixel clock 和 742.5 MHz serial clock。第二块板只能缓解媒体存储和预处理压力，不能替代输出主板的 APUG092/PHY 时序闭合。1080p 单帧约 2,073,600 个 32-bit word，接近单板 2M×32 SDRAM 容量，因此 1080p 不采用单板 A/B 全帧双缓冲；优先使用从板缓存下一帧、主板行/tile 缓冲和 frame-boundary 提交。
+
+项目验收分为两条口径：
+
+```text
+安全交付线：1280×720 + 1.4 五类扩展 + HDMI 音频
+挑战线：双板媒体链路 + 1920×1080 静态图片，之后再尝试视频/双源转场
+```
+
 ## 6. 后续 Presentation
 
-P1-05B `[B]` 后再推进：OSD/字幕、转场、亮度/对比度、HDMI audio、音频可视化、应急画面。
+P1-05B `[B]` 后进入安全交付线：OSD/字幕、转场、亮度/对比度、HDMI audio、音频可视化、应急画面和 1280×720。双板及 1920×1080 只在安全交付线保持绿色后进入挑战线。
 
 ## 7. 状态等级
 

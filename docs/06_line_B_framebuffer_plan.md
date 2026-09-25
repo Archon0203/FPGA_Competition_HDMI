@@ -1,5 +1,7 @@
 # B 线计划：双缓冲、SDRAM 与显示读出
 
+> 双板迭代说明：B 线拆成两个明确的部署域。B-S 负责从板 SDRAM、媒体预取和 packet TX；B-M 负责主板 packet RX、line/tile buffer、最终 framebuffer、动态读出和 HDMI 侧安全换帧。B-S 不拥有主板 front/back；B-M 不读取 TF。
+
 ## 1. 依据、目标与当前状态
 
 B 线负责把 A 线的单一媒体写事务安全地落入 internal SDRAM，并从稳定的 front framebuffer 连续读出 RGB，交给集成层和 C 线。P1-05A 已完成并冻结的路径是 B 线的 golden baseline：
@@ -153,3 +155,47 @@ P1-04C/APUG092 的 `axis_user/axis_valid/axis_last` cadence 仍由冻结的官�
 4. CDC 经过异步 FIFO/synchronizer 验证，不能以约束掩盖真实路径；
 5. 写失败、读 underflow、provider fault 可观测且不会显示半帧；
 6. active top 变更具备 TD6.2.1 final STA、资源报告和 rollback evidence。
+
+## 7. 双板数据平面
+
+### B-S：从板 packet TX
+
+从板使用独立 SDRAM 缓存媒体数据，通过 source-synchronous GPIO 数据面发送：
+
+```text
+S SDRAM -> packetizer -> TX FIFO -> DATA[31:0] + LINK_CLK/VALID/SOF/EOL/EOF/CRC
+```
+
+首版目标为 packed YUV422、32-bit payload、74.25 MHz link clock；RGB888 作为低分辨率或降帧调试模式。该数值不是已验证时序，必须先完成 PRBS、CRC、持续吞吐和 P&R。SPI 只承担命令/状态，不承担像素流。
+
+### B-M：主板 packet RX 与显示服务
+
+主板接收后执行：
+
+```text
+GPIO RX -> CDC/deskew -> CRC -> RX FIFO -> line/tile buffer
+       -> YUV/RGB -> UI/OSD/effects -> display scanout
+```
+
+主板只在 frame boundary 提交新的 `frame_id` 或 `source_epoch`。若 packet 缺失、CRC 错误或 credit 耗尽，主板保持上一帧、显示 fallback 或进入应急画面；不允许把半帧标记为成功。
+
+### B-D：控制和 credit
+
+控制平面定义为：
+
+```text
+M SPI master -> S SPI slave: command, format, frame_id, credit, heartbeat
+S SPI slave -> M SPI master: ready, descriptor, status, error, counters
+```
+
+数据面采用 credit 而非反向任意 `ready` 组合路径。主板按可用 line/tile buffer 空间发布 credit，从板消耗 credit 后再发送；双方通过 sequence number 和 CRC 检测重复、丢失和乱序。
+
+## 8. 分辨率分支
+
+```text
+B0-B5：保持现有 P1-05A/P1-05B 单板 640×480 baseline
+B6：主板 1280×720 HDMI profile + 从板 line/tile link
+B7：1920×1080 HDMI feasibility + 双板媒体链路
+```
+
+1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 的单板 A/B 全帧双缓冲。B7 使用从板缓存下一帧、主板行/tile 缓存和安全 frame-boundary commit。1080p HDMI 的 148.5 MHz pixel / 742.5 MHz serial 由主板独立闭合，第二块板不能替代该门禁。

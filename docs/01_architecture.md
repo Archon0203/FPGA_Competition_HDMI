@@ -10,9 +10,26 @@
 | P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S]`，历史 `[B]` |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
 | P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
-| P4 · Stretch | 720p 优化、1080p/双板、SDIO | feasibility |
+| P4 · Multi-board & Stretch | 720p 主板输出、双板媒体流、1080p feasibility | planned; no dual-board evidence |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
+
+## 2.1 双板主从部署边界
+
+第二块 HX4S20C 用于扩大媒体缓存和处理规模，不把两块板当作共享内存。主板（M）是唯一的最终显示时序和 HDMI 音视频输出所有者；从板（S）是媒体生产者，负责 TF/FAT32/BMP、视频帧预取和向主板提供帧/行/tile 数据。
+
+```text
+S: TF -> media catalog/decoder -> S SDRAM -> source-synchronous link
+                                                       |
+M: control/coordinator -> link RX -> line/tile buffer -> UI/OSD/effects
+                                                       -> APUG092/HDMI
+```
+
+主板向从板发送命令、格式、credit 和 heartbeat；从板只返回媒体描述符、数据、状态和 CRC。任何从板协议都不能直接修改主板 `framebuffer_base`、HDMI raster 或 front/back owner，避免板间形成循环依赖。
+
+控制平面首选主板 SPI master / 从板 SPI slave；数据平面首选 40Pin GPIO 上的 source-synchronous 32-bit packed YUV422 链路，目标时钟先定为 74.25 MHz。该配置只作为候选，必须先通过 PRBS、CRC、CDC、持续带宽和 P&R 门禁；不能把千兆以太网当作原始 1080p60 像素链路。以太网可作为调试、文件搬运或压缩媒体的后备通道。
+
+1080p challenge 使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
 
 ## 2. P0 媒体契约
 
@@ -203,3 +220,14 @@ TF -> FAT32 -> BMP -> framebuffer_writer -> SDRAM -> existing P1-05A display pat
 ```
 
 随后恢复 A/B framebuffer 与 frame-boundary swap。TF、FAT32、BMP 不与 HDMI low-level bring-up 混在一起。
+
+## 10. 分辨率与双板演进
+
+```text
+P1-05A        640×480 single-board rollback baseline
+P1-05B        640×480 TF/BMP image loop
+P2 required   1280×720 + 1.4 presentation extensions
+P4 challenge  dual-board media stream + 1920×1080 feasibility
+```
+
+P2 的 1.4 扩展包括图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化。主板完成显示空间合成；从板提供媒体源和预处理。若链路带宽不足以同时传输两路原始源，淡入淡出等媒体转场由从板预混合后发送单路结果，主板继续叠加 UI。
