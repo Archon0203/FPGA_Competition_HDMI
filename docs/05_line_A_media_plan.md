@@ -2,6 +2,8 @@
 
 > 2026-09-21 修订。公共契约、文件所有权及门禁以 `08_three_line_integration_flow.md` 为准；本文件是实施计划，实际证据等级以 `03_plan_and_status.md` 为准。
 
+> 双板迭代说明：A 线部署在从板 S，负责媒体生产；主板 M 不读取 TF，也不解析 FAT。A 线通过板间协议向 M 提供媒体描述符和帧/行/tile 数据。M 只发送 `image_id`、格式、credit 和播放控制，不向 S 暴露主板 framebuffer 地址。
+
 ## 1. 目标及已实现边界
 
 A 线承担康芯选题一基础①：从本地 TF 自动扫描、识别和装载**至少 4 幅 640×480、24-bit BMP**。交付范围从卡初始化、FAT32 挂载、目录表到向 back framebuffer 发出一帧写请求，不能仅交付“已知 cluster 的一个文件能解码”。
@@ -120,3 +122,31 @@ sim_tb/integration/run_p0_media_chain.do
 新增 catalog/provider/节流 TB 随对应模块交付。A 验收须证明启动和 done 唯一、写地址落在获授 back 区域、valid/ready 无丢重、目录无需手工 cluster、错误不会标为成功。
 
 A 的独立 PASS 只说明媒体事务；P1-05B 的 `[C]/[S]/[B]` 分别需要集成 RTL、当前实现时序和实际真板证据，按 docs/03 独立记录。完成四图显示后仍需 C/集成的 HDMI 音频才能覆盖竞赛全部基础要求。
+
+## 8. 双板从属媒体生产阶段
+
+### A6：从板媒体服务端
+
+在 A5 之后，A 线新增从板侧服务端，不直接驱动主板 SDRAM：
+
+```text
+S TF/SPI -> catalog -> decoder/prefetch -> S SDRAM
+                                      -> frame/line/tile packet
+```
+
+服务端至少支持：`OPEN(image_id)`、`NEXT/PREV`、`PLAY/PAUSE`、`SET_FORMAT`、`REQUEST_REGION`、`CREDIT`、`ABORT`。返回数据必须带 `frame_id`、`image_id`、`width/height`、`pixel_format`、`line_or_tile_index`、`payload_length` 和 CRC。坏文件、短读、超时和 CRC 错误只能产生失败状态，不得产生可提交帧。
+
+### A7：视频与 1080p 媒体
+
+图片先支持 RGB888/BMP；视频沿用 `vseq_reader` 的容器方向，但首版数据面优先采用 packed YUV422 以降低板间带宽。A 线负责从板端预取和格式转换，不能要求主板等待整帧完成后才开始显示。1080p 只在主板 HDMI profile、数据链路 PRBS/CRC 和 720p 长稳通过后开启。
+
+### A8：A 线验收
+
+```text
+A6 [C]：主板可通过 SPI 命令打开媒体，从板返回合法 descriptor
+A6 [C-sub]：连续 line/tile packet 无丢包、重包、CRC 错误
+A7 [C]：从板可按 credit 持续提供 720p 数据
+A7 [S]/[B]：双板链路和主板输出分别完成实现与真板验证
+```
+
+A 线不拥有主板的 UI、transition、framebuffer base、HDMI timing 或 audio packet。

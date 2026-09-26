@@ -1,5 +1,7 @@
 # C 线计划：表现层、交互与音频
 
+> 双板迭代说明：C 线部署在主板 M。C 线只消费主板 canonical raster/source stream，不直接读取从板 TF，不直接操作板间 GPIO。C 线产生高层 `media_cmd`，由主板 coordinator 转成 SPI 控制命令。
+
 ## 1. 依据、目标与边界
 
 C 线对应选题中的信息发布表现层：OSD/字幕、亮度与对比度、缩放、转场、按键/拨码交互、应用状态、提示音和音频可视化。P0 媒体解析、P1-05A SDRAM 读写、APUG011、TF 物理接口和 HDMI PHY 不属于 C 线所有权。
@@ -100,7 +102,7 @@ C 线先交付自洽的 PCM sample stream 或 `hdmi_audio_pack` 子帧：数据�
 
 ### C0：P0/P1 表现层回归基线
 
-保持现有 `vga_timing`、`color_space`、`image_enhance`、`image_scaler`、`transition`、`osd_overlay`、`menu_fsm`、`app_scenario` 及 audio unit TB 通过。P1-05A fixed-pattern/bypass 作为输入替身。
+保持现有 `vga_timing`、`color_space`、`image_enhance`、`image_scaler`、`transition`、`osd_overlay`、`menu_fsm`、`app_scenario` 及 audio unit TB 通过。P1-05A fixed-pattern/bypass 作为输入替身。2026-09-25，`media_command_controller` 完成 QuestaSim 10.7c 单元回归 `PASS(52)`；关联的 key/switch、menu/app、display unit 回归均通过。
 
 ### C1：canonical stream 流水线
 
@@ -115,6 +117,8 @@ canonical source -> enhance -> scaler -> transition -> OSD -> sink
 ### C2：交互与应用状态
 
 把 key/switch filter 的事件转换为播放、暂停、上下张、应急和配置快照，并通过 `media_cmd_*` 发送用户意图。禁止 C 状态机直接启动 A writer 或修改 B 的 front/back metadata。
+
+I0 已冻结的实现为 `src/app/media_command_controller.v`：当 `media_cmd_ready=0` 时保持当前 command payload，后续选图意图合并为 deferred command；应急状态只作用于主板本地 UI/提示音，不生成媒体 load command。该单元是 `[U] PASS(52)`，尚未与 coordinator、A loader 或 B manager 构成端到端系统链。I1 阶段 C 线只继续完成 `media_cmd` 到 coordinator mock/真实握手，不改变 A/B 写事务接口。
 
 ### C3：音频与可视化
 
@@ -133,3 +137,30 @@ canonical source -> enhance -> scaler -> transition -> OSD -> sink
 5. 不改变 P1-04C/APUG092 的 `user/valid/last` cadence、PLL、PHY、reset 或 EDID；
 6. 显示、交互和音频均可独立 bypass，且 C 线不形成对 A/B 的反向依赖。
 
+## 8. 主板 UI 与 1.4 扩展顺序
+
+C 线将官方 1.4 扩展全部纳入安全交付线，顺序固定为：
+
+```text
+C0 canonical raster/pass-through
+ -> C1 Logo/OSD/字幕图层
+ -> C2 亮度/对比度/实时参数快照
+ -> C3 图片缩放适配
+ -> C4 淡入淡出/擦除转场
+ -> C5 音频可视化
+```
+
+主板使用字体 ROM、图标 ROM、矩形和逐像素合成实现 UI，避免为 1920×1080 再分配一张完整 overlay framebuffer。参数只能在 frame boundary 采样，一帧内保持稳定。转场的 A/B 源由 coordinator 从主板当前帧和从板下一帧服务中提供；若链路只能提供单路源，则由从板预混合后发送单路结果，C 仍只叠加 UI。
+
+## 9. 双板命令边界
+
+```text
+key/menu/app_scenario -> media_cmd -> M coordinator -> SPI command -> S media service
+S descriptor/status   -> M SPI RX   -> coordinator/status UI
+```
+
+C 线不得产生 `load_request`、`framebuffer_base`、GPIO packet 时钟或从板内部 sector 请求。C 线可以要求下一张、播放/暂停、转场模式、目标分辨率和应急画面，但具体 buffer 分配、credit 和提交时刻由 M/B 线控制。
+
+## 10. 分辨率与回退
+
+安全交付线以 1280×720 为目标；挑战线才开启 1920×1080。1080p 时 UI、OSD 和音频可视化必须在主板 profile 上独立通过综合、STA 和真板验证。若 1080p PHY 或板间数据面未收敛，C 线必须保留 720p 全部 1.4 功能和 P1-05A fixed-pattern rollback。

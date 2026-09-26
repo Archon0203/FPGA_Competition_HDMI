@@ -33,6 +33,8 @@ docs/08_three_line_integration_flow.md
 
 `docs/01~04` 是四份权威文档；`docs/05~08` 是并列的三线计划与集成流程文档。阶段调试过程、候选实现和复盘追加到 `docs/develop_records/`；`docs/olds/` 只读。
 
+双板重构后的计划仍以 `docs/01~04` 为架构、目标和状态权威，以 `docs/05~08` 为执行计划。双板、1080p 和板间链路属于计划/feasibility，除非取得对应 `[C]`、`[S]`、`[B]` 证据，不得写成已实现能力。
+
 ## 3. 已收口基础证据
 
 ### P0
@@ -84,7 +86,7 @@ P1-04A 720p 75/375 MHz 为历史 STA FAIL；P1-04B 为 TD 可实现但 board 无
 | cached provider chain | `[C-sub]` | PASS(260), pixels=256, underflow=0 |
 | cached adapter + official APUG011 | `[C-sub]` | PASS(24) |
 | combined TD5.6.2 | `[S]` | 历史 closeout：0 setup / 0 hold, WNS +0.068 ns, WHS +0.131 ns |
-| TD6.2.1 routed final + BitGen | `[S]` | 2026-09-21 report：0 setup / 0 hold，SWNS +0.599 ns，HWNS +0.003 ns；bitstream 已生成 |
+| TD6.2.1 routed final + BitGen | `[S]` | 2026-09-25 report：0 setup / 0 hold，SWNS +0.599 ns，HWNS +0.003 ns；bitstream 已生成 |
 | HX4S20C board | `[B]` | 历史 framebuffer 稳定显示，无可见撕裂/抖动/移动黑线；TD6.2.1 bitstream 尚待复测 |
 
 因此，当前证据应写为：
@@ -100,7 +102,7 @@ P1-05A TD6.2.1 board re-test pending
 ### 4.3 TD6.2.1 final timing
 
 ```text
-Generated         2026-09-21 11:40:27
+Generated         2026-09-25 13:53:29
 STA coverage      99.17%
 Setup violations  0
 Hold violations   0
@@ -132,7 +134,7 @@ HWNS         +0.011 ns
 post-place LUT 7437 / 19600
 ```
 
-其中 `-7.098 ns` 和 `-1.119 ns` 只用于说明优化前问题，不代表当前 2026-09-21 routed result。
+其中 `-7.098 ns` 和 `-1.119 ns` 只用于说明优化前问题，不代表当前 2026-09-25 routed result。
 
 当前 source tree 已采用的优化：
 
@@ -194,6 +196,25 @@ TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.
 目标：TF/FAT32/BMP → SDRAM framebuffer → HDMI，恢复 A/B framebuffer 与 frame-boundary swap。
 
 P1-05B 的独立功能开发进入条件已经满足；active top 集成仍须先完成 TD6.2.1 bitstream 的 P1-05A 真板复测。P1-05B 第一原则是**复用并保护 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
+
+### 6.0 双板与 1.4 计划状态
+
+```text
+主板 M：HDMI/APUG092、最终 raster、UI/OSD、缩放、转场、音频
+从板 S：TF/FAT32/BMP、vseq/视频预取、媒体缓存、帧/行/tile 生产
+```
+
+当前工程没有板间通信端口、双板 top、source-synchronous GPIO 约束或双板证据。SPI 控制平面、GPIO 数据平面、1080p HDMI profile 均为未开始的计划项。1.4 扩展虽已列入项目目标，状态仍为待整合。
+
+### P1-05B-00 I0 契约冻结，进入 I1
+
+I0 的公共边界现已冻结：C 线在主板只通过 `media_cmd_valid/ready/image_id/mode` 表达用户媒体意图；A 线是唯一 `p1_media_framebuffer_loader` writer；B 线拥有写入 fence、`writer_done/writer_ok`、front/back metadata 与 `frame_boundary` swap。C 线不得直接驱动 loader、SDRAM、framebuffer base 或板间 GPIO。
+
+`src/app/media_command_controller.v` 已完成主板 C 线 I0 命令控制器，并由 QuestaSim 10.7c 单元回归验证 `PASS(52)`。它覆盖 `valid/ready` payload 保持、忙碌期间的选图意图合并、播放/暂停、轮播以及本地应急 UI 边界；`key_filter`、`sw_filter`、`menu_fsm`、`app_scenario`、`image_enhance`、`image_scaler`、`osd_overlay`、`transition` 的关联 C0 回归亦通过。
+
+2026-09-25 的 TD6.2.1 完整综合、布局布线和 BitGen 无 error。`FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 对 `p1_hx4s20c_sdram_hdmi_top` 报告 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0.000 ns`、HWNS `+0.003 ns`、HTNS `0.000 ns`，setup/hold violating endpoints 均为 0；bitstream 生成时间为 2026-09-25 13:53:33。
+
+该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。I0 在“公共契约冻结”意义上结束；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap` 仍未取得端到端集成 PASS。当前主线进入 I1。
 
 ### P1-05B-01 写入侧媒体 loader — `[U] PASS`
 
