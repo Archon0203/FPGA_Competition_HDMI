@@ -33,7 +33,7 @@ docs/08_three_line_integration_flow.md
 
 `docs/01~04` 是四份权威文档；`docs/05~08` 是并列的三线计划与集成流程文档。阶段调试过程、候选实现和复盘追加到 `docs/develop_records/`；`docs/olds/` 只读。
 
-双板重构后的计划仍以 `docs/01~04` 为架构、目标和状态权威，以 `docs/05~08` 为执行计划。双板、1080p 和板间链路属于计划/feasibility，除非取得对应 `[C]`、`[S]`、`[B]` 证据，不得写成已实现能力。
+双板重构后的计划仍以 `docs/01~04` 为架构、目标和状态权威，以 `docs/05~08` 为执行计划。双板、1080p 和板间链路属于主交付计划，除非取得对应 `[C]`、`[S]`、`[B]` 证据，不得写成已实现能力。
 
 ## 3. 已收口基础证据
 
@@ -87,14 +87,13 @@ P1-04A 720p 75/375 MHz 为历史 STA FAIL；P1-04B 为 TD 可实现但 board 无
 | cached adapter + official APUG011 | `[C-sub]` | PASS(24) |
 | combined TD5.6.2 | `[S]` | 历史 closeout：0 setup / 0 hold, WNS +0.068 ns, WHS +0.131 ns |
 | TD6.2.1 routed final + BitGen | `[S]` | 2026-09-25 report：0 setup / 0 hold，SWNS +0.599 ns，HWNS +0.003 ns；bitstream 已生成 |
-| HX4S20C board | `[B]` | 历史 framebuffer 稳定显示，无可见撕裂/抖动/移动黑线；TD6.2.1 bitstream 尚待复测 |
+| HX4S20C board | `[B]` | TD6.2.1 bitstream 已重新上板，framebuffer 稳定显示，无可见撕裂/抖动/移动黑线 |
 
 因此，当前证据应写为：
 
 ```text
 P1-05A TD6.2.1 [S] PASS
-P1-05A historical [B] PASS
-P1-05A TD6.2.1 board re-test pending
+P1-05A TD6.2.1 [B] PASS
 ```
 
 未取得 `[L]`，所以暂不声称长时间压力/掉电恢复等级。
@@ -174,7 +173,7 @@ TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.
 移动彩色窄线      -> sustained provider bandwidth underflow
 ```
 
-历史 bitstream 上板后未观察到抖动、抽搐、撕裂或移动黑线；本次 TD6.2.1 bitstream 尚无新的上板观察记录。
+TD6.2.1 bitstream 已重新上板复测：白边、四象限、洋红竖条和青色横条均稳定显示，未观察到抖动、抽搐、撕裂或移动黑线。
 
 详细实现与调试过程见：`docs/develop_records/P1-05A_CLOSEOUT_20260912.md`。
 
@@ -195,7 +194,7 @@ TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.
 
 目标：TF/FAT32/BMP → SDRAM framebuffer → HDMI，恢复 A/B framebuffer 与 frame-boundary swap。
 
-P1-05B 的独立功能开发进入条件已经满足；active top 集成仍须先完成 TD6.2.1 bitstream 的 P1-05A 真板复测。P1-05B 第一原则是**复用并保护 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
+P1-05B 的独立功能开发和 active top 集成进入条件已经满足；P1-05B 第一原则是**复用并保护已完成真板复测的 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
 
 ### 6.0 双板与 1.4 计划状态
 

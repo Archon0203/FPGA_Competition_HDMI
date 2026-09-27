@@ -1,6 +1,6 @@
 # C 线计划：表现层、交互与音频
 
-> 双板迭代说明：C 线部署在主板 M。C 线只消费主板 canonical raster/source stream，不直接读取从板 TF，不直接操作板间 GPIO。C 线产生高层 `media_cmd`，由主板 coordinator 转成 SPI 控制命令。
+> 双板主线说明：C 线部署在主板 M。C 线只消费主板 canonical raster/source stream，不直接读取从板 TF，不直接操作板间 GPIO。C 线产生高层 `media_cmd`，由主板 coordinator 转成 SPI 控制命令；主板最终目标为 1920×1080 HDMI 输出。
 
 ## 1. 依据、目标与边界
 
@@ -100,6 +100,8 @@ C 线先交付自洽的 PCM sample stream 或 `hdmi_audio_pack` 子帧：数据�
 
 ## 6. C 线分阶段计划
 
+阶段映射：C0～C4 的基础命令、raster 和表现模块参与 I1～I5；本文件第 11 节的 Q0～Q4 是 I1 通过后逐步分叉、在各 Q 汇合节点合并的双板 + 1080p 主交付，不是可选扩展。
+
 ### C0：P0/P1 表现层回归基线
 
 保持现有 `vga_timing`、`color_space`、`image_enhance`、`image_scaler`、`transition`、`osd_overlay`、`menu_fsm`、`app_scenario` 及 audio unit TB 通过。P1-05A fixed-pattern/bypass 作为输入替身。2026-09-25，`media_command_controller` 完成 QuestaSim 10.7c 单元回归 `PASS(52)`；关联的 key/switch、menu/app、display unit 回归均通过。
@@ -163,4 +165,14 @@ C 线不得产生 `load_request`、`framebuffer_base`、GPIO packet 时钟或从
 
 ## 10. 分辨率与回退
 
-安全交付线以 1280×720 为目标；挑战线才开启 1920×1080。1080p 时 UI、OSD 和音频可视化必须在主板 profile 上独立通过综合、STA 和真板验证。若 1080p PHY 或板间数据面未收敛，C 线必须保留 720p 全部 1.4 功能和 P1-05A fixed-pattern rollback。
+1280×720 是双板链路 bring-up profile，1920×1080 是本项目主目标。C 线必须在 1080p 主板 profile 上完成 UI、OSD、转场和音频可视化的综合、STA 和真板验证；若 1080p PHY 或板间数据面阶段性未收敛，保留 720p 作为调试 fallback，但不能将项目计划降级为 720p-only。
+
+## 11. 双板与 1080p 主线任务
+
+| 节点 | C 线任务 | 与其他线汇合 |
+|---|---|---|
+| Q0 | 主板 SPI 命令映射、ready/status/error UI | 与 A 的 descriptor、B 的 PRBS/CRC/CDC 汇合 |
+| Q1 | 双板状态页、媒体 descriptor/credit 可视化、错误提示 | 与 A/B packet service 汇合 |
+| Q2 | 720p line/tile bring-up 输入适配、单板 fallback、双源/转场接口 | 与 A/B 双板链路验证汇合，再升级到 1080p |
+| Q3 | 1920×1080 raster profile 下的 UI/OSD 资源、音频 timing 预算 | 与 B 主板 HDMI STA/PHY 汇合 |
+| Q4 | 1080p 静态图、视频切换、双源转场和音频可视化演示 | 与 A 媒体供给、B HDMI 输出汇合，作为必需的主交付验收 |

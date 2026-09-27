@@ -1,16 +1,16 @@
 # 01 · 系统架构（P0 → P4）
 
-> 本文是当前架构权威。功能与历史真板基线为 P1-05A internal SDRAM framebuffer → HDMI_B；当前 active top 已在 TD6.2.1 完成 routed STA/BitGen，P1-04C 继续作为 HDMI rollback baseline。TD6.2.1 真板复测尚未记录，不能把历史 `[B]` 证据误写成当前工具链的板级证据。
+> 本文是当前架构权威。功能与真板基线为 P1-05A internal SDRAM framebuffer → HDMI_B；当前 active top 已在 TD6.2.1 完成 routed STA/BitGen，并已重新上板稳定显示。P1-04C 继续作为 HDMI rollback baseline。
 
 ## 1. 总体阶段
 
 | 阶段 | 职责 | 当前证据 |
 |---|---|---|
 | P0 · Media Core | 文件流、BMP、framebuffer、抽象 SDRAM、整行预取、连续 RGB888 | `[C]` |
-| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S]`，历史 `[B]` |
+| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S][B]` |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
 | P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
-| P4 · Multi-board & Stretch | 720p 主板输出、双板媒体流、1080p feasibility | planned; no dual-board evidence |
+| P4 · Multi-board & 1080p | 双板媒体流、1280×720 bring-up、1920×1080 主目标 | planned; no dual-board/1080p evidence |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
 
@@ -29,7 +29,7 @@ M: control/coordinator -> link RX -> line/tile buffer -> UI/OSD/effects
 
 控制平面首选主板 SPI master / 从板 SPI slave；数据平面首选 40Pin GPIO 上的 source-synchronous 32-bit packed YUV422 链路，目标时钟先定为 74.25 MHz。该配置只作为候选，必须先通过 PRBS、CRC、CDC、持续带宽和 P&R 门禁；不能把千兆以太网当作原始 1080p60 像素链路。以太网可作为调试、文件搬运或压缩媒体的后备通道。
 
-1080p challenge 使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
+1080p 主目标使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile；1280×720 只作为双板链路 bring-up profile。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
 
 ## 2. P0 媒体契约
 
@@ -183,7 +183,7 @@ violating endpoints  0 / 0
 1. `p1_sdram_cached_adapter` 增加 `ENABLE_RUNTIME_DIAGNOSTICS` 参数。仿真默认 `1`，保留原有计数器/冗余协议断言；P1-05A board top 设置为 `0`，使这些非数据通路逻辑不进入生产 150 MHz timing cone。provider response legality check 仍保留。
 2. `p1_hx4s20c_sdram_hdmi_top` 的 HDMI reset **释放**使用 50 MHz 上升沿，与官方板级例程一致。曾尝试下降沿来避开 25 MHz pixel rising-edge removal 临界点，但 TD6.2.1 报告显示它缩短了 125 MHz serial-domain recovery window，因此已恢复上升沿实现。
 
-上述 source-level 修改已在当前 TD6.2.1 routed run 中得到实现和时序结果，BitGen 也已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`。但本次记录未包含 TD6.2.1 bitstream 的新真板观察，因此 `[B]` 仍引用历史 P1-05A board baseline，不能升级为当前工具链的板级复测结论。
+上述 source-level 修改已在当前 TD6.2.1 routed run 中得到实现和时序结果，BitGen 也已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`；该 bitstream 已重新上板显示正常，因此当前工具链取得 `[B]`。
 
 当前 run 仍记录以下 critical warning，需在后续约束/实现复盘中单独处理：
 

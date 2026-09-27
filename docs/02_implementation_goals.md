@@ -23,7 +23,7 @@ HDMI display
 - P0 media core：`[C] PASS(1698)`；
 - P1-02B APUG011 internal SDRAM backend：150 MHz `[S]`；
 - P1-04C HDMI_B：`[B] PASS`；
-- **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；历史真板 `[B] PASS`。**
+- **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；TD6.2.1 真板 `[B] PASS`。**
 
 ## 3. P1-05A 验收结果
 
@@ -31,7 +31,7 @@ HDMI display
 
 真实 internal SDRAM 存放完整 640×480 RGB888 固定帧，经 APUG011 读回、CDC、整行预取、ping-pong line buffer 后，通过 P1-04C HDMI boundary 输出。
 
-历史真板验证稳定显示：8 px 白边、红/绿/蓝/黄四象限、中央洋红竖条、中央青色横条；无移动黑线、无可见抖动、抽搐或撕裂。该 `[B]` 证据对应历史 P1-05A bitstream，不代表本次 TD6.2.1 bitstream 已完成板级复测。
+TD6.2.1 bitstream 重新上板后稳定显示：8 px 白边、红/绿/蓝/黄四象限、中央洋红竖条、中央青色横条；无移动黑线、无可见抖动、抽搐或撕裂。
 
 ### 3.2 Questa — PASS
 
@@ -77,7 +77,7 @@ HWNS +0.003 ns    HTNS 0.000 ns
 setup/hold violating endpoints: 0 / 0
 ```
 
-相关 25/150/50/125 MHz 域均为非负 setup/hold 结果；BitGen 已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`。因此当前 TD6.2.1 实现可记为 `[S] PASS`。这不等价于新工具链的 `[B]`：当前文档仍只拥有历史 P1-05A 真板 framebuffer 证据，TD6.2.1 bitstream 尚待重新下载和观察。
+相关 25/150/50/125 MHz 域均为非负 setup/hold 结果；BitGen 已生成 `FPGA_Competition_HDMI_Runs/phy_1/FPGA_Competition_HDMI.bit`，并已重新上板稳定显示。因此当前 TD6.2.1 实现可记为 `[S][B] PASS`。
 
 优化重点保持在两处：production cached-adapter diagnostics compile-out，以及 HDMI reset release phase 调整。当前 SDC 使用 `derive_clocks`，未用 false-path/clock-group 隐藏 150 MHz 同域逻辑；仅对 APUG011 相位相关硬宏边界保留受限例外。
 
@@ -127,7 +127,7 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 ```text
 640×480 : P1-05A stable baseline
 1280×720: required presentation target / independent timing gate
-1920×1080 / dual-board: challenge target / separate feasibility gate
+1920×1080 / dual-board: main target / staged implementation gates
 ```
 
 720p 旧 75/375 MHz candidate 已 STA FAIL，不与当前 640×480 baseline 混用。
@@ -141,13 +141,13 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 项目验收分为两条口径：
 
 ```text
-安全交付线：1280×720 + 1.4 五类扩展 + HDMI 音频
-挑战线：双板媒体链路 + 1920×1080 静态图片，之后再尝试视频/双源转场
+主线第一阶段：1280×720 bring-up + P1-05B 单板基线
+主线最终阶段：双板媒体链路 + 1920×1080 图片、视频、双源转场和 HDMI 音频
 ```
 
 ## 6. 后续 Presentation
 
-P1-05B `[B]` 后进入安全交付线：OSD/字幕、转场、亮度/对比度、HDMI audio、音频可视化、应急画面和 1280×720。双板及 1920×1080 只在安全交付线保持绿色后进入挑战线。
+P1-05B `[B]` 后进入双板主线：先完成 Q0/Q1/Q2 的控制面、数据面和 1280×720 bring-up，再完成 Q3/Q4 的 1920×1080 HDMI、媒体、UI、转场和音频集成。P1-05A fixed-pattern rollback 在整个主线中保留。
 
 ## 7. 状态等级
 
