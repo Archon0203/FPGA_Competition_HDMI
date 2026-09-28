@@ -12,7 +12,7 @@ HX4S20C HDMI_B `[B] PASS`，稳定八色条，证明 50 MHz board clock、HDMI P
 
 ### P1-05A · SDRAM framebuffer baseline
 
-P1-05A 的功能链和历史真板基线已通过；当前 TD6.2.1 active top 已取得 routed `[S] PASS`。真板画面证据仍引用此前已验证的 bitstream：
+P1-05A 的功能链和 TD6.2.1 真板基线已通过；当前 TD6.2.1 active top 已取得 routed `[S]` 和真板 `[B]`。
 
 ```text
 +--------------------------------------------------+
@@ -40,7 +40,7 @@ P1-05A 的功能链和历史真板基线已通过；当前 TD6.2.1 active top �
 
 当前 TD6.2.1 final routed report（2026-09-21）为 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0`、HWNS `+0.003 ns`、HTNS `0`，setup/hold 违例端点均为 0。硬件最小裕量只有 3 ps，答辩和开发记录应表述为“当前 routed STA 无违例”，不要表述为“有较大频率余量”。TD5.6.2 的 WNS `+0.068 ns` 只作为历史 closeout 记录。
 
-**板级边界：** 当前 TD6.2.1 bitstream 已生成，但本轮没有新的下载/显示记录；P1-05A 的功能演示仍以历史真板 framebuffer golden baseline 为依据，TD6.2.1 `[B]` 待复测。当前 run 还保留两个 SDRAM location warning 和一条 local clock routing warning。
+**板级边界：** 当前 TD6.2.1 bitstream 已重新下载并显示正常；P1-05A 已取得当前工具链 `[B]`。当前 run 仍保留两个 SDRAM location warning 和一条 local clock routing warning。
 
 ## 4. 下一演示：P1-05B 真图片播放
 
@@ -86,7 +86,7 @@ local emergency framebuffer
 1. P0 RTL media chain `[C]`；
 2. P1-02 APUG011 150 MHz `[S]`；
 3. P1-04C HDMI `[B]`；
-4. P1-05A SDRAM framebuffer：TD6.2.1 `[S]`，历史真板 `[B]`；
+4. P1-05A SDRAM framebuffer：TD6.2.1 `[S][B]`；
 5. P1-05B TF/BMP `[B]`（取得后）；
 6. OSD/audio/transition 等扩展。
 
@@ -106,7 +106,7 @@ P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把
 ```text
 640×480 : 当前稳定 baseline
 1280×720: 安全交付目标，独立 timing gate
-1920×1080 / 双板: 挑战目标，独立 feasibility gate
+1920×1080 / 双板：主目标，分阶段实现门禁
 ```
 
 双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过候选 source-synchronous GPIO 数据面返回媒体包。当前工程尚无双板 top、板间约束或双板证据，因此以下演示顺序不能把双板/1080p写成已完成能力。
@@ -120,11 +120,10 @@ P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把
 - P0 media core 已通过 RTL chain；
 - APUG011 backend 已通过 150 MHz TD；
 - P1-04C HDMI_B 已真板通过；
-- **P1-05A 已完成 internal SDRAM framebuffer → HDMI 的 Questa、历史 TD5.6.2、BitGen 和真板闭环；当前 TD6.2.1 已取得 routed `[S]`，其 bitstream 真板复测待进行；**
+- **P1-05A 已完成 internal SDRAM framebuffer → HDMI 的 Questa、TD6.2.1 routed `[S]`、BitGen 和当前工具链真板闭环；**
 - 当前 TD6.2.1 final STA 为 0 setup / 0 hold，SWNS +0.599 ns、HWNS +0.003 ns；
-- TD6.2.1 BitGen 已生成 bitstream，但尚无本轮新的真板复测记录；
-- 历史真板显示稳定，无可见 tearing/jitter/scanline underflow；TD6.2.1 本轮尚无新的真板观察记录。
-- 1.4 扩展、1280×720、双板通信和 1920×1080 已进入计划，但尚未取得对应证据。
+- TD6.2.1 BitGen 已生成 bitstream，重新上板后显示稳定，无可见 tearing/jitter/scanline underflow；
+- 1.4 扩展、1280×720 bring-up、双板通信和 1920×1080 主目标已进入计划，但尚未取得对应证据。
 
 ### 还不能说
 

@@ -1,12 +1,12 @@
 # A 线计划：TF/FAT32/BMP 媒体输入
 
-> 2026-09-21 修订。公共契约、文件所有权及门禁以 `08_three_line_integration_flow.md` 为准；本文件是实施计划，实际证据等级以 `03_plan_and_status.md` 为准。
+> 2026-09-27 双板主线修订。公共契约、文件所有权及门禁以 `08_three_line_integration_flow.md` 为准；本文件是实施计划，实际证据等级以 `03_plan_and_status.md` 为准。
 
-> 双板迭代说明：A 线部署在从板 S，负责媒体生产；主板 M 不读取 TF，也不解析 FAT。A 线通过板间协议向 M 提供媒体描述符和帧/行/tile 数据。M 只发送 `image_id`、格式、credit 和播放控制，不向 S 暴露主板 framebuffer 地址。
+> 双板主线说明：A 线部署在从板 S，负责媒体生产；主板 M 不读取 TF，也不解析 FAT。A 线通过板间协议向 M 提供媒体描述符和帧/行/tile 数据。M 只发送 `image_id`、格式、credit 和播放控制，不向 S 暴露主板 framebuffer 地址。
 
 ## 1. 目标及已实现边界
 
-A 线承担康芯选题一基础①：从本地 TF 自动扫描、识别和装载**至少 4 幅 640×480、24-bit BMP**。交付范围从卡初始化、FAT32 挂载、目录表到向 back framebuffer 发出一帧写请求，不能仅交付“已知 cluster 的一个文件能解码”。
+A 线承担康芯选题一基础①，并承担双板主线的从板媒体生产：从本地 TF 自动扫描、识别和装载**至少 4 幅 640×480、24-bit BMP**，再扩展到从板预取、帧/行/tile packet 和 1080p 媒体供给。交付范围从卡初始化、FAT32 挂载、目录表到双板媒体服务，不能仅交付“已知 cluster 的一个文件能解码”。
 
 可复用的已有证据：
 
@@ -93,14 +93,16 @@ provider 至少实现：请求 LBA 握手、完整 sector 数据缓存、响应�
 
 ## 6. 分阶段交付
 
-| 阶段 | 工作 | 独立验收 |
-|---|---|---|
-| A0 | 对齐 I0：格式、目录/metadata、provider/CDC、节流、load start/done | 用 fake catalog、mock sink 编译并测试，无 B/C 实现依赖 |
-| A1 | 保持 P0 和 loader 回归，补 mount/catalog 导出 | fragmented FAT、padding、非法文件；至少四图自动识别；卷参数直达 loader |
-| A2 | provider-realistic chain 与流量预算 | 保持 PASS(225) 覆盖，并测试 backpressure、最后一笔写、无界等待退出 |
-| A3 | 真实 TF provider、SPI 初始化/寻址、sector 缓存、CDC 和重试 | 卡模型/候选 harness；记录卡类型、频率、超时及重扫规则 |
-| A4 | 640×480 loader 与 mock/真实 B sink | 不少于四图逐字 RGB golden；显示读竞争下不溢出；错误保持 front |
-| A5 | 集成 I3/I7 图片候选 | 集成负责人接 active top，A 提供卡镜像和真实 TF 调试证据 |
+| A 线阶段 | 对应集成节点 | 工作 | 独立验收 |
+|---|---|---|---|
+| A0 | I0/I1 | 契约和 mock：格式、目录/metadata、provider/CDC、节流、load start/done | fake catalog + mock sink；不依赖 B/C 实现 |
+| A1 | I2 | 补 mount/catalog 导出 | fragmented FAT、padding、非法文件；至少四图自动识别；卷参数直达 loader |
+| A2 | I1/I2 | provider-realistic chain 与流量预算 | 保持 PASS(225)；覆盖 backpressure、最后一笔写、有限超时 |
+| A3 | I2 | 真实 TF provider、SPI 初始化/寻址、sector 缓存、CDC 和重试 | 卡模型/harness；记录卡类型、频率、超时及重扫规则 |
+| A4 | I2/I3 | 640×480 loader 与 B sink | 不少于四图逐字 RGB golden；显示读竞争下不溢出；错误保持 front |
+| A5 | I2/I3/I5 | 真实 A/B 写入、动态读出，最终完成 P1-05B | 集成负责人接 active top；A 提供卡镜像和真 TF 证据 |
+| A6 | Q0/Q1 | 双板从板媒体服务 | S 侧 catalog/decoder/prefetch/SDRAM；SPI 命令响应；descriptor/packet TX |
+| A7 | Q2/Q3/Q4 | 720p 链路 bring-up，升级到 1080p 媒体供给 | credit 下持续 line/tile；packed YUV422；帧边界、underflow 和双源媒体 |
 
 可以先用内存扇区 provider 做 A1/A2/A4 的 RTL 部分，同时开发 A3；真实卡未完成不阻塞 B/C 单元开发。
 
@@ -121,13 +123,13 @@ sim_tb/integration/run_p0_media_chain.do
 
 新增 catalog/provider/节流 TB 随对应模块交付。A 验收须证明启动和 done 唯一、写地址落在获授 back 区域、valid/ready 无丢重、目录无需手工 cluster、错误不会标为成功。
 
-A 的独立 PASS 只说明媒体事务；P1-05B 的 `[C]/[S]/[B]` 分别需要集成 RTL、当前实现时序和实际真板证据，按 docs/03 独立记录。完成四图显示后仍需 C/集成的 HDMI 音频才能覆盖竞赛全部基础要求。
+A 的独立 PASS 只说明媒体事务；P1-05B 的 `[C]/[S]/[B]` 分别需要集成 RTL、当前实现时序和实际真板证据，按 docs/03 独立记录。完成 P1-05B 后，A6/A7 双板媒体供给是主线必经项，1080p 不再是可选挑战。
 
-## 8. 双板从属媒体生产阶段
+## 8. 双板主线媒体生产阶段
 
 ### A6：从板媒体服务端
 
-在 A5 之后，A 线新增从板侧服务端，不直接驱动主板 SDRAM：
+P1-05B 单板图片闭环通过后，A 线必须进入从板侧服务端；双板不是可选演示项。A 线仍不直接驱动主板 SDRAM：
 
 ```text
 S TF/SPI -> catalog -> decoder/prefetch -> S SDRAM
@@ -136,17 +138,17 @@ S TF/SPI -> catalog -> decoder/prefetch -> S SDRAM
 
 服务端至少支持：`OPEN(image_id)`、`NEXT/PREV`、`PLAY/PAUSE`、`SET_FORMAT`、`REQUEST_REGION`、`CREDIT`、`ABORT`。返回数据必须带 `frame_id`、`image_id`、`width/height`、`pixel_format`、`line_or_tile_index`、`payload_length` 和 CRC。坏文件、短读、超时和 CRC 错误只能产生失败状态，不得产生可提交帧。
 
-### A7：视频与 1080p 媒体
+### A7：视频与 1080p 媒体主线
 
-图片先支持 RGB888/BMP；视频沿用 `vseq_reader` 的容器方向，但首版数据面优先采用 packed YUV422 以降低板间带宽。A 线负责从板端预取和格式转换，不能要求主板等待整帧完成后才开始显示。1080p 只在主板 HDMI profile、数据链路 PRBS/CRC 和 720p 长稳通过后开启。
+图片先支持 RGB888/BMP；视频沿用 `vseq_reader` 的容器方向，但数据面优先采用 packed YUV422 以降低板间带宽。A 线负责从板端预取和格式转换，不能要求主板等待整帧完成后才开始显示。720p 是链路 bring-up profile，1080p 是本项目主目标；只有在 PRBS/CRC、credit、720p link 和主板高速 HDMI 门禁通过后，才进入 1080p 媒体数据验证。
 
 ### A8：A 线验收
 
 ```text
 A6 [C]：主板可通过 SPI 命令打开媒体，从板返回合法 descriptor
 A6 [C-sub]：连续 line/tile packet 无丢包、重包、CRC 错误
-A7 [C]：从板可按 credit 持续提供 720p 数据
-A7 [S]/[B]：双板链路和主板输出分别完成实现与真板验证
+A7 [C]：从板可按 credit 持续提供 1080p 目标媒体流；720p 作为 bring-up profile
+A7 [S]/[B]：双板链路和主板 1080p 输出分别完成实现与真板验证
 ```
 
-A 线不拥有主板的 UI、transition、framebuffer base、HDMI timing 或 audio packet。
+A 线不拥有主板的 UI、transition、framebuffer base、HDMI timing 或 audio packet；但必须为主板 1080p UI/transition 提供连续、可回退的媒体源。

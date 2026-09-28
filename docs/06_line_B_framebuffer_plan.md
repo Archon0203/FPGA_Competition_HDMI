@@ -1,6 +1,6 @@
 # B 线计划：双缓冲、SDRAM 与显示读出
 
-> 双板迭代说明：B 线拆成两个明确的部署域。B-S 负责从板 SDRAM、媒体预取和 packet TX；B-M 负责主板 packet RX、line/tile buffer、最终 framebuffer、动态读出和 HDMI 侧安全换帧。B-S 不拥有主板 front/back；B-M 不读取 TF。
+> 双板主线说明：B 线拆成两个明确的部署域。B-S 负责从板 SDRAM、媒体预取和 packet TX；B-M 负责主板 packet RX、line/tile buffer、最终 framebuffer、动态读出和 HDMI 侧安全换帧。双板和 1080p 是本项目主交付路线；B-S 不拥有主板 front/back，B-M 不读取 TF。
 
 ## 1. 依据、目标与当前状态
 
@@ -14,7 +14,7 @@ framebuffer pattern
  -> P1-04C HDMI_B
 ```
 
-已有证据包括 P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]`（setup/hold 违例为 0）。但硬件最小 hold 裕量约 `+0.003 ns`，后续任意 active-netlist 改动都必须重新完整 STA；TD6.2.1 bitstream 仍需重新上板复测。B 线的首要原则是保护这条 640×480 显示基线。
+已有证据包括 P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]`（setup/hold 违例为 0）。硬件最小 hold 裕量约 `+0.003 ns`，后续任意 active-netlist 改动都必须重新完整 STA；TD6.2.1 bitstream 已重新上板复测正常。B 线的首要原则是保护这条 640×480 显示基线，并在其上逐步引入双板和 1080p。
 
 ## 2. 架构决策与文件所有权
 
@@ -123,6 +123,8 @@ P1-04C/APUG092 的 `axis_user/axis_valid/axis_last` cadence 仍由冻结的官�
 
 ## 5. B 线分阶段计划
 
+阶段映射：`B0～B5` 服务 I1～I5 单板 P1-05B 集成；`B-S/B-M/B-D` 是从板发送、主板接收和双板协议模块，依次进入 Q0/Q1；`B6` 对应 Q2 的 720p bring-up；`B7` 对应 Q3/Q4 的 1080p 主交付。Q0～Q4 是双板主线节点，不是可跳过的挑战阶段。
+
 ### B0：P1-05A baseline 回归
 
 回归 cached adapter、CDC bridge、prefetch、ping-pong line buffer、scanout、官方 APUG011 compatibility 和固定 pattern。任何失败先回退 P1-05A，不在同一 PR 内做 HDMI low-level 重构。
@@ -158,6 +160,8 @@ P1-04C/APUG092 的 `axis_user/axis_valid/axis_last` cadence 仍由冻结的官�
 
 ## 7. 双板数据平面
 
+双板数据平面是 B 线的主交付内容，不再作为可选挑战。B-S 与 B-M 必须先分别通过单元/子链，再在 Q0/Q1/Q2 汇合；任何 packet 错误都必须保留上一帧或 fallback，不能把半帧提交给 HDMI。
+
 ### B-S：从板 packet TX
 
 从板使用独立 SDRAM 缓存媒体数据，通过 source-synchronous GPIO 数据面发送：
@@ -166,7 +170,7 @@ P1-04C/APUG092 的 `axis_user/axis_valid/axis_last` cadence 仍由冻结的官�
 S SDRAM -> packetizer -> TX FIFO -> DATA[31:0] + LINK_CLK/VALID/SOF/EOL/EOF/CRC
 ```
 
-首版目标为 packed YUV422、32-bit payload、74.25 MHz link clock；RGB888 作为低分辨率或降帧调试模式。该数值不是已验证时序，必须先完成 PRBS、CRC、持续吞吐和 P&R。SPI 只承担命令/状态，不承担像素流。
+首版目标为 packed YUV422、32-bit payload、74.25 MHz link clock；RGB888 作为低分辨率或降帧调试模式。该数值不是已验证时序，必须先完成 PRBS、CRC、持续吞吐和 P&R。SPI 只承担命令/状态，不承担像素流。通过 Q0/Q1/Q2 后，链路必须继续服务 1080p，不得停留在仅 720p 演示。
 
 ### B-M：主板 packet RX 与显示服务
 
@@ -193,9 +197,18 @@ S SPI slave -> M SPI master: ready, descriptor, status, error, counters
 ## 8. 分辨率分支
 
 ```text
-B0-B5：保持现有 P1-05A/P1-05B 单板 640×480 baseline
-B6：主板 1280×720 HDMI profile + 从板 line/tile link
-B7：1920×1080 HDMI feasibility + 双板媒体链路
+I1-I5：完成 P1-05B 单板 640×480 baseline
+Q0-Q2：完成双板控制/数据链路，并用 1280×720 作为 bring-up profile
+Q3：主板 1920×1080 HDMI profile + 双板持续带宽门禁
+Q4：1920×1080 图片、视频和双源转场主交付
 ```
 
-1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 的单板 A/B 全帧双缓冲。B7 使用从板缓存下一帧、主板行/tile 缓存和安全 frame-boundary commit。1080p HDMI 的 148.5 MHz pixel / 742.5 MHz serial 由主板独立闭合，第二块板不能替代该门禁。
+### B6：Q2 双板 720p bring-up
+
+验证主从板 packet、credit、CDC、line/tile buffer 和主板显示时序；720p 通过是进入 1080p 的链路门禁，不是最终分辨率验收。
+
+### B7：Q3/Q4 双板 1080p 主交付
+
+主板独立闭合 148.5 MHz pixel / 742.5 MHz serial HDMI timing，双板持续提供 1080p line/tile 媒体；通过静态图后再验证视频、切换和双源转场。
+
+1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 的单板 A/B 全帧双缓冲。主路线使用从板缓存下一帧、主板行/tile 缓存和安全 frame-boundary commit。1080p HDMI 的 148.5 MHz pixel / 742.5 MHz serial 由主板独立闭合，第二块板不能替代该门禁，但第二块板承担媒体预取和持续供给。
