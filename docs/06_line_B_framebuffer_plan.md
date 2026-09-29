@@ -1,214 +1,140 @@
-# B 线计划：双缓冲、SDRAM 与显示读出
+# B 线计划：板间链路、缓冲与主板显示输出
 
-> 双板主线说明：B 线拆成两个明确的部署域。B-S 负责从板 SDRAM、媒体预取和 packet TX；B-M 负责主板 packet RX、line/tile buffer、最终 framebuffer、动态读出和 HDMI 侧安全换帧。双板和 1080p 是本项目主交付路线；B-S 不拥有主板 front/back，B-M 不读取 TF。
+> 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；720p 只作为链路 bring-up profile，P1-05A 只作为不可破坏的 rollback baseline。
 
-## 1. 依据、目标与当前状态
+## 1. 责任边界与当前状态
 
-B 线负责把 A 线的单一媒体写事务安全地落入 internal SDRAM，并从稳定的 front framebuffer 连续读出 RGB，交给集成层和 C 线。P1-05A 已完成并冻结的路径是 B 线的 golden baseline：
+B 线由杨文轩负责，分为两个部署域，但仍是一条 B 线：
 
 ```text
-framebuffer pattern
- -> cached adapter/APUG011
- -> 25↔150 MHz CDC
- -> prefetch/ping-pong line buffer
- -> P1-04C HDMI_B
+B-S（从板）: S SDRAM -> packetizer -> source-synchronous TX
+B-M（主板）: RX/CDC/CRC -> line/tile buffer -> scanout -> HDMI
 ```
 
-已有证据包括 P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]`（setup/hold 违例为 0）。硬件最小 hold 裕量约 `+0.003 ns`，后续任意 active-netlist 改动都必须重新完整 STA；TD6.2.1 bitstream 已重新上板复测正常。B 线的首要原则是保护这条 640×480 显示基线，并在其上逐步引入双板和 1080p。
+B-S 不拥有主板 front/back，也不读取 TF；B-M 不解析 FAT，也不建立第二个 writer。B 线负责 packet 接收、credit、CDC、主板行/tile 缓冲、动态读出、安全提交和 HDMI 1080p 时序。
 
-## 2. 架构决策与文件所有权
+已完成并冻结的基线：P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]` 和真板 `[B]`。该基线的 640×480 raster、HDMI PHY/PLL、CDC、prefetch 和 cadence 必须可随时回退。
 
-B 线拥有：
+## 2. 文件所有权
 
-```text
-frame_buffer_manager
-SDRAM write sink / arbiter 接口
-front/back metadata、pending_swap、swap
-SDRAM read、CDC、prefetch、line buffer、raw scanout
-```
-
-B 线不得再例化或控制 `framebuffer_writer`。该 writer 已由 A 线 `p1_media_framebuffer_loader` 内部持有，唯一链路为：
+B 线可修改：
 
 ```text
-A loader.mem_wr_*
-  -> B SDRAM write sink
-  -> sdram_arbiter
-  -> p1_sdram_cached_adapter
-  -> APUG011/internal SDRAM
-```
-
-B 线可以修改：
-
-```text
-src/framebuf/*.v（p1_media_framebuffer_loader.v 除外）
+src/framebuf/async_fifo.v
+src/framebuf/frame_buffer_manager.v
+src/framebuf/p1_sdram_*.v
+src/framebuf/sdram_*.v
+src/framebuf/line_*.v
+src/framebuf/p1_framebuffer_pattern_writer.v
 sim_tb/framebuf/**
 sim_tb/integration/tb_p1_sdram_*.v
 sim_tb/integration/run_p1_sdram_*.do
+src/display/hdmi_1080p_raster.v（新增的、与 vendor PHY 解耦的 profile）
+sim_tb/display/tb_hdmi_1080p_raster.v
 ```
 
 B 线不得修改：
 
 ```text
 src/storage/**  src/framebuf/p1_media_framebuffer_loader.v
-src/display/hdmi_*.v  src/audio/**  src/interact/**  src/app/**
+src/framebuf/framebuffer_writer.v（A loader 内部唯一 writer）
+src/display/hdmi_*（仅可新增上述独立 raster profile；不得改 P1-04C/P1-05A golden boundary）
+src/audio/**  src/interact/**  src/app/**
 src/top/**  constraints/**  FPGA_Competition_HDMI.al
 ```
 
-## 3. B 线接口契约
+主板 top、约束和 TD 工程由集成负责人统一维护；B 只提交可独立仿真的 wrapper、链路和 buffer 模块。
 
-### 3.1 写入与完成桥
+## 3. 不可变公共接口
 
-写入 sink 对 A 暴露：
+### 3.1 A/B 写入与安全提交
 
-```text
-mem_wr_valid / mem_wr_ready
-mem_wr_addr[20:0]
-mem_wr_data[31:0] = 0x00RRGGBB
-```
-
-manager 对集成层暴露：
+640×480 初始闭环可使用：
 
 ```text
-load_ready
-load_busy
-write_base / write_geometry
-writer_done / writer_ok / writer_error
+A packet/local source -> mem_wr_valid/ready
+                       -> B SDRAM write sink
+                       -> frame_buffer_manager
 ```
 
-`writer_done/writer_ok` 是 manager 的消费语义，不是第二个 writer 的控制源。集成层只把 A loader 的 `load_done/load_ok/load_error` 桥接到这组信号；manager 不得直接启动 A loader 内部 writer。
+`frame_buffer_manager` 是唯一 front/back owner；A loader 内部的 `framebuffer_writer` 是唯一 writer owner。B 不例化第二个 writer，也不把历史 `writer_start` 连接成第二条启动路径。完成桥必须满足：
 
-当前 `frame_buffer_manager` RTL 中仍存在 `writer_start` 输出，这是历史的外部-writer 控制接口。在 P1-05B 集成中它必须保持未连接或由 integration wrapper 明确转译为 A loader 的 `start`，绝不能再连接到第二个 `framebuffer_writer`；该遗留端口的处理必须在 I2.5 gate 中通过单次 start/done 断言确认。
+```text
+一次 media_cmd -> 一次 load/start
+多笔 write     -> write fence
+一次 fence     -> 一次 writer_done/writer_ok
+swap           -> 只在 display_frame_boundary
+```
 
-### 3.2 双缓冲与安全换帧
+失败写入、CRC 错误、underflow、短帧或 credit 耗尽都不能污染当前 front。read base、width、height、stride 一帧内保持稳定。
 
-manager 是唯一 front/back owner。规则如下：
+### 3.2 板间数据面
 
-1. `load_ready=1` 时才为 A 分配 `write_base`；一帧写入期间 base、尺寸和 stride 固定；
-2. A 完整写入且 `writer_ok=1` 后，manager 将 back metadata 标成 `pending_swap`；
-3. provider fault、协议错误、短帧或 underflow 不得污染当前 front；
-4. `swap_pulse` 只能在 `display_frame_boundary` 发生；active line 内不得改读基址；
-5. swap 后，旧 front 才能重新成为可写 back，避免正在读的帧被覆盖。
+首选 source-synchronous GPIO：
 
-### 3.3 动态读出约束
+```text
+DATA[31:0] + LINK_CLK + VALID/SOF/EOL/EOF + sequence + CRC
+```
 
-当前 `p1_sdram_hdmi_pipeline` 的 `FRAME_BASE=0` 是固定参数，不能直接当作 P1-05B 的 A/B 读出实现。B 线必须提供 manager-aware dynamic read wrapper/parameter path，把提交后的 `read_base/read_geometry` 接入既有读出链。一帧内 read base、width、height、stride 必须稳定；新 metadata 在 frame boundary commit 后才可生效。
+RX 路径为：
 
-### 3.4 对 C 的 raw 输出
+```text
+GPIO RX -> deskew/CDC -> CRC/sequence -> RX FIFO
+        -> line/tile buffer -> RGB/YUV conversion -> canonical raster
+```
 
-B 线输出的是 raw framebuffer stream，不自行伪造 C 线的 raster sideband：
+控制面由 SPI 完成，数据面不用 SPI 传原始像素。首版目标可从 74.25 MHz link clock + 32-bit packed payload + YUV422 开始，但必须经过 PRBS、CRC、持续吞吐、P&R 和真板门禁，不把候选数值当作已验证时序。
+
+### 3.3 对 C 线的输出
+
+B 向集成层提供 raw stream：
 
 ```text
 pix_clk / pix_rst_n
-fb_pixel_valid
-fb_pixel_data[23:0]
-frame_boundary
-underflow_sticky
-protocol_error
+fb_pixel_valid / fb_pixel_data[23:0]
+frame_boundary / underflow_sticky / protocol_error
 ```
 
-P1-04C/APUG092 的 `axis_user/axis_valid/axis_last` cadence 仍由冻结的官方 timing source 产生。集成层根据 P1-04C golden raster 生成 C 线所需的 canonical `frame_start/line_start/line_last`，避免 B 和 C 各自定义一套行帧边界。
+B 不自行生成第二套 `frame_start/line_start/line_last`。集成层使用唯一的 canonical raster 计数器产生 C 线 sideband；C 不反向驱动 B 的 swap。
 
-## 4. 时钟域契约
+## 4. 统一节点中的 B 线任务
 
-| 通路 | 来源 → 目的 | 要求 |
+| 统一节点 | B 线任务 | B 线完成证据 |
 |---|---|---|
-| 写数据 | A loader/provider → SDRAM write domain | async FIFO 或 valid/ready CDC；不靠组合跨域 |
-| 写完成 | A `load_done/ok` → manager control | toggle/握手同步；完成只消费一次 |
-| frame status | manager/control → pixel domain | synchronizer 或 event FIFO |
-| 显示边界 | pixel/raster → manager/control | 单拍事件 toggle/握手，不能直接采样脉冲 |
-| 读 metadata | manager → pixel/read domain | frame-boundary 双寄存器快照 |
-| raw stream | SDRAM read → pixel | 复用已验证 CDC、prefetch、line buffer |
+| `M0` | 回归 P1-05A cached adapter、CDC、prefetch、line buffer、HDMI cadence；固定 pattern 可回退 | 既有 `[C-sub]/[S]/[B]` 证据保持通过 |
+| `M1`（当前） | 冻结 SPI/GPIO 引脚候选、packet RX/TX 接口、CRC/sequence、credit、CDC 和 frame-boundary commit；尽早核对 1080p pixel/serial clock、PLL/PHY 能力、GPIO pin/IO 时序和有效吞吐预算；建立 PRBS/loopback harness | PRBS/CRC/CDC TB；1080p feasibility 与 pin/timing budget 有记录；最大暂停和异步 reset 不丢包 |
+| `M2` | 完成 640×480 双板第一闭环：B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper | mock/真实 A packet 可写入 back；一次 start/done；失败不污染 front |
+| `M3` | 完成双板链路 720p bring-up：持续吞吐、credit、line/tile buffer、YUV/RGB 转换、underflow/fallback | 720p packet 持续传输，CRC/sequence/underflow 门禁通过 |
+| `M4` | 完成主板 1920×1080 HDMI profile、148.5 MHz pixel/742.5 MHz serial 预算、1080p line/tile scanout | 1080p 静态图 RTL、P&R、STA 和真板证据 |
+| `M5` | 接入视频帧调度、动态源切换、丢包/欠载恢复、frame-boundary commit；保持 P1-05A fallback | 视频切换无半帧，异常恢复可观察 |
+| `M6` | 完成最终 top、资源/STA/BitGen、双板真板长稳和回退镜像 | 图片、视频、转场、音频演示的 `[C]/[S]/[B]` 证据 |
 
-所有 CDC 都必须在 harness 中注入暂停、异步 reset 和边界事件，且不能通过 false path 隐藏 150 MHz 同域逻辑。
+## 5. 时钟域与数据完整性
 
-## 5. B 线分阶段计划
+| 通路 | 要求 |
+|---|---|
+| S physical/link → S/M logic | source-synchronous 接收、deskew、FIFO 或握手 CDC；不可组合跨域 |
+| A loader → SDRAM write | valid/ready 或 async FIFO；payload 在未接受时稳定 |
+| A completion → manager | toggle/握手，只消费一次 |
+| manager → pixel/read | frame-boundary 双寄存器快照 |
+| pixel boundary → manager | 单拍事件 toggle/握手，不直接采样脉冲 |
 
-阶段映射：`B0～B5` 服务 I1～I5 单板 P1-05B 集成；`B-S/B-M/B-D` 是从板发送、主板接收和双板协议模块，依次进入 Q0/Q1；`B6` 对应 Q2 的 720p bring-up；`B7` 对应 Q3/Q4 的 1080p 主交付。Q0～Q4 是双板主线节点，不是可跳过的挑战阶段。
+测试必须注入 backpressure、链路暂停、异步 reset、CRC 错误、重复/丢包和最后一笔写。不能用 false path 隐藏 150 MHz 同域逻辑；每次 active top 或约束修改都重新综合、P&R、STA 和 BitGen。
 
-### B0：P1-05A baseline 回归
-
-回归 cached adapter、CDC bridge、prefetch、ping-pong line buffer、scanout、官方 APUG011 compatibility 和固定 pattern。任何失败先回退 P1-05A，不在同一 PR 内做 HDMI low-level 重构。
-
-### B1：双缓冲 metadata
-
-用纯 RTL harness 验证 base、尺寸、stride、valid、pending_swap 和 frame-boundary swap。证明失败写入不会污染 front，pending 帧不会在提交前显示或被覆盖。
-
-### B2：write sink 与 mock A
-
-用 mock media source 驱动 `mem_wr_*`，验证 full-frame write、backpressure、最后一笔、provider completion 和错误注入。明确一次 load 只对应一次 manager completion。
-
-### B3：manager-aware read
-
-把 back-buffer metadata 接入动态读 wrapper，继续复用现有 `p1_sdram_read_cdc_bridge`、line prefetch 和 ping-pong buffer。验证一帧内地址稳定、`underflow=0`、active line 连续。
-
-### B4：真实 A/B 子链
-
-接入 A loader 的真实 `mem_wr_*` 和 completion bridge，C 端仍使用固定 pattern/bypass。检查非法文件、写失败、重复 start/done 和安全换帧。
-
-### B5：candidate top
-
-只有 A/B 子链通过后，集成负责人才能把 wrapper 接入 active top；保留固定 pattern fallback，并对任何 top 变更重新综合、P&R、STA 和 BitGen。
-
-## 6. B 线验收门槛
-
-1. P1-05A 全部既有回归保持通过；
-2. writer start/done 只有一个来源，manager 不重复例化或启动 writer；
-3. swap 只发生在 frame boundary，读基址一帧内不变；
-4. CDC 经过异步 FIFO/synchronizer 验证，不能以约束掩盖真实路径；
-5. 写失败、读 underflow、provider fault 可观测且不会显示半帧；
-6. active top 变更具备 TD6.2.1 final STA、资源报告和 rollback evidence。
-
-## 7. 双板数据平面
-
-双板数据平面是 B 线的主交付内容，不再作为可选挑战。B-S 与 B-M 必须先分别通过单元/子链，再在 Q0/Q1/Q2 汇合；任何 packet 错误都必须保留上一帧或 fallback，不能把半帧提交给 HDMI。
-
-### B-S：从板 packet TX
-
-从板使用独立 SDRAM 缓存媒体数据，通过 source-synchronous GPIO 数据面发送：
+## 6. 分辨率策略
 
 ```text
-S SDRAM -> packetizer -> TX FIFO -> DATA[31:0] + LINK_CLK/VALID/SOF/EOL/EOF/CRC
+M2：640×480 双板架构闭环（第一媒体规格）
+M3：1280×720 链路 bring-up（仅门禁/调试 profile）
+M4～M6：1920×1080 主板 HDMI + 双板持续媒体（最终目标）
 ```
 
-首版目标为 packed YUV422、32-bit payload、74.25 MHz link clock；RGB888 作为低分辨率或降帧调试模式。该数值不是已验证时序，必须先完成 PRBS、CRC、持续吞吐和 P&R。SPI 只承担命令/状态，不承担像素流。通过 Q0/Q1/Q2 后，链路必须继续服务 1080p，不得停留在仅 720p 演示。
+1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 单板 A/B 全帧双缓冲。主线采用从板缓存下一帧、主板 line/tile buffer 和 frame-boundary 提交；主板是唯一 HDMI 输出 owner。
 
-### B-M：主板 packet RX 与显示服务
+## 7. B 线验收门槛
 
-主板接收后执行：
-
-```text
-GPIO RX -> CDC/deskew -> CRC -> RX FIFO -> line/tile buffer
-       -> YUV/RGB -> UI/OSD/effects -> display scanout
-```
-
-主板只在 frame boundary 提交新的 `frame_id` 或 `source_epoch`。若 packet 缺失、CRC 错误或 credit 耗尽，主板保持上一帧、显示 fallback 或进入应急画面；不允许把半帧标记为成功。
-
-### B-D：控制和 credit
-
-控制平面定义为：
-
-```text
-M SPI master -> S SPI slave: command, format, frame_id, credit, heartbeat
-S SPI slave -> M SPI master: ready, descriptor, status, error, counters
-```
-
-数据面采用 credit 而非反向任意 `ready` 组合路径。主板按可用 line/tile buffer 空间发布 credit，从板消耗 credit 后再发送；双方通过 sequence number 和 CRC 检测重复、丢失和乱序。
-
-## 8. 分辨率分支
-
-```text
-I1-I5：完成 P1-05B 单板 640×480 baseline
-Q0-Q2：完成双板控制/数据链路，并用 1280×720 作为 bring-up profile
-Q3：主板 1920×1080 HDMI profile + 双板持续带宽门禁
-Q4：1920×1080 图片、视频和双源转场主交付
-```
-
-### B6：Q2 双板 720p bring-up
-
-验证主从板 packet、credit、CDC、line/tile buffer 和主板显示时序；720p 通过是进入 1080p 的链路门禁，不是最终分辨率验收。
-
-### B7：Q3/Q4 双板 1080p 主交付
-
-主板独立闭合 148.5 MHz pixel / 742.5 MHz serial HDMI timing，双板持续提供 1080p line/tile 媒体；通过静态图后再验证视频、切换和双源转场。
-
-1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 的单板 A/B 全帧双缓冲。主路线使用从板缓存下一帧、主板行/tile 缓存和安全 frame-boundary commit。1080p HDMI 的 148.5 MHz pixel / 742.5 MHz serial 由主板独立闭合，第二块板不能替代该门禁，但第二块板承担媒体预取和持续供给。
+1. P1-05A rollback 始终可编译、可综合、可生成 bitstream。
+2. packet 错误只能保留上一帧、显示 fallback 或进入应急画面，不能提交半帧。
+3. 一帧内 read base/geometry 稳定，swap 只发生在 frame boundary。
+4. 1080p profile 独立取得 `[C]`、`[S]`、`[B]`；720p 通过不能代替 1080p 验收。
+5. B 线只交付 raw stream 和链路状态，不侵入 C 的 UI 状态机，也不要求 A 访问主板内部地址。

@@ -42,25 +42,16 @@ P1-05A 的功能链和 TD6.2.1 真板基线已通过；当前 TD6.2.1 active top
 
 **板级边界：** 当前 TD6.2.1 bitstream 已重新下载并显示正常；P1-05A 已取得当前工具链 `[B]`。当前 run 仍保留两个 SDRAM location warning 和一条 local clock routing warning。
 
-## 4. 下一演示：P1-05B 真图片播放
+## 4. 下一演示：双板媒体第一闭环
 
 ```text
-TF
- ↓
-FAT32
- ↓
-BMP
- ↓
-SDRAM A/B framebuffer
- ↓
-P1-05A display pipeline
- ↓
-HDMI
+从板 TF -> FAT32/BMP -> media service -> SPI/GPIO packet
+                                      -> 主板 buffer/safe commit -> HDMI
 ```
 
-目标：真实 BMP、手动切图、自动轮播、frame-boundary swap、不撕裂。
+M2 以至少 4 幅 640×480 BMP 完成双板第一闭环，覆盖手动切图、自动轮播、frame-boundary 提交和错误回退。该媒体规格用于证明选题基础能力，不单独搭建单板 P1-05B 开发路线；主板链路与接口从 M1 起就按最终双板架构定义。
 
-只有 P1-05B 真板通过后，才能对外表述“TF→SDRAM→HDMI 图片播放完成”。
+只有 M2 双板真板闭环通过后，才能对外表述“TF 图片经双板输出完成”。
 
 ## 5. 常规信息发布
 
@@ -83,12 +74,12 @@ local emergency framebuffer
 
 ## 7. 技术展示顺序
 
-1. P0 RTL media chain `[C]`；
-2. P1-02 APUG011 150 MHz `[S]`；
-3. P1-04C HDMI `[B]`；
-4. P1-05A SDRAM framebuffer：TD6.2.1 `[S][B]`；
-5. P1-05B TF/BMP `[B]`（取得后）；
-6. OSD/audio/transition 等扩展。
+1. P0/P1-05A 已有 RTL、TD 和真板证据；
+2. M1 双板协议、1080p 时钟/引脚/带宽契约与 PRBS 基础链；
+3. M2 双板 TF/BMP 640×480 第一闭环；
+4. M3 720p 链路 bring-up profile；
+5. M4 双板媒体到主板 1080p 静态图和 UI；
+6. M5/M6 视频、1.4 扩展、转场、音频及最终真板验收。
 
 ## 8. UI 分层
 
@@ -104,12 +95,12 @@ P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把
 ## 9. 分辨率边界
 
 ```text
-640×480 : 当前稳定 baseline
-1280×720: 安全交付目标，独立 timing gate
-1920×1080 / 双板：主目标，分阶段实现门禁
+640×480 : P1-05A rollback；也是 M2 双板第一媒体规格
+1280×720: M3 链路 bring-up/debug profile
+1920×1080 / 双板：M1 起即按此架构设计，M4～M6 完成主目标验收
 ```
 
-双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过候选 source-synchronous GPIO 数据面返回媒体包。当前工程尚无双板 top、板间约束或双板证据，因此以下演示顺序不能把双板/1080p写成已完成能力。
+双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过待验证的 source-synchronous GPIO 数据面返回媒体包。当前尚无双板 top、板间约束或双板证据；M1 起按双板/1080p 开发不代表功能已完成，必须逐级取得 RTL、STA 和真板证据。
 
 当前便携屏没有 input timing OSD，面板是否把 640×480 输入内部缩放为 1920×1080 全屏暂无法直接确认；色块边缘轻微 halo 也暂记为显示器 scaler/锐化/面板响应的非阻塞观察项。
 

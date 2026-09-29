@@ -190,9 +190,9 @@ TD6.2.1 bitstream 已重新上板复测：白边、四象限、洋红竖条和�
 
 修改上述任一项，必须重新取得对应 lower-level regression、combined STA 和 board 证据。
 
-## 6. 下一阶段 P1-05B
+## 6. 当前主线：M1 → M2（P1-05B 双板第一闭环）
 
-目标：TF/FAT32/BMP → SDRAM framebuffer → HDMI，恢复 A/B framebuffer 与 frame-boundary swap。
+目标：从板 TF/FAT32/BMP → media service → 板间 packet → 主板 buffer/HDMI，完成 P1-05B 图片能力并恢复安全的 A/B/frame-boundary 提交。
 
 P1-05B 的独立功能开发和 active top 集成进入条件已经满足；P1-05B 第一原则是**复用并保护已完成真板复测的 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
 
@@ -205,15 +205,15 @@ P1-05B 的独立功能开发和 active top 集成进入条件已经满足；P1-0
 
 当前工程没有板间通信端口、双板 top、source-synchronous GPIO 约束或双板证据。SPI 控制平面、GPIO 数据平面、1080p HDMI profile 均为未开始的计划项。1.4 扩展虽已列入项目目标，状态仍为待整合。
 
-### P1-05B-00 I0 契约冻结，进入 I1
+### 当前节点 M1：双板 + 1080P 公共契约与开发骨架
 
-I0 的公共边界现已冻结：C 线在主板只通过 `media_cmd_valid/ready/image_id/mode` 表达用户媒体意图；A 线是唯一 `p1_media_framebuffer_loader` writer；B 线拥有写入 fence、`writer_done/writer_ok`、front/back metadata 与 `frame_boundary` swap。C 线不得直接驱动 loader、SDRAM、framebuffer base 或板间 GPIO。
+M1 的公共边界沿用并扩展已冻结契约：C 线在主板只通过 `media_cmd_valid/ready/image_id/mode` 表达用户媒体意图；A 线是唯一 `p1_media_framebuffer_loader` writer；B 线拥有写入 fence、`writer_done/writer_ok`、front/back metadata 与 `frame_boundary` swap。C 线不得直接驱动 loader、SDRAM、framebuffer base 或板间 GPIO。双板 SPI 控制面、source-synchronous GPIO 数据面、descriptor/packet、credit、CRC 和 CDC 也必须在 M1 冻结。
 
-`src/app/media_command_controller.v` 已完成主板 C 线 I0 命令控制器，并由 QuestaSim 10.7c 单元回归验证 `PASS(52)`。它覆盖 `valid/ready` payload 保持、忙碌期间的选图意图合并、播放/暂停、轮播以及本地应急 UI 边界；`key_filter`、`sw_filter`、`menu_fsm`、`app_scenario`、`image_enhance`、`image_scaler`、`osd_overlay`、`transition` 的关联 C0 回归亦通过。
+`src/app/media_command_controller.v` 已完成主板 C 线命令控制器，并由 QuestaSim 10.7c 单元回归验证 `PASS(52)`。它覆盖 `valid/ready` payload 保持、忙碌期间的选图意图合并、播放/暂停、轮播以及本地应急 UI 边界；`key_filter`、`sw_filter`、`menu_fsm`、`app_scenario`、`image_enhance`、`image_scaler`、`osd_overlay`、`transition` 的关联回归亦通过。
 
 2026-09-25 的 TD6.2.1 完整综合、布局布线和 BitGen 无 error。`FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 对 `p1_hx4s20c_sdram_hdmi_top` 报告 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0.000 ns`、HWNS `+0.003 ns`、HTNS `0.000 ns`，setup/hold violating endpoints 均为 0；bitstream 生成时间为 2026-09-25 13:53:33。
 
-该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。I0 在“公共契约冻结”意义上结束；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap` 仍未取得端到端集成 PASS。当前主线进入 I1。
+该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。M1 的公共契约仍在开发骨架和 mock 验证阶段；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap`，以及双板 packet 链路，仍未取得端到端集成 PASS。当前工作位置为 M1。
 
 ### P1-05B-01 写入侧媒体 loader — `[U] PASS`
 
