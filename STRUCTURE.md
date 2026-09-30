@@ -1,6 +1,6 @@
 # 项目目录结构
 
-当前 active baseline 为 **P1-05A internal SDRAM framebuffer → HDMI_B**。TD6.2.1 routed implementation/timing/BitGen 已通过；P1-05A 真板画面是历史 golden baseline，TD6.2.1 bitstream 尚待重新上板复测。P1-04C 八色条 top 继续保留为 HDMI golden rollback。
+当前已验证基线为 **P1-05A internal SDRAM framebuffer → HDMI_B**。TD6.2.1 routed implementation/timing/BitGen 已通过，bitstream 已重新上板复测正常；P1-04C 八色条 top 继续保留为 HDMI golden rollback。P0/P1-05A 为当前已完成证据，P1-05B loader 仅有 `[U] PASS(225)`，双板和 1080p 尚无集成证据。
 
 **当前工具链：TD6.2.1。** 2026-09-21 final routed report 为 coverage 99.17%、SWNS +0.599 ns、STNS 0、HWNS +0.003 ns、HTNS 0，setup/hold 违例端点 0；BitGen 已完成。硬件最小裕量仅 3 ps，且仍有两个 SDRAM location warning 和一条 local clock routing warning。
 
@@ -103,7 +103,7 @@ APUG092 的 `axis_user/axis_valid/axis_last` 仍来自 P1-04C free-running sourc
 - `derive_clocks`（TD6.2.1；旧命令只保留在历史/实验约束）；
 - 25 MHz pixel 与 150 MHz SDRAM 明确声明为异步 clock groups，仅通过既有 CDC FIFO/synchronizer 通信。
 
-当前 TD6.2.1 final STA：0 setup / 0 hold，SWNS `+0.599 ns`，HWNS `+0.003 ns`，coverage `99.17%`。BitGen 已完成；TD6.2.1 真板复测仍待进行。任何 active RTL/SDC 修改后必须重新实现和 STA。
+当前 TD6.2.1 final STA：0 setup / 0 hold，SWNS `+0.599 ns`，HWNS `+0.003 ns`，coverage `99.17%`。BitGen 和真板复测均已完成。任何 active RTL/SDC 修改后必须重新实现和 STA。
 
 ## Board pin
 
@@ -121,4 +121,4 @@ P1-05A 没有增加 external board pin。
 
 ## 文档组织规则
 
-主要当前文档包括根 `README.md`、`STRUCTURE.md`、`CONTRIBUTING.md`、`docs/01~04` 四份权威文档，以及并列的 `docs/05~08` 三线计划/集成流程文档。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。
+主要当前文档包括根 `README.md`、`STRUCTURE.md`、`CONTRIBUTING.md`、`docs/01~04` 四份权威文档，以及并列的 `docs/05~08` 三线计划/集成流程文档。当前执行路线统一编号为 `M0～M6`，详情见 `docs/08_three_line_integration_flow.md`。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。

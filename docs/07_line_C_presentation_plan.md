@@ -1,57 +1,58 @@
-# C 线计划：表现层、交互与音频
+# C 线计划：主板 UI、交互、转场与音频
 
-> 双板主线说明：C 线部署在主板 M。C 线只消费主板 canonical raster/source stream，不直接读取从板 TF，不直接操作板间 GPIO。C 线产生高层 `media_cmd`，由主板 coordinator 转成 SPI 控制命令；主板最终目标为 1920×1080 HDMI 输出。
+> 本文件只描述 C 线任务。全项目使用统一节点 `M0～M6`；A/B/C 在同一节点并行，节点汇合后再前进。C 线从 `M1` 就按主板 M + 双板 + 1920×1080 的接口设计，640×480/720p 只用于验证和回退。
 
-## 1. 依据、目标与边界
+## 1. 责任边界与当前状态
 
-C 线对应选题中的信息发布表现层：OSD/字幕、亮度与对比度、缩放、转场、按键/拨码交互、应用状态、提示音和音频可视化。P0 媒体解析、P1-05A SDRAM 读写、APUG011、TF 物理接口和 HDMI PHY 不属于 C 线所有权。
+C 线由张宗负责，部署在主板 M，负责：
 
-P1-04C/P1-05A 已冻结的 APUG092 cadence、HDMI PHY/PLL、reset、EDID/IIC 和 640×480 timing 是 C 线的 golden boundary。C 线只能在 RGB 数据和应用配置层工作；任何 cadence 或 PHY 修改都必须离开 C 线 PR，由集成负责人单独评审并重新取得 STA/板级证据。
+```text
+按键/拨码 -> media_cmd -> coordinator/SPI command
+canonical raster -> enhance -> scale -> transition -> OSD/UI -> HDMI data
+PCM/tone -> audio stream -> integration/APUG092 audio boundary
+```
 
-## 2. 两层视频接口，禁止混用
+C 不读取从板 TF，不直接驱动 GPIO packet 时钟、A writer、主板 framebuffer base 或 SDRAM。主板 HDMI PHY、PLL、reset、EDID、官方 `axis_user/valid/last` cadence 由集成负责人维护为 golden boundary。
 
-### 2.1 B → integration：raw framebuffer stream
+## 2.1 C 线不能忽略的 A/B 依赖
 
-B 线交付：
+C 线分成“可用 mock 独立开发”和“必须真实合并验收”两部分：
+
+| C 模块 | 可先用 mock 开发的部分 | 真实合并的必要输入 |
+|---|---|---|
+| 按键滤波、旋钮 quadrature decoder、选择 FSM | 完全可独立 | 无；但最终 GPIO pin/CDC 由集成负责人确认 |
+| 转轮、字体、图标、OSD、参数页 | deterministic raster + 固定 catalog | B 的 canonical raster；A 的 catalog 条目、类型和数量 |
+| `media_command_controller` / coordinator | mock `catalog_valid/count`、mock status | A 的 `catalog_epoch/descriptor/ready/busy/done/error` |
+| 缩放、转场、音频时序 | PRBS/固定帧 | B 的 `frame_start/line_start/line_last/frame_boundary` 和真实 `frame_id` |
+| 图片/视频切换验收 | mock source 可测状态机 | A 的媒体完成/错误状态 + B 的无欠载提交结果 |
+
+初步交互方案按“按键进入选择 → 暂停当前源 → 旋钮浏览 → 按压确认 → OPEN 新源 → 首帧安全提交 → 恢复播放”实现。旋钮不是板载资源，默认采用外接增量式正交编码器 A/B + 按压开关，接入 40-pin GPIO；必须先完成 pin ownership、输入电平、消抖和 CDC 约束，不能把未确认的管脚写进正式约束。若旋钮硬件尚未到位，M1/M2 使用按键仿真接口，不能因此改变 A/B 契约。
+
+已有证据：`media_command_controller` `[U] PASS(52)`，关联 key/switch、menu/app、display unit 和音频单元回归已通过；尚未与 A media-service、B packet RX 和双板 top 形成端到端证据。
+
+## 2. 公共视频接口
+
+B → 集成层提供 raw framebuffer/media stream：
 
 ```text
 pix_clk / pix_rst_n
-fb_pixel_valid
-fb_pixel_data[23:0]
-frame_boundary
-underflow_sticky
-protocol_error
+fb_pixel_valid / fb_pixel_data[23:0]
+frame_boundary / underflow_sticky / protocol_error
 ```
 
-它表示已从 SDRAM 读出的 RGB 数据和存储状态，不承诺 C 线的 `frame_start/line_start/line_last` sideband。
-
-### 2.2 integration → C：canonical raster stream
-
-集成层使用冻结的 P1-04C golden raster 产生：
+集成层只生成一套 canonical raster sideband：
 
 ```text
-in_valid
-in_data[23:0]
-in_frame_start
-in_line_start
-in_line_last
+in_valid / in_data[23:0]
+in_frame_start / in_line_start / in_line_last
 frame_boundary
 ```
 
-sideband 定义固定为：
-
-| 信号 | 定义 |
-|---|---|
-| `frame_start` | 第一行第一 active pixel |
-| `line_start` | 每行第一个 active pixel |
-| `line_last` | 每行最后一个 active pixel |
-| `frame_boundary` | 允许提交 metadata/swap 的安全事件，不等同于 `frame_start` |
-
-B 不重新生成一套 C sideband，C 也不根据自己的计数器反向驱动 B swap。这样行帧边界只有一个权威定义。
+所有 C 参数（OSD、亮度、对比度、缩放模式、transition、audio_enable）在 `frame_boundary` 快照，一帧内保持不变。C 的处理链不能把任意 backpressure 传回 B；需要暂停时使用固定深度 FIFO/line buffer 或切换 fallback。
 
 ## 3. 文件所有权
 
-C 线可以修改：
+C 线可修改：
 
 ```text
 src/display/*.v（hdmi_* protected/golden boundary 除外）
@@ -62,117 +63,64 @@ sim_tb/display/**  sim_tb/audio/**  sim_tb/interact/**  sim_tb/app/**
 C 线不得修改：
 
 ```text
-src/framebuf/**  src/storage/**
+src/storage/**  src/framebuf/**
 src/display/hdmi_video_adapter.v  src/display/hdmi_framebuffer_scanout.v
 src/top/**  constraints/**  FPGA_Competition_HDMI.al
-src/vendor/**  FPGA_Competition_HDMI_Runs/**
 ```
 
-需要调整公共 stream 或配置接口时，先更新 mock/canonical contract，由集成负责人统一合并；不要在 C 线 PR 中直接添加新的底层 `load_request` 或 framebuffer base 端口。
+需要公共接口变化时，先在 mock/canonical contract 中说明，再由集成负责人统一合并；C 不新增底层 `load_request` 或 `framebuffer_base` 端口。
 
-## 4. 控制与媒体命令契约
+## 4. 控制面契约
 
-C 线只产生高层用户意图：
-
-```text
-media_cmd_valid
-media_cmd_ready
-media_cmd_image_id
-media_cmd_mode
-```
-
-`media_cmd` 送给 integration coordinator；coordinator 根据 B 的 `load_ready` 分配 back buffer，并向 A 发 `load_start`。C 线不产生底层 `load_request`，不等待 A 的内部 writer 信号，也不直接写 SDRAM。
-
-显示配置进入视频域时使用快照：
+C 只产生高层意图：
 
 ```text
-mode / image_index / transition_mode
-osd_enable / contrast / brightness
-emergency / audio_enable
+media_cmd_valid / media_cmd_ready
+media_cmd_image_id / media_cmd_mode
+mode / transition_mode / osd_enable
+contrast / brightness / emergency / audio_enable
 config_valid / config_epoch
 ```
 
-配置在 `frame_boundary` 采样，一帧内部保持稳定。按键/系统时钟域的多比特配置必须通过握手、双寄存器快照或异步 FIFO 跨域，不能直接组合跨入 pixel clock。
-
-## 5. 音频边界
-
-C 线先交付自洽的 PCM sample stream 或 `hdmi_audio_pack` 子帧：数据、valid、采样率和音频时钟必须属于同一契约。最终 Data Island 注入和 APUG092 wrapper 仍由集成阶段处理。C 线不得为音频便利而修改 HDMI PHY、reset 或官方 packet cadence。
-
-## 6. C 线分阶段计划
-
-阶段映射：C0～C4 的基础命令、raster 和表现模块参与 I1～I5；本文件第 11 节的 Q0～Q4 是 I1 通过后逐步分叉、在各 Q 汇合节点合并的双板 + 1080p 主交付，不是可选扩展。
-
-### C0：P0/P1 表现层回归基线
-
-保持现有 `vga_timing`、`color_space`、`image_enhance`、`image_scaler`、`transition`、`osd_overlay`、`menu_fsm`、`app_scenario` 及 audio unit TB 通过。P1-05A fixed-pattern/bypass 作为输入替身。2026-09-25，`media_command_controller` 完成 QuestaSim 10.7c 单元回归 `PASS(52)`；关联的 key/switch、menu/app、display unit 回归均通过。
-
-### C1：canonical stream 流水线
-
-用 deterministic source 驱动：
+coordinator 负责把 `media_cmd` 转成 SPI 命令、credit 和提交请求：
 
 ```text
-canonical source -> enhance -> scaler -> transition -> OSD -> sink
+key/menu/app -> media_cmd -> M coordinator -> SPI -> S media service
+S descriptor/status -> SPI RX -> coordinator -> status UI
 ```
 
-验证固定延迟、`frame_start/line_start/line_last` 不丢失、active line 一拍一像素、边界像素正确、参数只在 frame boundary 生效。C 处理链不能用 `ready` 把任意 backpressure 传回 B；需要缓存时使用固定深度 FIFO/line buffer。
+C 不等待 A 的内部 writer 信号，也不修改 B 的 front/back metadata；C 只消费 `ready/status/error/frame_boundary`。
 
-### C2：交互与应用状态
+## 5. 统一节点中的 C 线任务
 
-把 key/switch filter 的事件转换为播放、暂停、上下张、应急和配置快照，并通过 `media_cmd_*` 发送用户意图。禁止 C 状态机直接启动 A writer 或修改 B 的 front/back metadata。
+| 统一节点 | C 线任务 | C 线完成证据 |
+|---|---|---|
+| `M0` | 回归现有 raster、enhance、scaler、transition、OSD、交互和 audio 单元；保留 P1-05A fixed-pattern bypass | 既有单元回归通过；`media_command_controller` `[U] PASS(52)` |
+| `M1`（当前） | 冻结 `media_cmd`、SPI command/status、descriptor/credit 状态页、canonical sideband 和 1080p 参数快照；建立 coordinator mock；完成按键/旋钮输入抽象、选择 FSM、转轮绘制 mock | valid/ready payload 保持、busy 合并、status/error UI TB；明确 A/B 依赖端口；不宣称真实媒体或真实 raster 已接入 |
+| `M2` | 将 `media_cmd` 接入 A 的真实 catalog/status 和 B 的 640×480 双板第一闭环；实现基本选图、NEXT/PREV、PLAY/PAUSE、轮播和 pass-through UI | 一次命令对应一次 OPEN；收到 A 的 ready/done/error；B 的真实 frame_boundary 才允许提交；无半帧参数混合 |
+| `M3` | 接入 B 的 720p line/tile 输入、链路状态/credit/CRC/underflow UI 和 fallback；完成基础缩放；接入 A 的媒体类型/帧数 descriptor | 720p bring-up 下 canonical raster 连续、状态可见；A/B 状态和 UI 不循环等待 |
+| `M4` | 适配 1920×1080 raster：字体/图标/OSD、缩放、亮度/对比度、1080p audio timing 和资源预算 | B 的 1080p profile + A 的 1080p descriptor/数据均已通过；1080p 静态图 + UI 的 `[C]`、资源和时序记录 |
+| `M5` | 视频播放控制、图片/视频切换、淡入淡出/擦除等转场、音频 pack/tone/可视化；所有模块可旁路 | 视频和转场不改变 sideband，不产生半帧；音频流自洽 |
+| `M6` | 完成最终 UI 场景、应急页、双源转场演示、真板音频和回退控制 | 1.4 扩展逐项开启；异常可退回最近稳定源 |
 
-I0 已冻结的实现为 `src/app/media_command_controller.v`：当 `media_cmd_ready=0` 时保持当前 command payload，后续选图意图合并为 deferred command；应急状态只作用于主板本地 UI/提示音，不生成媒体 load command。该单元是 `[U] PASS(52)`，尚未与 coordinator、A loader 或 B manager 构成端到端系统链。I1 阶段 C 线只继续完成 `media_cmd` 到 coordinator mock/真实握手，不改变 A/B 写事务接口。
+C 线可以用 deterministic source、固定 catalog 和 B 的 PRBS/mock 独立推进；这只证明 C 的局部逻辑。节点汇合时按“先 A descriptor/status，再 B canonical raster，再接入 C coordinator/UI”顺序接入真实模块，避免出现 C 等 A、A 又等 C 的循环依赖。C 只发高层命令，A 只返回媒体事实，B 只返回显示事实。
 
-### C3：音频与可视化
+## 6. 1.4 扩展顺序
 
-先验证 tone、PCM pack、音频可视化和静音/应急提示音，再通过 mock audio sink 检查采样流稳定性。未经集成和真板证据，不宣称 HDMI 音频完成。
+```text
+M2 pass-through/基础交互
+ -> M3 缩放与状态页
+ -> M4 Logo/OSD/字幕/实时参数
+ -> M5 图片/视频转场与音频
+ -> M6 音频可视化、应急页、双源场景
+```
 
-### C4：可旁路集成候选
-
-提交一个可旁路的 pass-through/增强适配器。集成负责人先接 pass-through，再按 `enhance -> scaler -> transition -> OSD -> interaction -> audio` 逐项开启；任何时序下降都可关闭最近一项并保留 P1-05A rollback。
+主板不为 1920×1080 额外分配完整 overlay framebuffer；优先使用字体 ROM、图标 ROM、矩形和逐像素合成。若链路只提供单路源，转场由从板预混合或 C 在主板缓冲中完成，C 仍不改变 B 的提交规则。
 
 ## 7. C 线验收门槛
 
-1. 受影响模块 Questa/ModelSim 回归通过；
-2. canonical sideband 和固定延迟在压力、暂停、异步 reset 下保持正确；
-3. active line 无任意停顿，不能把 backpressure 传回 B；
-4. 配置只在 frame boundary 更新，不能产生半帧混合参数；
-5. 不改变 P1-04C/APUG092 的 `user/valid/last` cadence、PLL、PHY、reset 或 EDID；
-6. 显示、交互和音频均可独立 bypass，且 C 线不形成对 A/B 的反向依赖。
-
-## 8. 主板 UI 与 1.4 扩展顺序
-
-C 线将官方 1.4 扩展全部纳入安全交付线，顺序固定为：
-
-```text
-C0 canonical raster/pass-through
- -> C1 Logo/OSD/字幕图层
- -> C2 亮度/对比度/实时参数快照
- -> C3 图片缩放适配
- -> C4 淡入淡出/擦除转场
- -> C5 音频可视化
-```
-
-主板使用字体 ROM、图标 ROM、矩形和逐像素合成实现 UI，避免为 1920×1080 再分配一张完整 overlay framebuffer。参数只能在 frame boundary 采样，一帧内保持稳定。转场的 A/B 源由 coordinator 从主板当前帧和从板下一帧服务中提供；若链路只能提供单路源，则由从板预混合后发送单路结果，C 仍只叠加 UI。
-
-## 9. 双板命令边界
-
-```text
-key/menu/app_scenario -> media_cmd -> M coordinator -> SPI command -> S media service
-S descriptor/status   -> M SPI RX   -> coordinator/status UI
-```
-
-C 线不得产生 `load_request`、`framebuffer_base`、GPIO packet 时钟或从板内部 sector 请求。C 线可以要求下一张、播放/暂停、转场模式、目标分辨率和应急画面，但具体 buffer 分配、credit 和提交时刻由 M/B 线控制。
-
-## 10. 分辨率与回退
-
-1280×720 是双板链路 bring-up profile，1920×1080 是本项目主目标。C 线必须在 1080p 主板 profile 上完成 UI、OSD、转场和音频可视化的综合、STA 和真板验证；若 1080p PHY 或板间数据面阶段性未收敛，保留 720p 作为调试 fallback，但不能将项目计划降级为 720p-only。
-
-## 11. 双板与 1080p 主线任务
-
-| 节点 | C 线任务 | 与其他线汇合 |
-|---|---|---|
-| Q0 | 主板 SPI 命令映射、ready/status/error UI | 与 A 的 descriptor、B 的 PRBS/CRC/CDC 汇合 |
-| Q1 | 双板状态页、媒体 descriptor/credit 可视化、错误提示 | 与 A/B packet service 汇合 |
-| Q2 | 720p line/tile bring-up 输入适配、单板 fallback、双源/转场接口 | 与 A/B 双板链路验证汇合，再升级到 1080p |
-| Q3 | 1920×1080 raster profile 下的 UI/OSD 资源、音频 timing 预算 | 与 B 主板 HDMI STA/PHY 汇合 |
-| Q4 | 1080p 静态图、视频切换、双源转场和音频可视化演示 | 与 A 媒体供给、B HDMI 输出汇合，作为必需的主交付验收 |
+1. 每个受影响模块有 Questa/ModelSim 回归；sideband、固定延迟和异步 reset 行为可复现。
+2. 配置只在 `frame_boundary` 生效；active line 一拍一像素，不把任意 ready 传回 B。
+3. 不能修改 P1-04C/P1-05A 的 PHY、PLL、reset、EDID 或 `axis_user/valid/last` cadence。
+4. UI、交互、转场和音频都能独立旁路；双板链路故障时保留固定图案/上一帧/应急页。
+5. C 线模块通过 `[U]` 不等于主板 1080p `[S]/[B]`；后两级由集成负责人在统一节点验收。

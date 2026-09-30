@@ -10,7 +10,7 @@
 | P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S][B]` |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
 | P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
-| P4 · Multi-board & 1080p | 双板媒体流、1280×720 bring-up、1920×1080 主目标 | planned; no dual-board/1080p evidence |
+| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | 主线计划；当前无双板/1080p 集成证据 |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
 
@@ -211,23 +211,27 @@ P1-05A closeout 后默认冻结：
 7. cached-adapter sequential read cache 与 registered write request boundary；
 8. prefetch bank-availability scheduling invariant。
 
-## 9. 下一阶段 P1-05B
+## 9. 双板 + 1080p 主线中的 P1-05B
 
-P1-05B 只在此稳定 framebuffer baseline 上替换固定写源：
-
-```text
-TF -> FAT32 -> BMP -> framebuffer_writer -> SDRAM -> existing P1-05A display path
-```
-
-随后恢复 A/B framebuffer 与 frame-boundary swap。TF、FAT32、BMP 不与 HDMI low-level bring-up 混在一起。
-
-## 10. 分辨率与双板演进
+P1-05A 是持续保留的 rollback baseline。P1-05B 的 TF/FAT32/BMP 图片能力仍是必需交付，但不再先独立完成一条单板链、然后才开始双板开发；它作为双板主线的第一种媒体规格接入：
 
 ```text
-P1-05A        640×480 single-board rollback baseline
-P1-05B        640×480 TF/BMP image loop
-P2 required   1280×720 + 1.4 presentation extensions
-P4 challenge  dual-board media stream + 1920×1080 feasibility
+从板 TF -> FAT32/BMP -> media service -> 板间 packet
+                                  -> 主板 buffer/安全提交 -> HDMI
 ```
 
-P2 的 1.4 扩展包括图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化。主板完成显示空间合成；从板提供媒体源和预处理。若链路带宽不足以同时传输两路原始源，淡入淡出等媒体转场由从板预混合后发送单路结果，主板继续叠加 UI。
+P1-05A HDMI golden boundary 继续保护；但双板接口、主板 1080p profile 和媒体格式从开发开始就按最终架构设计，避免先做单板接口再二次改造。
+
+## 10. 统一开发节点与分辨率策略
+
+```text
+M0  P0/P1-05A 已有基线
+M1  双板协议、1080p 架构/时钟/引脚契约与开发骨架
+M2  双板 640×480 TF/BMP 第一闭环（P1-05B 功能并入此节点）
+M3  1280×720 链路 bring-up profile
+M4  双板媒体 + 主板 1920×1080 静态图和 UI
+M5  视频、切换、转场、音频
+M6  1.4 扩展及双板 1080p 最终交付
+```
+
+三人始终分别负责 A/B/C 一条开发线，集成负责人在每个 `M` 节点收口；不另设 I/Q 两套阶段或阶段性重复分工。1280×720 只做 bring-up/debug profile，不是进入 1080p 开发的长期前置路线。P2/选题 1.4 的图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化纳入 M4～M6；主板完成 UI 合成，从板提供媒体流。若链路不能承载两路源，允许从板预混合，但主板 1080p 输出仍是必需验收。

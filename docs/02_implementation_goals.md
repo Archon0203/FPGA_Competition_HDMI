@@ -97,9 +97,9 @@ GCLK        2 / 16     = 12.50%
 
 资源足以进入 P1-05B，当前 LUT 使用率约 37.84%。line buffer 的 ERAM 映射优化仍可作为后续资源回收手段；在没有资源压力前不破坏已收敛的 P1-05A baseline。
 
-## 4. 下一目标：P1-05B TF/BMP
+## 4. P1-05B 媒体能力并入双板主线
 
-P1-05B 在 P1-05A display path 不变的前提下加入：
+P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需能力，但按最终主从架构直接开发，不要求先完成独立单板闭环再开始双板。640×480 是双板第一闭环的媒体规格；P1-05A 保留为单板 rollback/display baseline。
 
 - TF card initialization / block read；
 - FAT32；
@@ -111,7 +111,7 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 
 当前第一项子证据：`p1_media_framebuffer_loader` 已 `[U] PASS`。它把 P0 FAT32/BMP/framebuffer writer 连接至 P1 cached APUG011 写后端的抽象接口；fragmented BMP provider-realistic chain 为 `PASS(225)`。该证据不包含真实 TF physical reader CDC、active board top、TD6.2.1 或真板显示。
 
-只有 P1-05B 真板通过后，才能对外表述“TF→SDRAM→HDMI 基础图片播放完成”。
+当前 `p1_media_framebuffer_loader` 仅 `[U] PASS(225)`。只有双板主线中真实 TF 图片经过从板媒体服务和板间数据面，在主板完成安全提交并取得真板证据后，才能对外表述“TF 图片经双板输出完成”。
 
 ### P1-05B 验收约束
 
@@ -122,15 +122,19 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 5. 真板必须完成真实 TF/BMP 图像显示与 frame-boundary swap；
 6. 资源变化必须记录 LUT/REG/BRAM/PLL/GCLK。
 
-## 5. 分辨率演进
+## 5. 统一开发节点与分辨率策略
 
 ```text
-640×480 : P1-05A stable baseline
-1280×720: required presentation target / independent timing gate
-1920×1080 / dual-board: main target / staged implementation gates
+M0: P0/P1-05A 已有基线
+M1: 双板协议、1080p 架构/时钟/引脚契约与开发骨架
+M2: 双板 640×480 TF/BMP 第一闭环（P1-05B 功能）
+M3: 1280×720 链路 bring-up/debug profile
+M4: 双板媒体 + 主板 1920×1080 静态图/UI
+M5: 视频、切换、转场、音频
+M6: 选题 1.4 扩展与双板 1080p 最终验收
 ```
 
-720p 旧 75/375 MHz candidate 已 STA FAIL，不与当前 640×480 baseline 混用。
+1280×720 只用于链路 bring-up，不是最终分辨率，也不作为开启 1080p 设计的长期前置阶段。旧 720p 75/375 MHz candidate 已 STA FAIL，不复用其时钟方案。任何新 profile 都必须独立完成时钟、PHY、P&R、STA 和真板验证。
 
 ## 5.1 双板目标边界
 
@@ -138,16 +142,15 @@ P1-05B 在 P1-05A display path 不变的前提下加入：
 
 1080p60 需要 148.5 MHz pixel clock 和 742.5 MHz serial clock。第二块板只能缓解媒体存储和预处理压力，不能替代输出主板的 APUG092/PHY 时序闭合。1080p 单帧约 2,073,600 个 32-bit word，接近单板 2M×32 SDRAM 容量，因此 1080p 不采用单板 A/B 全帧双缓冲；优先使用从板缓存下一帧、主板行/tile 缓冲和 frame-boundary 提交。
 
-项目验收分为两条口径：
+本项目只维护一条从开始到交付的主线：
 
 ```text
-主线第一阶段：1280×720 bring-up + P1-05B 单板基线
-主线最终阶段：双板媒体链路 + 1920×1080 图片、视频、双源转场和 HDMI 音频
+三人分别长期负责 A/B/C；每个 M 节点中三线并行，节点末尾集成汇合。P1-05A 只作为回退基线，P1-05B 图片能力通过 M2 双板闭环完成。
 ```
 
 ## 6. 后续 Presentation
 
-P1-05B `[B]` 后进入双板主线：先完成 Q0/Q1/Q2 的控制面、数据面和 1280×720 bring-up，再完成 Q3/Q4 的 1920×1080 HDMI、媒体、UI、转场和音频集成。P1-05A fixed-pattern rollback 在整个主线中保留。
+双板 + 1080p 从 M1 起就是开发主线；随后按 `M2 → M3 → M4 → M5 → M6` 收口。完整 A/B/C 任务与节点依赖见 `docs/08_three_line_integration_flow.md`。P1-05A fixed-pattern rollback 在整个主线中保留。
 
 ## 7. 状态等级
 
@@ -164,4 +167,4 @@ P1-05B `[B]` 后进入双板主线：先完成 Q0/Q1/Q2 的控制面、数据面
 
 ## 8. Golden boundary 冻结要求
 
-P1-05B 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI PLL、APUG092/EG PHY、reset/EDID/IIC divider、640×480 timing，以及 P1-05A 已证明的 cached-adapter/CDC/prefetch/scanout 行为。若必须修改，必须说明原因并重新取得对应 Questa、STA 和 board 证据。
+P1-05A rollback baseline 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI PLL、APUG092/EG PHY、reset/EDID/IIC divider、640×480 timing，以及已证明的 cached-adapter/CDC/prefetch/scanout 行为。双板 1080p 使用独立 profile/top 和约束；若修改 frozen baseline，必须重新取得对应 Questa、STA 和 board 证据。

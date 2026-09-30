@@ -2,7 +2,7 @@
 
 这是一个面向校园、园区信息发布和应急广播场景的 FPGA HDMI 多媒体终端。项目目标是在安路 HX4S20C / EG4S20BG256 上完成从 TF/FAT32/BMP 或帧序列数据到 internal SDRAM framebuffer，再到 HDMI 显示输出的完整链路，不依赖外部 CPU 或 MCU。
 
-当前稳定基线是 **P1-05A：internal SDRAM framebuffer → HDMI_B**。它使用固定的 640×480 RGB888 诊断图案验证 SDRAM、CDC、行预取、ping-pong line buffer 和 HDMI 输出链路；TF/FAT32/BMP 播放属于下一阶段 P1-05B，尚未作为已完成能力对外宣称。
+当前已验证基线是 **P1-05A：internal SDRAM framebuffer → HDMI_B**。它使用固定的 640×480 RGB888 诊断图案验证 SDRAM、CDC、行预取、ping-pong line buffer 和 HDMI 输出链路；`p1_media_framebuffer_loader` 目前只有 `[U] PASS(225)`。后续按 `M0～M6` 单一路线推进：从 `M1` 起按双板主从 + 1080p 架构开发，P1-05B 作为 `M2` 的双板 640×480 第一闭环，不单独开一条单板路线。
 
 ## 当前工程入口
 
@@ -69,10 +69,10 @@ FPGA_Competition_HDMI/
 
 三线并行开发与逐步集成按以下文档执行：
 
-- [`docs/05_line_A_media_plan.md`](docs/05_line_A_media_plan.md)：A 线 TF/FAT32/BMP 与媒体输入；
-- [`docs/06_line_B_framebuffer_plan.md`](docs/06_line_B_framebuffer_plan.md)：B 线 framebuffer/SDRAM/CDC；
-- [`docs/07_line_C_presentation_plan.md`](docs/07_line_C_presentation_plan.md)：C 线显示处理、交互和音频；
-- [`docs/08_three_line_integration_flow.md`](docs/08_three_line_integration_flow.md)：三线接口、分支和集成门禁。
+- [`docs/05_line_A_media_plan.md`](docs/05_line_A_media_plan.md)：A 线从板媒体生产、descriptor 和 line/tile 供给；
+- [`docs/06_line_B_framebuffer_plan.md`](docs/06_line_B_framebuffer_plan.md)：B 线板间链路、buffer、SDRAM/CDC 和主板 HDMI 输出；
+- [`docs/07_line_C_presentation_plan.md`](docs/07_line_C_presentation_plan.md)：C 线主板 UI、交互、转场和音频；
+- [`docs/08_three_line_integration_flow.md`](docs/08_three_line_integration_flow.md)：`M0～M6` 三线分支、汇合和当前节点图。
 
 开发过程记录、候选方案和阶段复盘统一放在 [`docs/develop_records/`](docs/develop_records/)；历史文档放在 `docs/olds/`，不作为当前状态依据。
 

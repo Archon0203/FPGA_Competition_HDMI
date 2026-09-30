@@ -19,11 +19,13 @@
 
 ### 集成与阶段规则
 
-1. `I1`～`I5` 仍是单板 P1-05B 基线阶段；先完成接口、数据通路和显示复测，再进入双板主线。
-2. `Q0`～`Q4` 是双板 + 1080p 主交付阶段：依次完成双板链路、720p bring-up、1080p profile 和 1080p 主交付。
+1. `M0` 是已完成的 P0/P1-05A 基线；`M1` 是当前的双板 + 1080p 公共契约和开发骨架节点。P1-05B 作为 `M2` 的双板架构第一闭环，不单独开一条单板开发线。
+2. `M3` 使用 1280×720 作为链路 bring-up 门禁；`M4～M6` 直接推进 1920×1080 媒体、UI、视频、转场和音频主交付。720p 通过不能替代 1080p 验收。
 3. 公共接口（`media_cmd`、descriptor/packet、板间链路、时钟/复位、显示提交等）由集成负责人先定义并冻结；接口变更必须先在 PR 中说明影响范围，再由集成负责人协调 A/B/C 三线同步修改。
+4. C 线可先用 deterministic raster、固定 catalog 和 PRBS mock 开发按键/旋钮/转轮/UI；真实选图范围、媒体类型、播放完成/错误必须接入 A 线 `catalog/descriptor/status`，真实缩放/OSD/转场验收必须接入 B 线 `canonical raster/frame_boundary/underflow`。mock 通过不等于双板集成通过。
+5. 旋钮采用外接增量式正交编码器 A/B + 按压开关的候选方案，优先使用 40-pin GPIO；pin ownership、电平、消抖、CDC 和约束由集成负责人冻结后才能上板。
 4. A 线和 B 线不得直接修改对方所有权范围，也不得绕过已冻结接口建立隐式依赖。跨线需求通过接口、stub 或测试数据提出。
-5. 每个集成节点由集成负责人建立集成分支并合并 PR，完成综合、布局布线、STA、BitGen 和真板验证后，更新 `docs/03_plan_and_status.md` 与 `docs/08_three_line_integration_flow.md` 的状态。
+5. 每个 `M` 节点由集成负责人建立集成分支并合并 PR，完成相应的综合、布局布线、STA、BitGen 和真板验证后，更新 `docs/03_plan_and_status.md` 与 `docs/08_three_line_integration_flow.md` 的状态。
 6. 集成发现问题时，优先回退到最近一个通过真板验证的基线；问题归属到对应开发线修复，集成负责人负责复测和重新合并。
 
 ## 提交流程（一句话）

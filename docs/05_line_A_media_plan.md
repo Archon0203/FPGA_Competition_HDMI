@@ -1,154 +1,131 @@
-# A 线计划：TF/FAT32/BMP 媒体输入
+# A 线计划：从板媒体生产与双板媒体供给
 
-> 2026-09-27 双板主线修订。公共契约、文件所有权及门禁以 `08_three_line_integration_flow.md` 为准；本文件是实施计划，实际证据等级以 `03_plan_and_status.md` 为准。
+> 本文件只描述 A 线任务。全项目使用统一节点 `M0～M6`；节点中的 A/B/C 任务并行完成，汇合后才进入下一节点。双板 + 1080P 从 `M1` 就是架构前提，640×480 只是第一种受控媒体规格，不再单独开一条“单板开发线”。实际证据等级以 `docs/03_plan_and_status.md` 为准。
 
-> 双板主线说明：A 线部署在从板 S，负责媒体生产；主板 M 不读取 TF，也不解析 FAT。A 线通过板间协议向 M 提供媒体描述符和帧/行/tile 数据。M 只发送 `image_id`、格式、credit 和播放控制，不向 S 暴露主板 framebuffer 地址。
+## 1. 责任边界与当前状态
 
-## 1. 目标及已实现边界
-
-A 线承担康芯选题一基础①，并承担双板主线的从板媒体生产：从本地 TF 自动扫描、识别和装载**至少 4 幅 640×480、24-bit BMP**，再扩展到从板预取、帧/行/tile packet 和 1080p 媒体供给。交付范围从卡初始化、FAT32 挂载、目录表到双板媒体服务，不能仅交付“已知 cluster 的一个文件能解码”。
-
-可复用的已有证据：
-
-| 部分 | 已有记录 | 不能据此宣称 |
-|---|---|---|
-| P0 full media chain | `[C] PASS(1698)` | 真实卡与当前板级 top 已接通 |
-| `p1_media_framebuffer_loader` | `[U] PASS(225)`，17×12、fragmented FAT、BGR/bottom-up/padding、mock APUG011 | 全尺寸、真实 TF、双缓冲或 TF→HDMI 已通过 |
-
-当前 loader 内部已有 FAT file reader、BMP parser/pixel stream 和 `framebuffer_writer`，输入依赖外部提供 cluster/size/FAT/data LBA/SPC。当前 `fat32_scan` 仅扫描根目录第一簇的第一扇区，BPB 信息存于内部寄存器，没有完整对外导出 loader 所需的卷参数。当前 `sd_reader` 是命令/字节层 FSM，板级 SPI 控制、卡类型/地址单位、重复读和错误路径仍需 provider 集成验证。
-
-## 2. 架构与文件所有权
+A 线由曾雨婷负责，部署在从板 S，负责：
 
 ```text
-TF physical + sector provider CDC
-   -> FAT32 mount/scan -> catalog/volume metadata
-   -> 按 image_id 查表
-   -> p1_media_framebuffer_loader（内部唯一 framebuffer_writer）
-   -> mem_wr_* -> B SDRAM sink
+TF/SPI -> FAT32 mount/catalog -> BMP/vseq decoder
+       -> descriptor + decoded line/tile payload
 ```
 
-A loader 是唯一 writer owner，即唯一控制它内部 writer.start 的模块。B manager 只预留 back、消费最终完成并管理 front/back；不能另建第二个 writer。writer 的公共 RTL 文件由 B 维护并默认冻结，A 不直接修改它。
+A 不负责 SDRAM 控制器、主板 HDMI 时序、主板 front/back、UI/OSD 或转场合成。A 提供应用层媒体 descriptor 和 ready/valid line/tile 数据；B 负责缓存、线上 packet 封装、CRC、物理链路和主板显示缓冲。主板只向从板发送 `image_id`、播放控制、格式和 credit；A 不读取主板 framebuffer 地址。
 
-A 可编辑：
+### A 对 C 的真实依赖边界
 
-- `src/storage/**`，包括新的 mount/catalog/provider/CDC wrapper；
-- `src/framebuf/p1_media_framebuffer_loader.v`；
-- `sim_tb/storage/**`；
-- 实际已有的 `sim_tb/integration/tb_p1_media_framebuffer_loader.v` 与 `run_p1_media_framebuffer_loader.do`；
-- `tools/make_sd_card.py` 及新增的 A 媒体 golden/镜像工具；`video_to_vseq.py` 留在 P3。
+C 的选图和播放状态不能凭空假设媒体数量。A 必须向主板 coordinator 提供以下只读结果：
 
-A 不编辑 manager、公共 writer、SDRAM/显示读出、C 模块、active top、约束或 TD 工程。公共 P0 全链 harness 由集成负责人维护，A 可以在独立 worktree 运行回归。
+```text
+catalog_valid / catalog_count / catalog_epoch
+descriptor(image_id, type, width, height, frame_count, duration)
+media_ready / source_busy / source_done / source_error
+```
 
-## 3. 首版媒体及目录契约
+因此 C 的 `NEXT/PREV/转轮范围/图片或视频类型显示/播放完成后的自动推进` 在真实系统中依赖 A 的 descriptor 和 status。M1 允许 C 用固定 catalog mock 开发；从 M2 起，C 的真实命令验收必须接入 A 的 catalog/status。A 不依赖 C 的 UI 状态，只消费 coordinator 发出的高层 `OPEN/PLAY/PAUSE/ABORT`。
+
+当前可复用证据：
+
+- P0 full media chain：`[C] PASS(1698)`；
+- `p1_media_framebuffer_loader`：`[U] PASS(225)`，覆盖 fragmented FAT、BGR/bottom-up/padding 和 mock APUG011；
+- P1-05A 真板显示已完成，但 A 线尚未完成真实 TF、双板 packet、1080p 持续供给。
+
+当前正在进入 `M1`：先冻结双板控制/数据协议、descriptor、credit、错误和 CDC，再把已有 loader 接入统一服务端。不得先做只适用于单板的私有接口。
+
+## 2. 文件所有权
+
+A 线可修改：
+
+```text
+src/storage/**
+sim_tb/storage/**
+sim_tb/integration/tb_p1_media_framebuffer_loader.v
+tools/make_sd_card.py 以及 A 线媒体镜像/golden 工具
+```
+
+`p1_media_framebuffer_loader.v` 当前已有 P1-05B `[U]` 证据；如需修改须先由集成负责人协调 A/B，因为它连接媒体解析和 SDRAM 写口，不作为 A 的独占所有权文件。
+
+A 线不得修改：
+
+```text
+src/framebuf/frame_buffer_manager.v
+src/framebuf/framebuffer_writer.v（公共 writer 接口由集成负责人冻结）
+src/framebuf/** 的主板读出/line buffer 部分
+src/display/**  src/app/**  src/interact/**  src/audio/**
+src/top/**  constraints/**  FPGA_Competition_HDMI.al
+```
+
+公共协议需要变化时，先提交契约变更，由集成负责人协调 B/C 一起更新；A 不通过隐式信号依赖主板内部状态。
+
+## 3. 媒体与板间契约
+
+### 3.1 第一规格：640×480 图片
 
 | 项目 | 固定规则 |
 |---|---|
-| BMP | 640×480、24-bit BI_RGB、正高度 bottom-up；文件 BGR 正确转 RGB |
-| SDRAM pixel | 一个 32-bit word：`0x00RRGGBB`，输出按 display y 坐标落址 |
-| stride/base | stride=640 words；base 4-word 对齐；地址为 word，不能把 BMP byte offset 当 SDRAM 地址 |
-| buffer map | B 分配 A=0、B=307200 words，各 307200 words；A 不能自行改 front/back |
-| BMP row | 文件 row padding 与 framebuffer stride 分开计算；640×480 行恰无 padding，小尺寸测试继续覆盖 padding |
-| 目录首版 | MBR FAT32、512B sector、8.3 名；自动生成不少于 4 个合法图片表项 |
-| 错误 | 非法 header/尺寸、短读、坏 cluster、超时、overflow 均不得使失败帧获得可显示资格 |
+| BMP | 24-bit BI_RGB，正高度 bottom-up，BGR 转 `0x00RRGGBB` |
+| 目录 | FAT32、512B sector、8.3 名，至少 4 个合法图片项 |
+| 数据 | A 负责 descriptor 和 decoded line/tile payload；B 负责 wire packet、CRC、cache 和显示提交 |
+| 错误 | 非法 header、坏 cluster、短读、超时、CRC/overflow 不得产生成功帧 |
+| 测试 | 删除项、LFN、非 BMP、坏文件和 fragmented FAT 必须覆盖 |
 
-A 新增 catalog/volume wrapper，导出 `catalog_valid/count/epoch`，支持 `image_id[7:0]` 查询得到 `start_cluster/file_size/fat_lba_base/data_lba_base/sectors_per_cluster`。查表握手及 payload 在 I0 固定。coordinator 只负责路由，不解析 FAT，不从外部硬编码 cluster/LBA。
+`catalog` 必须按 `image_id` 返回 `start_cluster/file_size/fat_lba_base/data_lba_base/sectors_per_cluster` 和 `epoch`。不能把 cluster/LBA 硬编码在 coordinator 或主板。
 
-首版受控镜像将至少 4 个 8.3 BMP 条目放在当前 scanner 支持的根目录扇区；测试还应混合删除项、LFN、非 BMP 项及坏文件，证明不会把 4 个文件名直接当成 4 幅可播放图片。首次逐文件 header 识别后发布可播放表；BMP 全文装载仍要检查完整性。记录受支持卡布局，后续多扇区/多簇根目录扫描由 A 单独扩展，不能声称支持任意目录。
+### 3.2 双板协议
 
-扫描、header 探测和 loader 共用同一 TF provider，由 A 仲裁，一次只允许一个 sector 请求 owner。catalog 建立不依赖 B framebuffer。重扫必须先停止/完成当前读取、更新 epoch，不能让旧 image_id 指向新表。
-
-## 4. 启动与完成契约
-
-文中的 `load_done/load_ok` 是当前 loader `done/ok` 的逻辑别名，错误由 `protocol_error/source_error/overflow` 等汇总；不能把这些规划名称当作现有端口。
-
-唯一启动次序：
+控制面：
 
 ```text
-coordinator 已取得合法 catalog metadata
- -> B manager.load_start + 固定 640/480/640
- -> manager.load_accept
- -> coordinator 锁存 write_base/metadata
- -> loader.start（loader.ready 时，恰一次）
- -> loader 自行在解析 header 后启动内部 writer
+M SPI master -> S SPI slave: OPEN/NEXT/PREV/PLAY/PAUSE/SET_FORMAT/CREDIT/ABORT
+S SPI slave -> M SPI master: READY/DESCRIPTOR/STATUS/ERROR/COUNTERS
 ```
 
-manager 的历史 `writer_start` 输出在本版不连接；不得同时和 coordinator 触发 loader。BMP header 检查位于已预留事务内部，不能要求 B 等 header 才允许 A 开始读文件，否则会形成启动互等。
-
-loader 输出 `mem_wr_valid/ready/addr/data`，valid 未被接受前 payload 必须稳定。`done` 只保证 loader 及内部 writer 终态、抽象写已被接受；B 的 registered request slice/APUG011 还可能有在途写。集成桥必须锁存 loader 结果，等待 B write fence 再向 manager 发一次 `writer_done/writer_ok`。A 不生成 pending_swap/swap，也不把 done 当显示成功。
-
-## 5. 真实 provider、节流及超时
-
-首版 physical reader/SPI 位于板级 50 MHz 域，loader/catalog/manager 位于 150 MHz；若物理模块另有时钟，A 必须在 I0 登记并提供 CDC。默认在 A provider wrapper 中集中处理 CDC，`mem_wr_*` 在 150 MHz 与 B 同域，不再额外重复跨域。
-
-provider 至少实现：请求 LBA 握手、完整 sector 数据缓存、响应归属、成功/失败及超时、reset/取消后旧响应隔离。physical `data_valid` 不能直接跨入 loader；多比特 LBA/结果用握手或 FIFO，不逐位双触发器采样。
-
-当前 BMP 像素是 valid-only，没有逐像素 ready 回传。writer 内 FIFO 只能吸收有限暂停，`mem_wr_ready` 低并不能停止 BMP 解析。新增 sector 缓存后若在 150 MHz 连续重放 512B，仍可能压满 writer，因此 A 必须交付 provider 重放节流：
-
-- 在 A loader wrapper 暴露/计算可靠的像素容量 credit，预留 BGR 拼装和在途字节余量；不要只观察某拍 mem_wr_ready；
-- 以 credit 限制 `sector_din_valid`，允许受控字节间隙，physical 侧在开始块事务前保证整扇区存储容量；
-- I0 先用有限 FIFO 和最大写阻塞 mock 冻结节流接口；若需修改公共 writer 的水位输出，由 B 的独立 PR 维护，不由双方同时编辑；
-- 覆盖读优先仲裁、SDRAM refresh、read cache 被写失效等竞争；FIFO 超界必须报失败，不能静默丢字；
-- loader 默认 `STALL_TIMEOUT_CYCLES=200000` 在 150 MHz 下约 1.33 ms，不能照搬成真实卡超时。按初始化、块等待、节流、写排空分别预算并测试有限退出；
-- 某模块因故障不能自行 done 时，由集成恢复协议隔离并排空后复位该事务域，保证下次 load 不混入旧 sector/写请求。不能通过复位 HDMI 来清除媒体错误。
-
-## 6. 分阶段交付
-
-| A 线阶段 | 对应集成节点 | 工作 | 独立验收 |
-|---|---|---|---|
-| A0 | I0/I1 | 契约和 mock：格式、目录/metadata、provider/CDC、节流、load start/done | fake catalog + mock sink；不依赖 B/C 实现 |
-| A1 | I2 | 补 mount/catalog 导出 | fragmented FAT、padding、非法文件；至少四图自动识别；卷参数直达 loader |
-| A2 | I1/I2 | provider-realistic chain 与流量预算 | 保持 PASS(225)；覆盖 backpressure、最后一笔写、有限超时 |
-| A3 | I2 | 真实 TF provider、SPI 初始化/寻址、sector 缓存、CDC 和重试 | 卡模型/harness；记录卡类型、频率、超时及重扫规则 |
-| A4 | I2/I3 | 640×480 loader 与 B sink | 不少于四图逐字 RGB golden；显示读竞争下不溢出；错误保持 front |
-| A5 | I2/I3/I5 | 真实 A/B 写入、动态读出，最终完成 P1-05B | 集成负责人接 active top；A 提供卡镜像和真 TF 证据 |
-| A6 | Q0/Q1 | 双板从板媒体服务 | S 侧 catalog/decoder/prefetch/SDRAM；SPI 命令响应；descriptor/packet TX |
-| A7 | Q2/Q3/Q4 | 720p 链路 bring-up，升级到 1080p 媒体供给 | credit 下持续 line/tile；packed YUV422；帧边界、underflow 和双源媒体 |
-
-可以先用内存扇区 provider 做 A1/A2/A4 的 RTL 部分，同时开发 A3；真实卡未完成不阻塞 B/C 单元开发。
-
-## 7. 回归及完成口径
-
-既有入口包括：
+数据面首选 source-synchronous GPIO：
 
 ```text
-sim_tb/storage/run_sd_spi.do
-sim_tb/storage/run_sd_reader.do
-sim_tb/storage/run_fat32_scan.do
-sim_tb/storage/run_fat32_file_reader.do
-sim_tb/storage/run_bmp_parser.do
-sim_tb/storage/run_bmp_pixel_stream.do
-sim_tb/integration/run_p1_media_framebuffer_loader.do
-sim_tb/integration/run_p0_media_chain.do
+S SDRAM/prefetch -> packetizer -> DATA[31:0] + LINK_CLK
+                   + VALID/SOF/EOL/EOF + sequence + CRC
 ```
 
-新增 catalog/provider/节流 TB 随对应模块交付。A 验收须证明启动和 done 唯一、写地址落在获授 back 区域、valid/ready 无丢重、目录无需手工 cluster、错误不会标为成功。
+SPI 只承载命令和状态，不承载原始像素流。首版可用 RGB888 低分辨率验证协议，主线数据格式采用 packed YUV422 以降低 1080p 带宽；格式、payload 长度、`frame_id`、`image_id`、行/tile 索引、credit 和 CRC 都必须在 `M1` 冻结。A 定义应用 payload 字段，B 定义线上分帧、sequence/CRC 和 GPIO 时序。
 
-A 的独立 PASS 只说明媒体事务；P1-05B 的 `[C]/[S]/[B]` 分别需要集成 RTL、当前实现时序和实际真板证据，按 docs/03 独立记录。完成 P1-05B 后，A6/A7 双板媒体供给是主线必经项，1080p 不再是可选挑战。
-
-## 8. 双板主线媒体生产阶段
-
-### A6：从板媒体服务端
-
-P1-05B 单板图片闭环通过后，A 线必须进入从板侧服务端；双板不是可选演示项。A 线仍不直接驱动主板 SDRAM：
+### 3.3 启动、credit 与完成
 
 ```text
-S TF/SPI -> catalog -> decoder/prefetch -> S SDRAM
-                                      -> frame/line/tile packet
+C media_cmd -> coordinator 发 OPEN(image_id)
+            -> A 查询 catalog 并返回 descriptor
+            -> B 分配目标 buffer/credit
+            -> A 发送 line/tile packet
+            -> B 在 frame boundary 提交
 ```
 
-服务端至少支持：`OPEN(image_id)`、`NEXT/PREV`、`PLAY/PAUSE`、`SET_FORMAT`、`REQUEST_REGION`、`CREDIT`、`ABORT`。返回数据必须带 `frame_id`、`image_id`、`width/height`、`pixel_format`、`line_or_tile_index`、`payload_length` 和 CRC。坏文件、短读、超时和 CRC 错误只能产生失败状态，不得产生可提交帧。
+A 只报告 `source_done/source_error`；不得生成主板 `swap`。`mem_wr_valid/ready` 或 packet valid 未被接受时，payload 必须保持稳定。物理 TF 时钟与 150 MHz 处理域之间使用显式 FIFO/握手 CDC；不能把 SPI `data_valid` 直接采样进 loader。
 
-### A7：视频与 1080p 媒体主线
+## 4. 统一节点中的 A 线任务
 
-图片先支持 RGB888/BMP；视频沿用 `vseq_reader` 的容器方向，但数据面优先采用 packed YUV422 以降低板间带宽。A 线负责从板端预取和格式转换，不能要求主板等待整帧完成后才开始显示。720p 是链路 bring-up profile，1080p 是本项目主目标；只有在 PRBS/CRC、credit、720p link 和主板高速 HDMI 门禁通过后，才进入 1080p 媒体数据验证。
+| 统一节点 | A 线任务 | A 线完成证据 |
+|---|---|---|
+| `M0` | 继承 P0/P1-05A 证据；整理 loader、TF、BMP 的输入输出边界 | 既有 `[C] PASS(1698)`、`[U] PASS(225)` 可复现 |
+| `M1`（当前） | 冻结 descriptor/packet 契约；实现 SPI 控制帧、credit、错误码和 provider CDC；建立从板 media-service shell；用 mock source 验证行数据 ready/valid | descriptor/线上 packet、sequence/CRC 和双板链路仍待与 B 集成冻结；M1A 模块级 Questa mock 回归通过，不能替代真实 TF 或双板证据 |
+| `M2` | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务；冻结 C 可消费的 descriptor/status 实现 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden；C 的真实选图命令能收到 ready/busy/done/error |
+| `M3` | 按 descriptor 生成持续 line/tile 数据并响应 credit；实现帧边界、重试和错误隔离；配合 720p bring-up | 在 credit 下持续输出，无丢包/重包/CRC 错误 |
+| `M4` | 将媒体生产扩展到 1920×1080：packed YUV422、帧/行/tile descriptor、带宽预算和 underflow 预警 | 1080p 静态图连续 packet，带宽和 buffer 水位有记录 |
+| `M5` | 接入 `vseq_reader`/视频帧调度；支持图片、视频、NEXT/PREV/PLAY/PAUSE 和双源切换所需的两路媒体描述 | 视频帧序号连续，切换不会提交坏帧 |
+| `M6` | 长稳、异常恢复、双源/转场媒体准备和最终演示镜像 | 图片→视频→切换/转场长稳证据；故障可回退到上一帧 |
 
-### A8：A 线验收
+每个节点的合并顺序为：A 自测与提交 → 集成负责人接入 mock/子链 → 与 B/C 合并验证。A 未完成时，B/C 使用固定 descriptor、PRBS 或本地 test source；但 M2 真实媒体命令门禁必须等待 A 的 catalog/status 契约和 provider 实现，不能把 mock 结果记为双板完成。
 
-```text
-A6 [C]：主板可通过 SPI 命令打开媒体，从板返回合法 descriptor
-A6 [C-sub]：连续 line/tile packet 无丢包、重包、CRC 错误
-A7 [C]：从板可按 credit 持续提供 1080p 目标媒体流；720p 作为 bring-up profile
-A7 [S]/[B]：双板链路和主板 1080p 输出分别完成实现与真板验证
-```
+### M1A 从板媒体服务骨架 — `[U]/[C-sub] Questa PASS`
 
-A 线不拥有主板的 UI、transition、framebuffer base、HDMI timing 或 audio packet；但必须为主板 1080p UI/transition 提供连续、可回退的媒体源。
+`src/storage/m1a_service_shell.v` 将 SPI Mode 0 字节入口、`SOF/opcode/length/payload/CRC16-CCITT` 命令解码、异步 provider byte FIFO 和 deterministic media-service mock 组合起来。mock 提供 catalog/descriptor/status、PLAY/PAUSE、按行 credit 与 ready/valid 媒体字；它不读取 TF，也不实现线上 packet sequence/CRC 或 GPIO 数据链路。SPI 无字节级反压，shell 用 sticky `spi_rx_overflow` 报告 ingress FIFO 满时的丢字节；状态回读通过稳定数据 mailbox 跨域。
+
+QuestaSim 10.7c：SPI slave、command decoder、provider CDC、media mock、service shell、catalog table、FAT32 catalog path 和原 `fat32_scan` 回归八个 testbench 全部 PASS。新增 `m1a_fat32_catalog` 将现有 scanner 接至 catalog table；受控 MBR/BPB/多扇区根目录簇仿真验证文件 cluster/size、FAT/data LBA base 和 sectors-per-cluster 均能进入 descriptor。`fat32_scan` 现在遍历根目录首簇内的各扇区，但尚不跟随 FAT 链读取后续目录簇，也尚未连接真实 TF/SPI provider。完整回归命令为 `sim_tb/storage/run_m1a.ps1`。该结果是模块/受控 sector-stream `[U]/[C-sub]` 仿真证据；真实卡接线、跨簇目录、A/B 冻结的线上 packet 契约、双板 top、TD 实现及真板验证仍未完成。
+
+## 5. A 线验收门槛
+
+1. 目录扫描不依赖手工 cluster；旧 `image_id` 在重扫后由 `epoch` 失效。
+2. 一次 OPEN 只产生一次媒体事务；超时、取消、reset 后的旧 sector/packet 不得污染下一次事务。
+3. valid/ready、credit、sequence 和 CRC 无丢重；错误只能产生错误状态或回退帧。
+4. 640×480 是 `M2` 的第一验证规格；720p 仅用于 `M3` 链路 bring-up；A 线最终必须提供 1080p 连续媒体源。
+5. A 线 `[U]/[C-sub]` 不等于双板 `[C]`、时序 `[S]` 或真板 `[B]`；三类证据由集成负责人分别记录。
