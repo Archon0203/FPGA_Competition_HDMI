@@ -97,13 +97,25 @@ frame_boundary / underflow_sticky / protocol_error
 
 B 不自行生成第二套 `frame_start/line_start/line_last`。集成层使用唯一的 canonical raster 计数器产生 C 线 sideband；C 不反向驱动 B 的 swap。
 
+### B 对 C 的真实依赖边界
+
+C 的缩放、OSD、转场和音视频同步必须以 B 的输出时序为准，不能以 A 的文件读取节拍为准。B 必须提供：
+
+```text
+canonical raster: in_valid / in_data / frame_start / line_start / line_last
+commit: frame_boundary
+health: underflow_sticky / protocol_error / link_ready / frame_id
+```
+
+C 可以在 M1 用 deterministic raster 或 PRBS mock 编写处理链；M2 的 pass-through 只能算子链验证。M3 起，C 的缩放和状态页要接入真实 B raw stream；M4 的 1080P UI/OSD 只有在 B 的 1080P timing profile、line/tile buffer 和 frame-boundary commit 通过后才算集成完成。B 不等待 C 的 UI 实现，始终先输出可旁路的 canonical raster。
+
 ## 4. 统一节点中的 B 线任务
 
 | 统一节点 | B 线任务 | B 线完成证据 |
 |---|---|---|
 | `M0` | 回归 P1-05A cached adapter、CDC、prefetch、line buffer、HDMI cadence；固定 pattern 可回退 | 既有 `[C-sub]/[S]/[B]` 证据保持通过 |
-| `M1`（当前） | 冻结 SPI/GPIO 引脚候选、packet RX/TX 接口、CRC/sequence、credit、CDC 和 frame-boundary commit；尽早核对 1080p pixel/serial clock、PLL/PHY 能力、GPIO pin/IO 时序和有效吞吐预算；建立 PRBS/loopback harness | PRBS/CRC/CDC TB；1080p feasibility 与 pin/timing budget 有记录；最大暂停和异步 reset 不丢包 |
-| `M2` | 完成 640×480 双板第一闭环：B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper | mock/真实 A packet 可写入 back；一次 start/done；失败不污染 front |
+| `M1`（当前） | 冻结 SPI/GPIO 引脚候选、packet RX/TX 接口、CRC/sequence、credit、CDC 和 frame-boundary commit；尽早核对 1080p pixel/serial clock、PLL/PHY 能力、GPIO pin/IO 时序和有效吞吐预算；建立 PRBS/loopback harness；先向 C 提供 canonical raster/health mock | PRBS/CRC/CDC TB；1080p feasibility 与 pin/timing budget 有记录；最大暂停和异步 reset 不丢包；C 可用 mock 验证 sideband 消费 |
+| `M2` | 完成 640×480 双板第一闭环：B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper；向 C 暴露真实 frame_boundary/underflow/protocol_error | mock/真实 A packet 可写入 back；一次 start/done；失败不污染 front；C pass-through 能观察真实状态 |
 | `M3` | 完成双板链路 720p bring-up：持续吞吐、credit、line/tile buffer、YUV/RGB 转换、underflow/fallback | 720p packet 持续传输，CRC/sequence/underflow 门禁通过 |
 | `M4` | 完成主板 1920×1080 HDMI profile、148.5 MHz pixel/742.5 MHz serial 预算、1080p line/tile scanout | 1080p 静态图 RTL、P&R、STA 和真板证据 |
 | `M5` | 接入视频帧调度、动态源切换、丢包/欠载恢复、frame-boundary commit；保持 P1-05A fallback | 视频切换无半帧，异常恢复可观察 |

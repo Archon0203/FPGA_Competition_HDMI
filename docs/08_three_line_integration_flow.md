@@ -2,7 +2,7 @@
 
 开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。图中箭头从项目开始指向最终交付，`M1` 是当前节点。
 
-图例：绿色 = 已完成；黄色 = 当前节点/当前任务；白色 = 未完成；蓝色 = 三线汇合；紫色 = 双板 + 1080P 主线；A/B/C 使用不同边框颜色；实线 = 必要依赖；虚线 = rollback/fallback。
+图例：绿色 = 已完成；黄色 = 当前节点/当前任务；白色 = 未完成；蓝色 = 三线汇合；紫色 = 双板 + 1080P 主线；A/B/C 使用不同边框颜色；实线 = 必须完成的真实依赖；点划线 = 可先用 mock、随后必须替换为真实接口的依赖；虚线 = rollback/fallback。C 线的 A/B 依赖专门画在每个节点旁，避免把“可独立写代码”误读成“可以脱离 A/B 完成验收”。
 
 ```mermaid
 flowchart TD
@@ -10,9 +10,11 @@ flowchart TD
 
     M0 --> M1G["M1 · 当前节点：双板 + 1080P 公共契约与开发骨架<br/>A/B/C 同时完成；完成后才进入 M2"]
     M1G -.-> CUR["当前所在节点：M1↑"]
-    M1G --> M1A["A 线 · 曾雨婷<br/>✓ 既有 loader [U] PASS(225)<br/>□ descriptor/packet/CRC/sequence<br/>□ SPI 命令、credit、错误码<br/>□ 从板 media-service mock + provider CDC"]
+    M1G --> M1A["A 线 · 曾雨婷<br/>✓ 既有 loader [U] PASS(225)<br/>✓ M1A SPI/decoder/mock/provider CDC [U/C-sub] Questa PASS<br/>□ descriptor/线上 packet/sequence 契约与 B 集成<br/>□ 真实 TF/FAT32 与双板 media service"]
     M1G --> M1B["B 线 · 杨文轩<br/>✓ P1-05A rollback 基线<br/>□ GPIO source-sync 引脚候选<br/>□ PRBS/CRC/CDC/deskew loopback<br/>□ RX/TX、line/tile、frame-boundary 接口"]
     M1G --> M1C["C 线 · 张宗<br/>✓ media_command_controller [U] PASS(52)<br/>□ coordinator mock 与 SPI status<br/>□ canonical raster sideband<br/>□ 1080P 配置快照与状态 UI"]
+    M1A -.->|descriptor/status mock → 真实接口| M1C
+    M1B -.->|canonical raster/health mock → 真实接口| M1C
     M1A --> M1E["M1 汇合门禁<br/>冻结：media_cmd、descriptor、packet、credit、CRC、CDC、错误与 frame_boundary<br/>集成负责人建立双板 top skeleton；[未完成]"]
     M1B --> M1E
     M1C --> M1E
@@ -23,6 +25,8 @@ flowchart TD
     M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>TF → 从板服务 → 板间 packet/loopback → 主板安全提交 → HDMI<br/>坏文件、短帧、CRC 错误不得污染 front；[未完成]"]
     M2B --> M2E
     M2C --> M2E
+    M2A -->|真实 catalog/status| M2C
+    M2B -->|真实 raster/frame_boundary/health| M2C
 
     M2E --> M3A["M3 · A 线<br/>从板 SDRAM 预取、line/tile 切分<br/>credit 下连续 packet TX<br/>重试、超时、错误隔离"]
     M2E --> M3B["M3 · B 线<br/>1280×720 link bring-up<br/>CDC/CRC/line-tile buffer/YUV-RGB<br/>underflow/fallback/STA"]
@@ -30,6 +34,8 @@ flowchart TD
     M3A --> M3E["M3 汇合门禁 · 720p bring-up<br/>双板持续传输、无丢包/重包/CRC 错误、无 underflow<br/>720p 仅是链路门禁，不是最终验收；[未完成]"]
     M3B --> M3E
     M3C --> M3E
+    M3A -->|媒体类型/帧数/完成状态| M3C
+    M3B -->|canonical raster/underflow| M3C
 
     M3E --> M4A["M4 · A 线<br/>1920×1080 媒体生产<br/>packed YUV422、frame/line/tile descriptor<br/>带宽与 buffer 水位预算"]
     M3E --> M4B["M4 · B 线<br/>主板 1920×1080 HDMI profile<br/>148.5 MHz pixel / 742.5 MHz serial<br/>line/tile scanout、P&R、STA"]
@@ -37,6 +43,8 @@ flowchart TD
     M4A --> M4E["M4 汇合门禁 · 1080P 静态图<br/>从板持续媒体 + 主板 1080P HDMI + UI/OSD<br/>取得 RTL [C]、实现时序 [S]、真板 [B] 后进入 M5；[未完成]"]
     M4B --> M4E
     M4C --> M4E
+    M4A -->|1080P descriptor/媒体数据| M4C
+    M4B -->|1080P raster/frame_boundary| M4C
 
     M4E --> M5A["M5 · A 线<br/>vseq/video reader 与帧调度<br/>图片/视频/双源 descriptor<br/>切换时保留上一帧"]
     M4E --> M5B["M5 · B 线<br/>视频 packet RX、动态源切换<br/>frame-boundary commit<br/>丢包/欠载恢复"]
@@ -44,6 +52,8 @@ flowchart TD
     M5A --> M5E["M5 汇合门禁 · 图片 + 视频 + UI<br/>静态图 → 视频 → 切换；所有模块可旁路；[未完成]"]
     M5B --> M5E
     M5C --> M5E
+    M5A -->|video descriptor/done/error| M5C
+    M5B -->|无欠载提交/切换边界| M5C
 
     M5E --> M6A["M6 · A 线<br/>长稳、异常恢复、双源媒体<br/>最终演示镜像与回退数据"]
     M5E --> M6B["M6 · B 线<br/>最终双板 top、资源、STA、BitGen<br/>1080P 真板长稳与 rollback"]

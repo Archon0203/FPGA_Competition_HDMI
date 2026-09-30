@@ -14,6 +14,20 @@ PCM/tone -> audio stream -> integration/APUG092 audio boundary
 
 C 不读取从板 TF，不直接驱动 GPIO packet 时钟、A writer、主板 framebuffer base 或 SDRAM。主板 HDMI PHY、PLL、reset、EDID、官方 `axis_user/valid/last` cadence 由集成负责人维护为 golden boundary。
 
+## 2.1 C 线不能忽略的 A/B 依赖
+
+C 线分成“可用 mock 独立开发”和“必须真实合并验收”两部分：
+
+| C 模块 | 可先用 mock 开发的部分 | 真实合并的必要输入 |
+|---|---|---|
+| 按键滤波、旋钮 quadrature decoder、选择 FSM | 完全可独立 | 无；但最终 GPIO pin/CDC 由集成负责人确认 |
+| 转轮、字体、图标、OSD、参数页 | deterministic raster + 固定 catalog | B 的 canonical raster；A 的 catalog 条目、类型和数量 |
+| `media_command_controller` / coordinator | mock `catalog_valid/count`、mock status | A 的 `catalog_epoch/descriptor/ready/busy/done/error` |
+| 缩放、转场、音频时序 | PRBS/固定帧 | B 的 `frame_start/line_start/line_last/frame_boundary` 和真实 `frame_id` |
+| 图片/视频切换验收 | mock source 可测状态机 | A 的媒体完成/错误状态 + B 的无欠载提交结果 |
+
+初步交互方案按“按键进入选择 → 暂停当前源 → 旋钮浏览 → 按压确认 → OPEN 新源 → 首帧安全提交 → 恢复播放”实现。旋钮不是板载资源，默认采用外接增量式正交编码器 A/B + 按压开关，接入 40-pin GPIO；必须先完成 pin ownership、输入电平、消抖和 CDC 约束，不能把未确认的管脚写进正式约束。若旋钮硬件尚未到位，M1/M2 使用按键仿真接口，不能因此改变 A/B 契约。
+
 已有证据：`media_command_controller` `[U] PASS(52)`，关联 key/switch、menu/app、display unit 和音频单元回归已通过；尚未与 A media-service、B packet RX 和双板 top 形成端到端证据。
 
 ## 2. 公共视频接口
@@ -82,14 +96,14 @@ C 不等待 A 的内部 writer 信号，也不修改 B 的 front/back metadata�
 | 统一节点 | C 线任务 | C 线完成证据 |
 |---|---|---|
 | `M0` | 回归现有 raster、enhance、scaler、transition、OSD、交互和 audio 单元；保留 P1-05A fixed-pattern bypass | 既有单元回归通过；`media_command_controller` `[U] PASS(52)` |
-| `M1`（当前） | 冻结 `media_cmd`、SPI command/status、descriptor/credit 状态页、canonical sideband 和 1080p 参数快照；建立 coordinator mock | valid/ready payload 保持、busy 合并、status/error UI TB；不接真实 A/B |
-| `M2` | 将 `media_cmd` 接入 640×480 双板第一闭环；实现基本选图、NEXT/PREV、PLAY/PAUSE、轮播和 pass-through UI | 命令一次完成、无半帧参数混合；与 mock packet 子链汇合 |
-| `M3` | 适配 720p line/tile 输入、链路状态/credit/CRC/underflow UI 和 fallback；完成基础缩放 | 720p bring-up 下 canonical raster 连续、状态可见 |
-| `M4` | 适配 1920×1080 raster：字体/图标/OSD、缩放、亮度/对比度、1080p audio timing 和资源预算 | 1080p 静态图 + UI 的 `[C]`、资源和时序记录 |
+| `M1`（当前） | 冻结 `media_cmd`、SPI command/status、descriptor/credit 状态页、canonical sideband 和 1080p 参数快照；建立 coordinator mock；完成按键/旋钮输入抽象、选择 FSM、转轮绘制 mock | valid/ready payload 保持、busy 合并、status/error UI TB；明确 A/B 依赖端口；不宣称真实媒体或真实 raster 已接入 |
+| `M2` | 将 `media_cmd` 接入 A 的真实 catalog/status 和 B 的 640×480 双板第一闭环；实现基本选图、NEXT/PREV、PLAY/PAUSE、轮播和 pass-through UI | 一次命令对应一次 OPEN；收到 A 的 ready/done/error；B 的真实 frame_boundary 才允许提交；无半帧参数混合 |
+| `M3` | 接入 B 的 720p line/tile 输入、链路状态/credit/CRC/underflow UI 和 fallback；完成基础缩放；接入 A 的媒体类型/帧数 descriptor | 720p bring-up 下 canonical raster 连续、状态可见；A/B 状态和 UI 不循环等待 |
+| `M4` | 适配 1920×1080 raster：字体/图标/OSD、缩放、亮度/对比度、1080p audio timing 和资源预算 | B 的 1080p profile + A 的 1080p descriptor/数据均已通过；1080p 静态图 + UI 的 `[C]`、资源和时序记录 |
 | `M5` | 视频播放控制、图片/视频切换、淡入淡出/擦除等转场、音频 pack/tone/可视化；所有模块可旁路 | 视频和转场不改变 sideband，不产生半帧；音频流自洽 |
 | `M6` | 完成最终 UI 场景、应急页、双源转场演示、真板音频和回退控制 | 1.4 扩展逐项开启；异常可退回最近稳定源 |
 
-C 线可以用 deterministic source 和 B 的 PRBS/mock 独立推进。只有节点汇合时才接入真实 A packet 和 B RX，避免 C 对未完成板间链路形成阻塞依赖。
+C 线可以用 deterministic source、固定 catalog 和 B 的 PRBS/mock 独立推进；这只证明 C 的局部逻辑。节点汇合时按“先 A descriptor/status，再 B canonical raster，再接入 C coordinator/UI”顺序接入真实模块，避免出现 C 等 A、A 又等 C 的循环依赖。C 只发高层命令，A 只返回媒体事实，B 只返回显示事实。
 
 ## 6. 1.4 扩展顺序
 

@@ -13,6 +13,18 @@ TF/SPI -> FAT32 mount/catalog -> BMP/vseq decoder
 
 A 不负责 SDRAM 控制器、主板 HDMI 时序、主板 front/back、UI/OSD 或转场合成。A 提供应用层媒体 descriptor 和 ready/valid line/tile 数据；B 负责缓存、线上 packet 封装、CRC、物理链路和主板显示缓冲。主板只向从板发送 `image_id`、播放控制、格式和 credit；A 不读取主板 framebuffer 地址。
 
+### A 对 C 的真实依赖边界
+
+C 的选图和播放状态不能凭空假设媒体数量。A 必须向主板 coordinator 提供以下只读结果：
+
+```text
+catalog_valid / catalog_count / catalog_epoch
+descriptor(image_id, type, width, height, frame_count, duration)
+media_ready / source_busy / source_done / source_error
+```
+
+因此 C 的 `NEXT/PREV/转轮范围/图片或视频类型显示/播放完成后的自动推进` 在真实系统中依赖 A 的 descriptor 和 status。M1 允许 C 用固定 catalog mock 开发；从 M2 起，C 的真实命令验收必须接入 A 的 catalog/status。A 不依赖 C 的 UI 状态，只消费 coordinator 发出的高层 `OPEN/PLAY/PAUSE/ABORT`。
+
 当前可复用证据：
 
 - P0 full media chain：`[C] PASS(1698)`；
@@ -95,14 +107,20 @@ A 只报告 `source_done/source_error`；不得生成主板 `swap`。`mem_wr_val
 | 统一节点 | A 线任务 | A 线完成证据 |
 |---|---|---|
 | `M0` | 继承 P0/P1-05A 证据；整理 loader、TF、BMP 的输入输出边界 | 既有 `[C] PASS(1698)`、`[U] PASS(225)` 可复现 |
-| `M1`（当前） | 冻结 descriptor/packet、SPI 命令、credit、CRC、错误码和 provider CDC；建立从板 media-service shell；用 mock source 产生 640×480 测试 packet | fake catalog、mock SPI、packet CRC/sequence/credit TB；不依赖真实 TF |
-| `M2` | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden |
+| `M1`（当前） | 冻结 descriptor/packet 契约；实现 SPI 控制帧、credit、错误码和 provider CDC；建立从板 media-service shell；用 mock source 验证行数据 ready/valid | descriptor/线上 packet、sequence/CRC 和双板链路仍待与 B 集成冻结；M1A 模块级 Questa mock 回归通过，不能替代真实 TF 或双板证据 |
+| `M2` | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务；冻结 C 可消费的 descriptor/status 实现 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden；C 的真实选图命令能收到 ready/busy/done/error |
 | `M3` | 按 descriptor 生成持续 line/tile 数据并响应 credit；实现帧边界、重试和错误隔离；配合 720p bring-up | 在 credit 下持续输出，无丢包/重包/CRC 错误 |
 | `M4` | 将媒体生产扩展到 1920×1080：packed YUV422、帧/行/tile descriptor、带宽预算和 underflow 预警 | 1080p 静态图连续 packet，带宽和 buffer 水位有记录 |
 | `M5` | 接入 `vseq_reader`/视频帧调度；支持图片、视频、NEXT/PREV/PLAY/PAUSE 和双源切换所需的两路媒体描述 | 视频帧序号连续，切换不会提交坏帧 |
 | `M6` | 长稳、异常恢复、双源/转场媒体准备和最终演示镜像 | 图片→视频→切换/转场长稳证据；故障可回退到上一帧 |
 
-每个节点的合并顺序为：A 自测与提交 → 集成负责人接入 mock/子链 → 与 B/C 合并验证。A 未完成时，B/C 使用固定 descriptor、PRBS 或本地 test source，不等待 A 的真实 TF。
+每个节点的合并顺序为：A 自测与提交 → 集成负责人接入 mock/子链 → 与 B/C 合并验证。A 未完成时，B/C 使用固定 descriptor、PRBS 或本地 test source；但 M2 真实媒体命令门禁必须等待 A 的 catalog/status 契约和 provider 实现，不能把 mock 结果记为双板完成。
+
+### M1A 从板媒体服务骨架 — `[U]/[C-sub] Questa PASS`
+
+`src/storage/m1a_service_shell.v` 将 SPI Mode 0 字节入口、`SOF/opcode/length/payload/CRC16-CCITT` 命令解码、异步 provider byte FIFO 和 deterministic media-service mock 组合起来。mock 提供 catalog/descriptor/status、PLAY/PAUSE、按行 credit 与 ready/valid 媒体字；它不读取 TF，也不实现线上 packet sequence/CRC 或 GPIO 数据链路。SPI 无字节级反压，shell 用 sticky `spi_rx_overflow` 报告 ingress FIFO 满时的丢字节；状态回读通过稳定数据 mailbox 跨域。
+
+QuestaSim 10.7c：SPI slave、command decoder、provider CDC、media mock、service shell、catalog table、FAT32 catalog path 和原 `fat32_scan` 回归八个 testbench 全部 PASS。新增 `m1a_fat32_catalog` 将现有 scanner 接至 catalog table；受控 MBR/BPB/多扇区根目录簇仿真验证文件 cluster/size、FAT/data LBA base 和 sectors-per-cluster 均能进入 descriptor。`fat32_scan` 现在遍历根目录首簇内的各扇区，但尚不跟随 FAT 链读取后续目录簇，也尚未连接真实 TF/SPI provider。完整回归命令为 `sim_tb/storage/run_m1a.ps1`。该结果是模块/受控 sector-stream `[U]/[C-sub]` 仿真证据；真实卡接线、跨簇目录、A/B 冻结的线上 packet 契约、双板 top、TD 实现及真板验证仍未完成。
 
 ## 5. A 线验收门槛
 

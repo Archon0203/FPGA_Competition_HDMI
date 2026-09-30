@@ -27,6 +27,8 @@ module tb_fat32_scan;
     wire [4:0]  file_count, file_index;
     wire [1:0]  file_type;
     wire [31:0] file_cluster, file_size;
+    wire [31:0] fat_lba_base, data_lba_base;
+    wire [7:0]  sectors_per_cluster;
 
     fat32_scan #(.FILE_MAX(8)) u_dut (
         .clk(clk), .rst_n(rst_n), .start(start),
@@ -36,7 +38,9 @@ module tb_fat32_scan;
         .scan_done(scan_done), .scan_ok(scan_ok),
         .file_count(file_count), .file_index(file_index),
         .file_type(file_type), .file_cluster(file_cluster),
-        .file_size(file_size), .file_wr(file_wr)
+        .file_size(file_size), .file_wr(file_wr),
+        .fat_lba_base(fat_lba_base), .data_lba_base(data_lba_base),
+        .sectors_per_cluster(sectors_per_cluster)
     );
 
     always #5 clk = ~clk;

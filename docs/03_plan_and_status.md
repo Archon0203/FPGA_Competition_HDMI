@@ -209,11 +209,15 @@ P1-05B 的独立功能开发和 active top 集成进入条件已经满足；P1-0
 
 M1 的公共边界沿用并扩展已冻结契约：C 线在主板只通过 `media_cmd_valid/ready/image_id/mode` 表达用户媒体意图；A 线是唯一 `p1_media_framebuffer_loader` writer；B 线拥有写入 fence、`writer_done/writer_ok`、front/back metadata 与 `frame_boundary` swap。C 线不得直接驱动 loader、SDRAM、framebuffer base 或板间 GPIO。双板 SPI 控制面、source-synchronous GPIO 数据面、descriptor/packet、credit、CRC 和 CDC 也必须在 M1 冻结。
 
+需要特别区分两种依赖：C 的按键/旋钮/菜单/OSD/转场状态机可用 deterministic raster 和固定 catalog mock 开发；C 的真实选图范围、媒体类型、播放完成/错误必须消费 A 的 `catalog/descriptor/status`，C 的真实缩放、OSD 合成和转场验收必须消费 B 的 `canonical raster/frame_boundary/underflow`。M2 起，mock 只能作为回归源，不能作为双板完成证据。
+
 `src/app/media_command_controller.v` 已完成主板 C 线命令控制器，并由 QuestaSim 10.7c 单元回归验证 `PASS(52)`。它覆盖 `valid/ready` payload 保持、忙碌期间的选图意图合并、播放/暂停、轮播以及本地应急 UI 边界；`key_filter`、`sw_filter`、`menu_fsm`、`app_scenario`、`image_enhance`、`image_scaler`、`osd_overlay`、`transition` 的关联回归亦通过。
 
 2026-09-25 的 TD6.2.1 完整综合、布局布线和 BitGen 无 error。`FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 对 `p1_hx4s20c_sdram_hdmi_top` 报告 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0.000 ns`、HWNS `+0.003 ns`、HTNS `0.000 ns`，setup/hold violating endpoints 均为 0；bitstream 生成时间为 2026-09-25 13:53:33。
 
 该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。M1 的公共契约仍在开发骨架和 mock 验证阶段；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap`，以及双板 packet 链路，仍未取得端到端集成 PASS。当前工作位置为 M1。
+
+M1A 从板媒体服务骨架已加入 `src/storage/m1a_*`：SPI Mode 0 字节 ingress、命令 CRC-16/CCITT 解码、provider 异步 FIFO CDC、deterministic catalog/descriptor/credit/mock line source，以及组合 shell。新增 `m1a_fat32_catalog` 将现有 `fat32_scan` 与 catalog table 接通；八个 QuestaSim 10.7c testbench 全部通过，受控 MBR/BPB/多扇区根目录 sector-stream 用例验证文件 descriptor 中的 cluster/size/FAT 与 data LBA base/SPC。scanner 可遍历根目录首簇内各扇区，但尚未跟随 FAT 链读取后续目录簇，真实 TF/SPI provider 也尚未连接。此证据仅为模块/受控 sector-stream `[U]/[C-sub]`；不含 B 线线上 packet sequence/CRC、GPIO 链路或 frame commit，也未进入 TD active top，不能记作 M1 汇合或双板完成。
 
 ### P1-05B-01 写入侧媒体 loader — `[U] PASS`
 

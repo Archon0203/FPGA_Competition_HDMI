@@ -2,7 +2,7 @@
 // 模块   : fat32_scan
 // 功能   : FAT32 文件索引扫描(纯 RTL)。
 //           读取 MBR -> 找 FAT32 分区 -> 读取引导扇区(BPB)
-//           -> 读取根目录首扇区 -> 解析 32B 目录项, 建立文件索引。
+//           -> 读取根目录首簇各扇区 -> 解析 32B 目录项, 建立文件索引。
 //           支持 8.3 短名, 扩展名 BMP/SEQ 分别记为图片/视频片段;
 //           VFAT 长文件名(.vseq 等)需后续扩展(工具可生成 8.3 名)。
 // 作者   : FPGA 竞赛团队
@@ -24,7 +24,7 @@
 // 参数:
 //   - FILE_MAX            : 索引条目上限(默认 8)
 //   - SECTOR_BYTES        : 扇区字节数(默认 512)
-// 说明   : 当前扫描根目录第一簇的第一扇区; 子目录/多簇根目录后续扩展。
+// 说明   : 当前扫描根目录第一簇内的所有扇区; FAT 链式多簇根目录/子目录后续扩展。
 // 时钟域: clk 为 SD 读卡时钟域。
 // 修改历史:
 //   2026-08-27 v1.0 初版, 按文档11任务卡 T5 实现。
@@ -50,7 +50,10 @@ module fat32_scan #(
     output reg  [1:0]  file_type,
     output reg  [31:0] file_cluster,
     output reg  [31:0] file_size,
-    output reg         file_wr
+    output reg         file_wr,
+    output reg  [31:0] fat_lba_base,
+    output reg  [31:0] data_lba_base,
+    output reg  [7:0]  sectors_per_cluster
 );
 
     localparam [2:0] S_IDLE=0, S_MBR=1, S_BOOT=2, S_ROOT=3, S_DONE=4, S_GAP=5;
@@ -68,6 +71,7 @@ module fat32_scan #(
     reg  [7:0]  num_fats;
     reg  [31:0] fat_sz;
     reg  [31:0] root_clu;
+    reg  [7:0]  root_sector_index;
     // 当前目录项
     reg  [7:0]  entry_state;   // bit0=entry0x00, bit1=deleted, bit2=dir
     reg  [7:0]  ext0, ext1, ext2;
@@ -86,12 +90,16 @@ module fat32_scan #(
             ptype <= 8'd0; part_lba <= 32'd0;
             bps <= 16'd0; spc <= 8'd0; reserved <= 16'd0;
             num_fats <= 8'd0; fat_sz <= 32'd0; root_clu <= 32'd0;
+            root_sector_index <= 8'd0;
             entry_state <= 8'd0; ext0<=8'd0; ext1<=8'd0; ext2<=8'd0;
             clu_hi<=16'd0; clu_lo<=16'd0; cur_size<=32'd0;
             scan_done <= 1'b0; scan_ok <= 1'b0;
             file_count <= 5'd0; file_index <= 5'd0;
             file_type <= 2'd0; file_cluster <= 32'd0; file_size <= 32'd0;
             file_wr <= 1'b0;
+            fat_lba_base <= 32'd0;
+            data_lba_base <= 32'd0;
+            sectors_per_cluster <= 8'd0;
         end else begin
             file_wr <= 1'b0;
             case (state)
@@ -150,9 +158,14 @@ module fat32_scan #(
                         if (byte_idx == SECTOR_BYTES-1) begin
                             sector_req <= 1'b0;
                             byte_idx   <= 9'd0;
+                            fat_lba_base <= part_lba + reserved;
+                            data_lba_base <= part_lba + reserved +
+                                             (num_fats * fat_sz);
+                            sectors_per_cluster <= spc;
                             state      <= S_GAP;
                             next_state <= S_ROOT;
                             sector_lba <= root_lba;
+                            root_sector_index <= 8'd0;
                             entry_state <= 8'd0;
                         end else begin
                             byte_idx <= byte_idx + 1'b1;
@@ -208,12 +221,23 @@ module fat32_scan #(
                         end
 
                         if (byte_idx == SECTOR_BYTES-1) begin
-                            // 扇区读完(无 0x00 结束也结束)
-                            if (state == S_ROOT && !scan_done) begin
-                                state <= S_DONE;
-                                scan_done <= 1'b1;
-                                scan_ok   <= 1'b1;
-                                sector_req <= 1'b0;
+                            // 目录项按 32B 对齐且扇区长度为 512B 的整数倍。
+                            // 若本扇区没有目录结束项，则继续扫描根目录簇的下一扇区。
+                            if (state == S_ROOT && !entry_state[0]) begin
+                                if ((root_sector_index + 8'd1) < spc) begin
+                                    root_sector_index <= root_sector_index + 8'd1;
+                                    sector_lba <= root_lba + root_sector_index + 8'd1;
+                                    byte_idx <= 9'd0;
+                                    sector_req <= 1'b0;
+                                    state <= S_GAP;
+                                    next_state <= S_ROOT;
+                                    entry_state <= 8'd0;
+                                end else begin
+                                    state <= S_DONE;
+                                    scan_done <= 1'b1;
+                                    scan_ok   <= 1'b1;
+                                    sector_req <= 1'b0;
+                                end
                             end
                         end else begin
                             byte_idx <= byte_idx + 1'b1;

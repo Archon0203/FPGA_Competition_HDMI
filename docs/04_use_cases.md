@@ -92,6 +92,24 @@ local emergency framebuffer
 
 P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把固定测试源替换为真实 TF/BMP 内容。
 
+## 8.1 交互闭环与依赖
+
+目标交互由主板 C 线实现：
+
+```text
+按键进入选择
+  -> 暂停当前播放并锁定当前 frame
+  -> 显示图片/视频转轮
+  -> 旋钮 A/B 方向改变 selected_id
+  -> 旋钮按压确认
+  -> C 发 OPEN(selected_id)
+  -> A 返回 descriptor/ready
+  -> B 在 frame_boundary 安全提交首帧
+  -> C 收到 done/error 后恢复播放或回退上一帧
+```
+
+其中转轮绘制和输入 FSM 可以先用 mock 开发；`selected_id` 的合法范围和媒体类型依赖 A 的 catalog/descriptor，首帧是否可提交及是否欠载依赖 B 的 `frame_boundary/underflow/protocol_error`。旋钮采用外接增量式编码器，优先接 40-pin GPIO；在管脚、电平和 CDC 尚未冻结前只使用按键仿真，不把临时管脚写入正式约束。
+
 ## 9. 分辨率边界
 
 ```text
