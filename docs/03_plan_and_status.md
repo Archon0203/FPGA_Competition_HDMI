@@ -223,7 +223,7 @@ M1 的公共边界沿用并扩展已冻结契约：C 线在主板只通过 `medi
 
 2026-09-25 的 TD6.2.1 完整综合、布局布线和 BitGen 无 error。`FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 对 `p1_hx4s20c_sdram_hdmi_top` 报告 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0.000 ns`、HWNS `+0.003 ns`、HTNS `0.000 ns`，setup/hold violating endpoints 均为 0；bitstream 生成时间为 2026-09-25 13:53:33。
 
-P1-05A 的实现报告仍只证明冻结 display baseline，不能替代 M1ABC 的角色实现证据。M1ABC 的真板功能门禁已经 PASS：Master 控制、Slave HDMI 可视页面、自动轮播、KEY2/KEY3/KEY4 与双向链路均正常。上一验证包的 `run_all.bat` 没有在用户环境正常执行，因此 aggregate M1ABC Questa 仍需用本发布包修复后的脚本补跑；两个角色最终 STA 数值也需归档后才能补齐完整 `[C]/[S]`。这些证据缺口不改变已取得的 `[B]`，但文档禁止把其写成 1080p 或高速数据面 PASS。当前开发节点进入 **M2：真实 TF/BMP + 双板媒体第一闭环**。
+该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。M1 的公共契约仍在开发骨架和 mock 验证阶段；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap`，以及双板 packet 链路，仍未取得端到端集成 PASS。当前工作位置为 M1。
 
 M1A 从板媒体服务骨架已加入 `src/storage/m1a_*`：SPI Mode 0 字节 ingress、命令 CRC-16/CCITT 解码、provider 异步 FIFO CDC、deterministic catalog/descriptor/credit/mock line source，以及组合 shell。新增 `m1a_fat32_catalog` 将现有 `fat32_scan` 与 catalog table 接通；八个 QuestaSim 10.7c testbench 全部通过，受控 MBR/BPB/多扇区根目录 sector-stream 用例验证文件 descriptor 中的 cluster/size/FAT 与 data LBA base/SPC。scanner 可遍历根目录首簇内各扇区，但尚未跟随 FAT 链读取后续目录簇，真实 TF/SPI provider 也尚未连接。此证据仅为模块/受控 sector-stream `[U]/[C-sub]`；不含 B 线线上 packet sequence/CRC、GPIO 链路或 frame commit，也未进入 TD active top，不能记作 M1 汇合或双板完成。
 
