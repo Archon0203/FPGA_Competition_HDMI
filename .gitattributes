@@ -1,0 +1,31 @@
+# GitHub/repository line-ending policy.
+# TD project files are intentionally CRLF because TD6.2.1 has shown sensitivity
+# to project-file formatting. Source/docs stay LF for stable diffs.
+* text=auto
+
+*.v       text eol=lf
+*.vh      text eol=lf
+*.md      text eol=lf
+*.tcl     text eol=lf
+*.do      text eol=lf
+*.py      text eol=lf
+
+*.al      text eol=crlf
+*.adc     text eol=crlf
+*.sdc     text eol=crlf
+*.cfg     text eol=crlf
+*.bat     text eol=crlf
+*.ps1     text eol=crlf
+*.prj     text eol=crlf
+
+# Protected/vendor payloads and generated binary artifacts must never be
+# normalized by Git.
+*.enc.v   -text
+*.ipc     -text
+*.bit     -text
+*.db      -text
+*.qdb     -text
+*.qpg     -text
+*.qtl     -text
+*.wlf     -text
+*.dmp     -text

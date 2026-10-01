@@ -4,6 +4,8 @@
 
 # ---- Anlogic TangDynasty (TD) 生成物 ----
 *.log
+# Keep curated, intentionally versioned evidence logs.
+!docs/develop_records/evidence/*.log
 *.bak
 *.ful
 *.srr
@@ -46,3 +48,28 @@ log/
 
 FPGA_Competition_HDMI_Runs/
 M1A_Timing_Runs/
+M1_Dual_master_Runs/
+M1_Dual_slave_Runs/
+M1_test_Runs/
+dual_board/runs*/
+
+
+# ---- General TD / Questa scratch not suitable for GitHub ----
+*_Runs/
+**/*_Runs/
+work/
+**/work/
+transcript_*.txt
+*.qdb
+*.qpg
+*.qtl
+*.dmp
+.recent_user_depot.ini
+
+TD_WORK_*/
+sim_tb/m1abc/work/
+
+
+# Two canonical TD6.2.1 role-project generated results
+FPGA_Competition_HDMI_MASTER_Runs/
+FPGA_Competition_HDMI_SLAVE_Runs/

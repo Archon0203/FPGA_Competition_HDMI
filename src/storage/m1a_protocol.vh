@@ -1,8 +1,11 @@
 `ifndef M1A_PROTOCOL_VH
 `define M1A_PROTOCOL_VH
 
-// M1A control-plane opcodes. A command frame is:
-//   0xA5, opcode, payload_length, payload[0..n-1], crc_hi, crc_lo
+// M1A service-layer opcodes. These constants are transport-independent.
+// The legacy SPI service shell may wrap them in its own frame, while the
+// M1ABC board demo carries them inside db_ctrl_frame_*:
+//   0x55, 0xA5, opcode, payload_length, payload[0..n-1], crc8(poly=0x07).
+// Do not infer the physical transport from this header.
 `define M1A_FRAME_SOF       8'hA5
 `define M1A_CMD_OPEN        8'h01
 `define M1A_CMD_NEXT        8'h02

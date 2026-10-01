@@ -10,7 +10,7 @@
 | P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S][B]` |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
 | P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
-| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | 主线计划；当前无双板/1080p 集成证据 |
+| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | M1 控制/可视化双板 `[B]` PASS；高速媒体数据面与真实 1080p 仍待 M2~M4 |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
 
@@ -27,9 +27,75 @@ M: control/coordinator -> link RX -> line/tile buffer -> UI/OSD/effects
 
 主板向从板发送命令、格式、credit 和 heartbeat；从板只返回媒体描述符、数据、状态和 CRC。任何从板协议都不能直接修改主板 `framebuffer_base`、HDMI raster 或 front/back owner，避免板间形成循环依赖。
 
+
+### 2.1A 为什么最终必须“Slave 生产媒体、Master 输出 1080P”
+
+M1 真板为了观察控制链，临时让 Slave 接 HDMI；该 profile 已验证成功，但最终作品不沿用该职责。最终分工冻结为：
+
+```text
+Slave = media producer / cache / packet source
+Master = coordinator / final renderer / HDMI owner
+```
+
+原因不是简单把两块 FPGA 的 LUT 相加，而是切断两个完全不同的时序与存储压力域：TF/FAT32/BMP/vseq、目录、预取和媒体缓存主要是低速/突发/状态机密集逻辑；1080p raster、缩放、OSD、转场、音频和 APUG092 是持续高吞吐、严格时序逻辑。把前者移到 Slave，可让 Master 的高频 timing cone 保持可控。
+
+1920×1080 一帧为 2,073,600 像素。若继续使用 P0/P1 历史的 32-bit/像素表示，单帧几乎占满 2M×32 SDRAM，无法在一块 EG4S20 内简单维持两张完整 1080p RGB888 framebuffer 再叠加文件系统/OSD 缓冲。因此最终链路采用 **Slave 源缓存 + packed YUV422 line/tile 流 + Master 小规模 FIFO/line/tile buffer + frame-boundary commit**，而不是“先把两张完整 1080p 帧都复制到 Master”。
+
+M1 的 Slave HDMI 工程永久保留为诊断回退：它证明控制平面和 A/B/C 组合可观察；M2 开始，真实媒体从 Slave 送到 Master，最终 HDMI 输出逐步切回 Master。
+
 控制平面首选主板 SPI master / 从板 SPI slave；数据平面首选 40Pin GPIO 上的 source-synchronous 32-bit packed YUV422 链路，目标时钟先定为 74.25 MHz。该配置只作为候选，必须先通过 PRBS、CRC、CDC、持续带宽和 P&R 门禁；不能把千兆以太网当作原始 1080p60 像素链路。以太网可作为调试、文件搬运或压缩媒体的后备通道。
 
-1080p 主目标使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile；1280×720 只作为双板链路 bring-up profile。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
+### 2.2 板间物理接口与通信方案
+
+HX4S20C 原理图提供两组 40-pin DC3 扩展口（GPIOA/GPIOB）。接口本身没有专用 FPGA-to-FPGA USB 或高速收发器，所有板间信号都必须由 GPIO 复用实现。两板必须共地，信号电平按 3.3 V LVCMOS 设计，禁止把任一端的 5 V 引脚作为 FPGA 信号驱动；3.3 V/5 V 只按原理图定义作为供电参考，不能直接给另一板供电。
+
+板载 USB 不作为今天的板间通信方案。USB 下载口用于配置 FPGA；USB-UART 可以把 FPGA 的 TXD/RXD 接到电脑，但两块板的 USB 设备口不能用普通 USB 线直接互连并自动形成 FPGA-to-FPGA 通道，除非额外实现 USB Host/Device 协议和对应物理连接。当前只有杜邦线时，优先使用 GPIOA/GPIOB 上的普通 3.3 V GPIO 做低速 UART 验证。
+
+推荐分层如下：
+
+| 层 | 首选实现 | 用途 | 验证要求 |
+|---|---|---|---|
+| 控制面 | 4-wire SPI：M SCK/MOSI/CS，S MISO | `READY/OPEN/PAUSE/CREDIT/STATUS/ERROR`、descriptor 摘要、heartbeat | 先用 1-10 MHz；独立 SPI loopback，再做两板握手和 reset 恢复 |
+| 数据面候选 A | 32-bit single-ended DATA + LINK_CLK + VALID/SOF/EOL/EOF | packed YUV422 行/tile 数据 | 从 25 MHz PRBS 开始，逐步到 74.25 MHz；必须有 CRC、sequence、credit、CDC 和误码注入 |
+| 数据面候选 B | 16-bit DATA + LINK_CLK，按 148.5 MHz 发送 | 当 32-bit GPIO 布线/时序不可收敛时的备选 | 只有候选 A 在管脚、STA 或信号完整性上失败时启用 |
+| 后备通道 | 千兆 Ethernet | 调试、文件搬运或压缩媒体 | 不作为首版原始 1080P60 像素链路 |
+
+40-pin 连接器的具体 GPIO 编号、方向、IO 标准、时钟脚和地线分配必须在 M1 形成一张 pin map，并由 B 线和集成负责人共同冻结；在此之前，计划中的 74.25 MHz 和 32-bit 只是候选参数，不能写入正式约束或宣称已具备吞吐能力。
+
+当前工程级候选分配为：GPIOA/J1 承载数据面（DATA、LINK_CLK、VALID、SOF/EOL/EOF、CRC/sequence 辅助信号），GPIOB/J2 承载 SPI 控制面、heartbeat、reset/status 和少量调试信号。该分配只是便于布线和职责隔离的起点；最终必须根据两块板的实际线缆方向、管脚 IO 能力、时钟能力和 P&R/STA 结果确认，不能直接视为已冻结 pinout。
+
+#### M1 今日最小双板验证 profile
+
+在 40-pin 排线和高速链路尚未具备时，先用三根杜邦线验证控制面：
+
+```text
+master GPIO_TX  -> slave GPIO_RX
+slave  GPIO_TX  -> master GPIO_RX
+master GND      -- slave GND
+```
+
+两端均使用普通 GPIO 和 3.3 V LVCMOS；不要连接 5 V。协议先采用 8N1、115200 baud、固定短帧，不传原始像素：`0x55 0xA5 opcode length payload crc8`。第一帧只做 `PING/READY`，随后做 `OPEN/STATUS/ABORT`，接收端用 LED 或数码管显示计数/错误码。验证顺序为：分别烧录 `master.bit` 和 `slave.bit` → 不接线单板自检 → 接 GND → 接 TX/RX → master 发送 PING → slave 回 ACK → 注入 reset 后重复握手。该 profile 只证明 GPIO 电气连接、两个角色 bitstream 和最小控制协议，不替代 SPI 或 source-synchronous 媒体链路。
+
+### 2.3 双 bitstream 构建与板级验证
+
+双板使用同一共享 RTL 工程，但生成两个角色不同的 bitstream：
+
+```text
+master_top + master ADC/SDC -> master.bit
+slave_top  + slave  ADC/SDC -> slave.bit
+```
+
+更换 Top 或约束后必须分别执行 synthesis、P&R、STA 和 BitGen；不能复用另一角色的 P&R 结果。输出目录和文件名必须分离，烧录记录必须标明板号、角色、commit 和 bitstream 哈希。
+
+板级验证顺序固定为：
+
+1. 单板验证 `slave.bit`：50 MHz、复位、SPI slave、GPIO TX、状态 LED，不接主板也能显示 READY/错误状态。
+2. 单板验证 `master.bit`：50 MHz、SPI master、GPIO RX、P1-05A rollback HDMI 输出，未接从板时仍能显示 fallback。
+3. 两板控制面验证：先只接 SPI，完成 `READY -> OPEN -> STATUS -> PAUSE/ABORT` 和异步复位恢复。
+4. 两板数据面验证：接入 PRBS/CRC/sequence，先低速再提升链路时钟；记录误码、丢包、重复包和 backpressure。
+5. 媒体闭环验证：写入 `slave.bit` 与 `master.bit`，从板真实 TF 媒体经链路到主板安全提交；最后再分别取得双板 `[S]`、`[B]` 和长稳证据。
+
+1080p 主目标使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile。1280×720 仅保留为可选故障隔离 profile；M3 的正式门禁改为 1080p packed-YUV422 等效吞吐，避免把时间投入到并非最终验收的 720p 路线上。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
 
 ## 2. P0 媒体契约
 
@@ -228,10 +294,10 @@ P1-05A HDMI golden boundary 继续保护；但双板接口、主板 1080p profil
 M0  P0/P1-05A 已有基线
 M1  双板协议、1080p 架构/时钟/引脚契约与开发骨架
 M2  双板 640×480 TF/BMP 第一闭环（P1-05B 功能并入此节点）
-M3  1280×720 链路 bring-up profile
+M3  1080p packed-YUV422 等效数据链吞吐门禁（720p 可选排错）
 M4  双板媒体 + 主板 1920×1080 静态图和 UI
 M5  视频、切换、转场、音频
 M6  1.4 扩展及双板 1080p 最终交付
 ```
 
-三人始终分别负责 A/B/C 一条开发线，集成负责人在每个 `M` 节点收口；不另设 I/Q 两套阶段或阶段性重复分工。1280×720 只做 bring-up/debug profile，不是进入 1080p 开发的长期前置路线。P2/选题 1.4 的图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化纳入 M4～M6；主板完成 UI 合成，从板提供媒体流。若链路不能承载两路源，允许从板预混合，但主板 1080p 输出仍是必需验收。
+三人始终分别负责 A/B/C 一条开发线，集成负责人在每个 `M` 节点收口；不另设 I/Q 两套阶段或阶段性重复分工。1280×720 只作为排错时可选 profile，不是必经节点；M3 直接用 1080p 等效 payload 做数据链压力。P2/选题 1.4 的图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化纳入 M4～M6；主板完成 UI 合成，从板提供媒体流。若链路不能承载两路源，允许从板预混合，但主板 1080p 输出仍是必需验收。

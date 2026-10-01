@@ -1,0 +1,21 @@
+# M1ABC master/controller - HX4S20C EG4S20BG256
+# Proven board-link physical mapping from the supplied schematic:
+#   FPGA J13 -> GPIOA10 -> J1 pin 8  : local TX
+#   FPGA F13 -> GPIOA7  -> J1 pin 4  : local RX
+#   J1 pin 12                        : GND (wire only, no FPGA constraint)
+# Wiring: Master J1-8 -> Slave J1-4; Slave J1-8 -> Master J1-4; GND <-> GND.
+set_pin_assignment { clk }          { LOCATION = R7;  IOSTANDARD = LVCMOS33; }
+set_pin_assignment { rst_n }        { LOCATION = A2;  IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment { uart_tx }      { LOCATION = J13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { uart_rx }      { LOCATION = F13; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+
+# Board keys: KEY2 next, KEY3 previous, KEY4 play/pause. Active low.
+set_pin_assignment { key_next_n }   { LOCATION = B2;  IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment { key_prev_n }   { LOCATION = B1;  IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment { key_play_n }   { LOCATION = C1;  IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+
+# Four independent green LEDs, active high.
+set_pin_assignment { led[0] }       { LOCATION = A4;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[1] }       { LOCATION = A3;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[2] }       { LOCATION = E13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[3] }       { LOCATION = B12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }

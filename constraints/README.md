@@ -1,32 +1,10 @@
-# constraints
+# TD6.2.1 active constraints
 
-当前 active P1-05A board build 复用 P1-04C 已真板验证的 HDMI_B ADC，并在 SDC 中增加 P1-05A CDC timing boundary：
+本目录只保存当前两个长期主工程的角色约束。RTL 统一从仓库根目录 `src/` 共享，不在 TD 工程目录复制源码。
 
-```text
-ADC: p1_hx4s20c_hdmi_board.adc
-SDC: p1_hx4s20c_hdmi_board.sdc
-```
+- `master/master.adc` + `master/master.sdc`：`FPGA_Competition_HDMI_MASTER.al`
+- `slave/slave.adc` + `slave/slave.sdc`：`FPGA_Competition_HDMI_SLAVE.al`
 
-ADC：
+当前 M1 真板已验证的板间接线保持不变：Master J1-8(TX/J13) → Slave J1-4(RX/F13)，Slave J1-8(TX/J13) → Master J1-4(RX/F13)，J1-12 GND ↔ GND。
 
-| port | pin | standard |
-|---|---|---|
-| clk | R7 | LVCMOS33 |
-| HDMI_D0_P | G5 | LVDS33 |
-| HDMI_D1_P | F1 | LVDS33 |
-| HDMI_D2_P | E1 | LVDS33 |
-| HDMI_CLK_P | C3 | LVDS33 |
-| HDMI_DDC_SCL | P2 | LVCMOS33 |
-| HDMI_DDC_SDA | R2 | LVCMOS33 |
-
-SDC：
-
-- 50 MHz board root clock；
-- `derive_clocks`（TD6.2.1 推荐命令；旧 `derive_pll_clocks` 仅见于历史/实验约束）；
-- TD6.2.1 final report 中的 generated-clock 名称：25 MHz `u_hdmi_pll/u_pll.clkc[0]`、150 MHz `u_sdram_pll/pll_inst.clkc[1]`；
-- 25 MHz pixel 与 150 MHz SDRAM 声明为 asynchronous groups，只通过项目内显式 FIFO/synchronizer 跨域；
-- 不对 150 MHz same-domain timing 使用 false path。
-
-当前 TD6.2.1 final routed STA：0 setup / 0 hold，SWNS `+0.599 ns`、HWNS `+0.003 ns`，coverage `99.17%`。硬件最小裕量仅 3 ps，active RTL/SDC 任何修改后都必须重新实现和检查 timing report。当前 run 仍有两个 SDRAM location warning 和一条 local clock routing warning。
-
-其他 SDC/ADC 为历史或实验文件，不代表当前 active build。
+后续 M2~M6 只演进这两个工程及各自约束；不得再新建第三个 active `.al`。历史 P1 约束可从 Git 历史或 `docs/develop_records/` 的记录中追溯，不作为当前构建入口。

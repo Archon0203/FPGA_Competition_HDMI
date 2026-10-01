@@ -15,7 +15,7 @@ The first 150 MHz cleanup candidate was revalidated at RTL level before this rev
 
 The automated TD5.6.2 CLI attempt was not usable because its generated worker Tcl lost the device database argument (`import_device -package` with an empty DB). This is a CLI environment/tool-flow issue and is not used as implementation evidence.
 
-The same candidate was then run successfully in the **TD5.6.2 GUI** using SynOpt + PhyOpt. The GUI timing report is preserved under `docs/evidence/` and shows:
+The same candidate was then run successfully in the **TD5.6.2 GUI** using SynOpt + PhyOpt. The GUI timing report is preserved under `docs/develop_records/evidence/` and shows:
 
 - constrained clock: `u_apug011_ref_pll/pll_inst.clkc[1]`
 - target period: **6.666 ns (150 MHz)**

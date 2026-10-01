@@ -1,27 +1,31 @@
 # 三线统一集成流程图
 
-开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。图中箭头从项目开始指向最终交付，`M1` 是当前节点。
+开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。图中箭头从项目开始指向最终交付，`M1` 已完成 A/B/C 双板可视化门禁，当前节点为 `M2`。
 
 图例：绿色 = 已完成；黄色 = 当前节点/当前任务；白色 = 未完成；蓝色 = 三线汇合；紫色 = 双板 + 1080P 主线；A/B/C 使用不同边框颜色；实线 = 必须完成的真实依赖；点划线 = 可先用 mock、随后必须替换为真实接口的依赖；虚线 = rollback/fallback。C 线的 A/B 依赖专门画在每个节点旁，避免把“可独立写代码”误读成“可以脱离 A/B 完成验收”。
+
+工程入口同时冻结为两份长期 TD6.2.1 工程：`FPGA_Competition_HDMI_MASTER.al` 与 `FPGA_Competition_HDMI_SLAVE.al`。两者共享根目录 `src/`，分别使用 `constraints/master/` 与 `constraints/slave/`。从 M2 到 M6 只演进这两份工程，不新增阶段性 active `.al`。
 
 ```mermaid
 flowchart TD
     START["项目开始"] --> M0["M0 · 已有基线<br/>P0 media chain [C] PASS(1698)<br/>P1-02B SDRAM [S]<br/>P1-04C HDMI_B [B]<br/>P1-05A 640×480 framebuffer<br/>TD6.2.1 [S] + 真板 [B]<br/>P1-05A rollback 冻结"]
 
-    M0 --> M1G["M1 · 当前节点：双板 + 1080P 公共契约与开发骨架<br/>A/B/C 同时完成；完成后才进入 M2"]
-    M1G -.-> CUR["当前所在节点：M1↑"]
-    M1G --> M1A["A 线 · 曾雨婷<br/>✓ 既有 loader [U] PASS(225)<br/>✓ M1A SPI/decoder/mock/provider CDC [U/C-sub] Questa PASS<br/>□ descriptor/线上 packet/sequence 契约与 B 集成<br/>□ 真实 TF/FAT32 与双板 media service"]
-    M1G --> M1B["B 线 · 杨文轩<br/>✓ P1-05A rollback 基线<br/>□ GPIO source-sync 引脚候选<br/>□ PRBS/CRC/CDC/deskew loopback<br/>□ RX/TX、line/tile、frame-boundary 接口"]
-    M1G --> M1C["C 线 · 张宗<br/>✓ media_command_controller [U] PASS(52)<br/>□ coordinator mock 与 SPI status<br/>□ canonical raster sideband<br/>□ 1080P 配置快照与状态 UI"]
+    M0 --> M1G["M1 · 双板 + 1080P 公共契约与开发骨架<br/>A/B/C 契约 + 双板可视化门禁 [C][B] PASS"]
+    M2E -.-> CUR["当前所在节点：M2↑"]
+    M1G --> M1A["A 线 · 曾雨婷<br/>✓ 既有 loader [U] PASS(225)<br/>✓ M1A SPI/decoder/mock/provider CDC [U/C-sub] Questa PASS<br/>✓ descriptor / media-service shell / UART bridge 契约<br/>✓ Slave HDMI mock-service 真板可视化<br/>→ 真实 TF/FAT32 provider 转入 M2"]
+    M1G --> M1B["B 线 · 杨文轩<br/>✓ P1-05A rollback 基线<br/>✓ J1-8/J1-4/GND 三线物理链路<br/>✓ 115200 framed UART 双向控制链 [B] PASS<br/>✓ SPI/packet/CRC/sequence/CDC 逻辑骨架 Questa PASS<br/>✓ RX/TX、line/tile、frame-boundary 契约冻结<br/>→ 高速媒体数据面真板门禁转入 M2-B0"]
+    M1G --> M1C["C 线 · 张宗<br/>✓ media_command_controller [U] PASS(52)<br/>✓ coordinator UART / frame-boundary CDC<br/>✓ canonical 1080P raster contract Questa PASS<br/>✓ Master KEY2/KEY3/KEY4 控制 Slave HDMI<br/>→ 真实媒体/1080P 输出转入 M2~M4"]
     M1A -.->|descriptor/status mock → 真实接口| M1C
     M1B -.->|canonical raster/health mock → 真实接口| M1C
-    M1A --> M1E["M1 汇合门禁<br/>冻结：media_cmd、descriptor、packet、credit、CRC、CDC、错误与 frame_boundary<br/>集成负责人建立双板 top skeleton；[未完成]"]
+    M1A --> M1E["M1 汇合门禁<br/>冻结：media_cmd、descriptor、packet、credit、CRC、CDC、错误与 frame_boundary<br/>双板 top + Questa aggregate + 真板可视化；[C][B] PASS"]
     M1B --> M1E
     M1C --> M1E
 
-    M1E --> M2A["M2 · A 线<br/>真实 TF/SPI provider、FAT32 catalog<br/>至少 4 幅 640×480 BMP<br/>从板 packet/本地写入适配"]
-    M1E --> M2B["M2 · B 线<br/>B-S packet TX + B-M RX/FIFO<br/>write sink、front/back、dynamic read<br/>一次 start → fence → done"]
-    M1E --> M2C["M2 · C 线<br/>640×480 双板第一闭环<br/>选图、NEXT/PREV、PLAY/PAUSE、轮播<br/>pass-through + 基础 UI"]
+    M1E --> V1["M1 板级验证门禁<br/>分别构建 master.bit / slave.bit<br/>J1-8→J1-4、J1-8←J1-4、GND↔GND<br/>GPIO UART 115200/8N1 framed control<br/>Master KEY2/KEY3/KEY4 → Slave HDMI 4 patterns<br/>复位后重新握手；[B] PASS"]
+    V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑 [C] PASS<br/>source-sync GPIO 高速媒体数据面仍需 P&R/STA/真板<br/>UART PASS 不等于媒体吞吐；[M2-B0 当前任务]"]
+    V2 --> M2A["M2 · A 线 · 当前<br/>真实 TF/SPI provider、FAT32 catalog<br/>至少 4 幅 640×480 BMP<br/>从板 packet/本地写入适配"]
+    V2 --> M2B["M2 · B 线 · 当前<br/>B-S packet TX + B-M RX/FIFO<br/>write sink、front/back、dynamic read<br/>一次 start → fence → done"]
+    V2 --> M2C["M2 · C 线 · 当前<br/>640×480 双板第一闭环<br/>选图、NEXT/PREV、PLAY/PAUSE、轮播<br/>pass-through + 基础 UI"]
     M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>TF → 从板服务 → 板间 packet/loopback → 主板安全提交 → HDMI<br/>坏文件、短帧、CRC 错误不得污染 front；[未完成]"]
     M2B --> M2E
     M2C --> M2E
@@ -76,9 +80,9 @@ flowchart TD
     classDef mainline fill:#ede9fe,stroke:#7c3aed,color:#111;
     classDef endpoint fill:#d1fae5,stroke:#059669,color:#111;
 
-    class START,M0 done;
-    class M1G,M1A,M1B,M1C,M1E,CUR current;
-    class M2A,M2B,M2C,M3A,M3B,M3C,M4A,M4B,M4C,M5A,M5B,M5C,M6A,M6B,M6C pending;
+    class START,M0,M1G,M1A,M1B,M1C,M1E,V1 done;
+    class M2A,M2B,M2C,M2E,CUR current;
+    class V2,M3A,M3B,M3C,M4A,M4B,M4C,M5A,M5B,M5C,M6A,M6B,M6C pending;
     class M2E,M3E,M4E,M5E,M6E merge;
     class M1A,M2A,M3A,M4A,M5A,M6A laneA;
     class M1B,M2B,M3B,M4B,M5B,M6B laneB;
@@ -86,3 +90,26 @@ flowchart TD
     class M2A,M2B,M2C,M2E,M3A,M3B,M3C,M3E,M4A,M4B,M4C,M4E,M5A,M5B,M5C,M5E,M6A,M6B,M6C,M6E mainline;
     class DONE endpoint;
 ```
+
+
+## 节点验证纪律（2026-10-01 起强制执行）
+
+每个 M 节点均按以下顺序推进，任何一步失败都回到该层定位，不直接跨层修改其它模块：
+
+```text
+A/B/C 单元与子链 Questa
+        ↓
+Master-alone：独立 TD synthesis / P&R / STA / BitGen / 板级状态
+        ↓
+Slave-alone：独立 TD synthesis / P&R / STA / BitGen / HDMI 或本地自检
+        ↓
+Dual-control：只接控制面，验证命令/状态/复位恢复
+        ↓
+Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
+        ↓
+节点汇合门禁：功能 + 时序 + 真板 + 回退路径
+```
+
+当前 M1 已按此方法完成控制面与可视化真板闭环：Master 的 KEY2/KEY3/KEY4 可通过 115200 framed UART 控制 Slave HDMI 的 4 个 deterministic pattern；Questa aggregate 回归也已通过。M2 从真实 TF/FAT32/BMP 与高速媒体数据面开始，最终 HDMI owner 按 `01_architecture.md` 回归 Master。
+
+> 开发过程、验证记录、日志和截图不得直接新增到 `docs/` 根目录；统一放入 `docs/develop_records/`，其中原始证据放 `docs/develop_records/evidence/`。`docs/` 根目录只保留 01～08 的规范文档。
