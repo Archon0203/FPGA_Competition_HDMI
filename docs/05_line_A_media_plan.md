@@ -11,6 +11,8 @@ TF/SPI -> FAT32 mount/catalog -> BMP/vseq decoder
        -> descriptor + decoded line/tile payload
 ```
 
+从板媒体服务最终部署在 `slave_top` bitstream 中。A 线不生成主板 bitstream，但必须为 B/集成提供从板角色所需的 SPI slave、GPIO TX、复位后 READY 和故障状态端口；这些端口先以 M1A shell 验证，M2 再接入真实 TF provider。
+
 A 不负责 SDRAM 控制器、主板 HDMI 时序、主板 front/back、UI/OSD 或转场合成。A 提供应用层媒体 descriptor 和 ready/valid line/tile 数据；B 负责缓存、线上 packet 封装、CRC、物理链路和主板显示缓冲。主板只向从板发送 `image_id`、播放控制、格式和 credit；A 不读取主板 framebuffer 地址。
 
 ### A 对 C 的真实依赖边界
@@ -53,7 +55,7 @@ src/framebuf/frame_buffer_manager.v
 src/framebuf/framebuffer_writer.v（公共 writer 接口由集成负责人冻结）
 src/framebuf/** 的主板读出/line buffer 部分
 src/display/**  src/app/**  src/interact/**  src/audio/**
-src/top/**  constraints/**  FPGA_Competition_HDMI.al
+src/top/**  FPGA_Competition_HDMI_MASTER.al / FPGA_Competition_HDMI_SLAVE.al  constraints/master/** / constraints/slave/**
 ```
 
 公共协议需要变化时，先提交契约变更，由集成负责人协调 B/C 一起更新；A 不通过隐式信号依赖主板内部状态。
@@ -107,9 +109,9 @@ A 只报告 `source_done/source_error`；不得生成主板 `swap`。`mem_wr_val
 | 统一节点 | A 线任务 | A 线完成证据 |
 |---|---|---|
 | `M0` | 继承 P0/P1-05A 证据；整理 loader、TF、BMP 的输入输出边界 | 既有 `[C] PASS(1698)`、`[U] PASS(225)` 可复现 |
-| `M1`（当前） | 冻结 descriptor/packet 契约；实现 SPI 控制帧、credit、错误码和 provider CDC；建立从板 media-service shell；用 mock source 验证行数据 ready/valid | descriptor/线上 packet、sequence/CRC 和双板链路仍待与 B 集成冻结；M1A 模块级 Questa mock 回归通过，不能替代真实 TF 或双板证据 |
-| `M2` | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务；冻结 C 可消费的 descriptor/status 实现 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden；C 的真实选图命令能收到 ready/busy/done/error |
-| `M3` | 按 descriptor 生成持续 line/tile 数据并响应 credit；实现帧边界、重试和错误隔离；配合 720p bring-up | 在 credit 下持续输出，无丢包/重包/CRC 错误 |
+| `M1`（board gate 已通过） | descriptor/credit/error/provider CDC 与 SPI service shell 已有模块级回归；本轮新增 `m1a_uart_service_bridge`，把已真板验证的 UART transport 接入同一 service contract，并在 Slave HDMI top 中实际返回 catalog/status、响应 OPEN | M1A 既有 `[U]/[C-sub]` + M1ABC 双板 control/A-service TB；Slave 单板与双板 HDMI 可视控制。真实 TF 仍明确留在 M2，不用 mock 冒充 |
+| `M2`（当前） | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务；冻结 C 可消费的 descriptor/status 实现 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden；C 的真实选图命令能收到 ready/busy/done/error |
+| `M3` | 按 descriptor 生成持续 line/tile 数据并响应 credit；实现帧边界、重试和错误隔离；配合 B 做 1080p packed-YUV422 等效吞吐压力。720p 只可选排错 | 在 1080p 等效 payload 下持续输出，无丢包/重包/CRC 错误；记录 source buffer 水位 |
 | `M4` | 将媒体生产扩展到 1920×1080：packed YUV422、帧/行/tile descriptor、带宽预算和 underflow 预警 | 1080p 静态图连续 packet，带宽和 buffer 水位有记录 |
 | `M5` | 接入 `vseq_reader`/视频帧调度；支持图片、视频、NEXT/PREV/PLAY/PAUSE 和双源切换所需的两路媒体描述 | 视频帧序号连续，切换不会提交坏帧 |
 | `M6` | 长稳、异常恢复、双源/转场媒体准备和最终演示镜像 | 图片→视频→切换/转场长稳证据；故障可回退到上一帧 |
@@ -127,5 +129,11 @@ QuestaSim 10.7c：SPI slave、command decoder、provider CDC、media mock、serv
 1. 目录扫描不依赖手工 cluster；旧 `image_id` 在重扫后由 `epoch` 失效。
 2. 一次 OPEN 只产生一次媒体事务；超时、取消、reset 后的旧 sector/packet 不得污染下一次事务。
 3. valid/ready、credit、sequence 和 CRC 无丢重；错误只能产生错误状态或回退帧。
-4. 640×480 是 `M2` 的第一验证规格；720p 仅用于 `M3` 链路 bring-up；A 线最终必须提供 1080p 连续媒体源。
+4. 640×480 是 `M2` 的第一验证规格；M3 直接以 1080p packed-YUV422 等效 payload 做吞吐门禁，720p 只可选排错；A 线最终必须提供 1080p 连续媒体源。
 5. A 线 `[U]/[C-sub]` 不等于双板 `[C]`、时序 `[S]` 或真板 `[B]`；三类证据由集成负责人分别记录。
+
+## 6. 2026-10-01 M1-A 集成补充
+
+M1 真板阶段新增 `m1a_uart_service_bridge.v`，把已经真板通过的 115200 UART frame 临时适配到 A 线 `cmd_valid/opcode/arg -> catalog/descriptor/status` 语义。它只负责 M1 可观察集成；`m1a_service_shell.v` 中 SPI/command-decoder/provider-CDC 仍保留为后续正式控制/provider 契约。
+
+M1 slave HDMI candidate 直接例化 deterministic `m1a_media_service_mock`，使 Master 的 OPEN(image_id) 能在从板得到 descriptor 并驱动 pattern 选择。该结果即使真板通过，也只能证明 A 的服务语义与双板控制集成；真实 TF/FAT32 仍以 M2 为完成门禁。

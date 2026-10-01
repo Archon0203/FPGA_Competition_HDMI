@@ -1,6 +1,6 @@
 # B 线计划：板间链路、缓冲与主板显示输出
 
-> 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；720p 只作为链路 bring-up profile，P1-05A 只作为不可破坏的 rollback baseline。
+> 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；**720p 只保留为可选故障隔离 profile，不再是必经验收节点**，最终和中期硬门禁均围绕 1080P 等效数据率与真实 1080P HDMI 展开。P1-05A 只作为不可破坏的 rollback baseline。
 
 ## 1. 责任边界与当前状态
 
@@ -12,6 +12,10 @@ B-M（主板）: RX/CDC/CRC -> line/tile buffer -> scanout -> HDMI
 ```
 
 B-S 不拥有主板 front/back，也不读取 TF；B-M 不解析 FAT，也不建立第二个 writer。B 线负责 packet 接收、credit、CDC、主板行/tile 缓冲、动态读出、安全提交和 HDMI 1080p 时序。
+
+第二块板到位后，B 线还负责双角色板级 bring-up：`master_top` 实现 GPIO RX/SPI master，`slave_top` 实现 GPIO TX/SPI slave。两个角色共享底层 RTL，但必须分别使用 ADC/SDC、TD run 和 bitstream。
+
+在没有 40-pin 排线时，M1 先使用三线 GPIO UART bring-up：`master TX -> slave RX`、`slave TX -> master RX`、`GND -> GND`，115200 baud、8N1、短控制帧。该测试只验证 bitstream 和 GPIO 通路；不能把 UART 的低带宽结果当作媒体链路吞吐，也不能因此取消后续 SPI/source-synchronous 数据面验证。
 
 已完成并冻结的基线：P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]` 和真板 `[B]`。该基线的 640×480 raster、HDMI PHY/PLL、CDC、prefetch 和 cadence 必须可随时回退。
 
@@ -40,7 +44,7 @@ src/storage/**  src/framebuf/p1_media_framebuffer_loader.v
 src/framebuf/framebuffer_writer.v（A loader 内部唯一 writer）
 src/display/hdmi_*（仅可新增上述独立 raster profile；不得改 P1-04C/P1-05A golden boundary）
 src/audio/**  src/interact/**  src/app/**
-src/top/**  constraints/**  FPGA_Competition_HDMI.al
+src/top/**  FPGA_Competition_HDMI_MASTER.al / FPGA_Competition_HDMI_SLAVE.al  constraints/master/** / constraints/slave/**
 ```
 
 主板 top、约束和 TD 工程由集成负责人统一维护；B 只提交可独立仿真的 wrapper、链路和 buffer 模块。
@@ -114,9 +118,9 @@ C 可以在 M1 用 deterministic raster 或 PRBS mock 编写处理链；M2 的 p
 | 统一节点 | B 线任务 | B 线完成证据 |
 |---|---|---|
 | `M0` | 回归 P1-05A cached adapter、CDC、prefetch、line buffer、HDMI cadence；固定 pattern 可回退 | 既有 `[C-sub]/[S]/[B]` 证据保持通过 |
-| `M1`（当前） | 冻结 SPI/GPIO 引脚候选、packet RX/TX 接口、CRC/sequence、credit、CDC 和 frame-boundary commit；尽早核对 1080p pixel/serial clock、PLL/PHY 能力、GPIO pin/IO 时序和有效吞吐预算；建立 PRBS/loopback harness；先向 C 提供 canonical raster/health mock | PRBS/CRC/CDC TB；1080p feasibility 与 pin/timing budget 有记录；最大暂停和异步 reset 不丢包；C 可用 mock 验证 sideband 消费 |
-| `M2` | 完成 640×480 双板第一闭环：B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper；向 C 暴露真实 frame_boundary/underflow/protocol_error | mock/真实 A packet 可写入 back；一次 start/done；失败不污染 front；C pass-through 能观察真实状态 |
-| `M3` | 完成双板链路 720p bring-up：持续吞吐、credit、line/tile buffer、YUV/RGB 转换、underflow/fallback | 720p packet 持续传输，CRC/sequence/underflow 门禁通过 |
+| `M1`（board gate 已通过） | 三线 GPIO UART 已完成真板双向 115200 控制链；冻结 payload control frame、line packet/sequence/CRC16、PRBS selftest、canonical 1080p raster；提供 M1ABC Master/Slave 两角色 Top | UART `masks=1111/1111` + 真板 link 已通过；新 M1ABC 双板可视控制已真板 PASS；aggregate Questa 脚本已修复待补跑；packet/1080p contract 仍不是物理高速链路证据 |
+| `M2`（当前） | 完成 640×480 第一媒体闭环，并在任何真实媒体 packet 之前完成 source-synchronous 物理 PRBS/CRC/sequence 门禁；B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper | 各板先本地压力；再双板低速→高速 PRBS；真实 A packet 可写入 back；一次 start/done；失败不污染 front；C pass-through 能观察真实状态 |
+| `M3` | 完成 **1080p packed-YUV422 等效吞吐**的双板链路压力：credit、line/tile buffer、YUV/RGB、underflow/fallback；720p 仅在排错时可选 | 持续 payload ≥1080p60 active 需求，CRC/sequence/underflow 门禁通过；记录最大稳定 link clock 和余量 |
 | `M4` | 完成主板 1920×1080 HDMI profile、148.5 MHz pixel/742.5 MHz serial 预算、1080p line/tile scanout | 1080p 静态图 RTL、P&R、STA 和真板证据 |
 | `M5` | 接入视频帧调度、动态源切换、丢包/欠载恢复、frame-boundary commit；保持 P1-05A fallback | 视频切换无半帧，异常恢复可观察 |
 | `M6` | 完成最终 top、资源/STA/BitGen、双板真板长稳和回退镜像 | 图片、视频、转场、音频演示的 `[C]/[S]/[B]` 证据 |
@@ -136,12 +140,12 @@ C 可以在 M1 用 deterministic raster 或 PRBS mock 编写处理链；M2 的 p
 ## 6. 分辨率策略
 
 ```text
-M2：640×480 双板架构闭环（第一媒体规格）
-M3：1280×720 链路 bring-up（仅门禁/调试 profile）
-M4～M6：1920×1080 主板 HDMI + 双板持续媒体（最终目标）
+M2：640×480 双板架构闭环（只证明媒体事务/安全提交）
+M3：1080p60 packed-YUV422 等效吞吐门禁（720p 仅可选排错）
+M4～M6：1920×1080 HDMI + 双板持续媒体（唯一最终分辨率目标）
 ```
 
-1080p 单帧约 2,073,600 个 32-bit word，不能沿用 640×480 单板 A/B 全帧双缓冲。主线采用从板缓存下一帧、主板 line/tile buffer 和 frame-boundary 提交；主板是唯一 HDMI 输出 owner。
+1920×1080@60 active 像素率为 124,416,000 pixel/s；packed YUV422 16 bpp active payload 约 1.991 Gbit/s（248.832 MB/s）。候选 32-bit × 74.25 MHz raw 为 2.376 Gbit/s（297 MB/s），未扣 header/CRC/credit/CDC 时理论 raw 余量约 19.36%，因此必须在 M3 做真板持续吞吐而不是只跑短 PRBS。1080p RGB888/32-bit 单帧为 2,073,600 word，内部 SDRAM 几乎被单帧占满，不能沿用 640×480 的宽松全帧双缓冲；主线使用源板缓存 + 输出板 line/tile buffer + frame-boundary 提交。最终 HDMI owner 仍按 `docs/01` 冻结架构执行；M1 的“Master 控制、Slave HDMI”只是可视控制面验证 profile。
 
 ## 7. B 线验收门槛
 
@@ -150,3 +154,11 @@ M4～M6：1920×1080 主板 HDMI + 双板持续媒体（最终目标）
 3. 一帧内 read base/geometry 稳定，swap 只发生在 frame boundary。
 4. 1080p profile 独立取得 `[C]`、`[S]`、`[B]`；720p 通过不能代替 1080p 验收。
 5. B 线只交付 raw stream 和链路状态，不侵入 C 的 UI 状态机，也不要求 A 访问主板内部地址。
+
+## 8. 2026-10-01 M1-B 证据更新与路线调整
+
+三线 GPIO UART 物理/control gate 已取得真板 PASS：9600 最小链路与 115200 framed/CRC8 四 opcode 均通过。正确接线是 J1-8(J13/TX) -> 对端 J1-4(F13/RX)，反向同理，J1-12 共地。
+
+M1-B v5 candidate 新增：`db_ctrl_frame_tx/parser`、`m1b_line_packetizer/checker/selftest`、`m1b_spi_master_byte`、`m1b_prbs_packet_tx/rx`、`m1b_link_word_cdc`。这些模块冻结 packet、sequence、CRC、SPI byte 和 link_clk->sys_clk FIFO CDC 语义；它们尚不证明最终 32-bit 40-pin 物理链路，per-pin deskew 仍必须等待最终 pin map/cable、P&R/STA 和真板 PRBS/BER 门禁。
+
+分辨率路线更新：M3 不再要求 720p PASS 才能进入 1080p。M3 直接完成宽链路与 1080p 148.5/742.5 MHz 物理可行性；720p 仅作为失败诊断 profile。M4~M6 的最终验收始终是 1920×1080。

@@ -20,13 +20,27 @@
 ### 集成与阶段规则
 
 1. `M0` 是已完成的 P0/P1-05A 基线；`M1` 是当前的双板 + 1080p 公共契约和开发骨架节点。P1-05B 作为 `M2` 的双板架构第一闭环，不单独开一条单板开发线。
-2. `M3` 使用 1280×720 作为链路 bring-up 门禁；`M4～M6` 直接推进 1920×1080 媒体、UI、视频、转场和音频主交付。720p 通过不能替代 1080p 验收。
+2. `M1` 的双板可视化控制闭环已经在真板通过；当前进入 `M2`。`M3` 直接以 1080p packed-YUV422 等效吞吐和 1080p PHY 可行性为硬门禁，1280×720 只允许作为故障隔离 profile，不能作为节点完成条件。
 3. 公共接口（`media_cmd`、descriptor/packet、板间链路、时钟/复位、显示提交等）由集成负责人先定义并冻结；接口变更必须先在 PR 中说明影响范围，再由集成负责人协调 A/B/C 三线同步修改。
 4. C 线可先用 deterministic raster、固定 catalog 和 PRBS mock 开发按键/旋钮/转轮/UI；真实选图范围、媒体类型、播放完成/错误必须接入 A 线 `catalog/descriptor/status`，真实缩放/OSD/转场验收必须接入 B 线 `canonical raster/frame_boundary/underflow`。mock 通过不等于双板集成通过。
 5. 旋钮采用外接增量式正交编码器 A/B + 按压开关的候选方案，优先使用 40-pin GPIO；pin ownership、电平、消抖、CDC 和约束由集成负责人冻结后才能上板。
-4. A 线和 B 线不得直接修改对方所有权范围，也不得绕过已冻结接口建立隐式依赖。跨线需求通过接口、stub 或测试数据提出。
-5. 每个 `M` 节点由集成负责人建立集成分支并合并 PR，完成相应的综合、布局布线、STA、BitGen 和真板验证后，更新 `docs/03_plan_and_status.md` 与 `docs/08_three_line_integration_flow.md` 的状态。
-6. 集成发现问题时，优先回退到最近一个通过真板验证的基线；问题归属到对应开发线修复，集成负责人负责复测和重新合并。
+6. 双板构建产物必须分开保存：`master.bit` 对应主板 `master_top + master ADC/SDC`，`slave.bit` 对应从板 `slave_top + slave ADC/SDC`。更换 Top 或约束后必须完整执行 synthesis、P&R、STA、BitGen，并在烧录记录中写明板号、角色、commit 和 bitstream 哈希。
+7. A 线和 B 线不得直接修改对方所有权范围，也不得绕过已冻结接口建立隐式依赖。跨线需求通过接口、stub 或测试数据提出。
+8. 每个 `M` 节点由集成负责人建立集成分支并合并 PR，完成相应的综合、布局布线、STA、BitGen 和真板验证后，更新 `docs/03_plan_and_status.md` 与 `docs/08_three_line_integration_flow.md` 的状态。
+9. 集成发现问题时，优先回退到最近一个通过真板验证的基线；问题归属到对应开发线修复，集成负责人负责复测和重新合并。
+
+## TD 工程与共享 RTL 纪律
+
+仓库只允许两个 active TD6.2.1 工程：
+
+```text
+FPGA_Competition_HDMI_MASTER.al
+FPGA_Competition_HDMI_SLAVE.al
+```
+
+两者必须直接引用同一套 `src/`；禁止为了 TD 工程方便复制一份 `rtl/` 到角色目录。Master 约束只能来自 `constraints/master/`，Slave 约束只能来自 `constraints/slave/`。新增第三个 `.al`、复制共享 RTL、或让一个工程同时加载两套角色约束，均视为需要在 PR 中先纠正的工程结构问题。
+
+M2~M6 顶层演进也沿用这两个 `.al`：可以修改其 `TOP_MODULE` 和 Source_Files，但不再创建阶段性 active 工程。历史验证工程只保留在 Git 历史/开发记录中。
 
 ## 提交流程（一句话）
 克隆原仓库 -> 建 feature 分支 -> 改 -> ModelSim 自检 PASS -> commit -> push -> PR 到 main -> 等 Approve -> Squash and merge
@@ -50,3 +64,13 @@ cd FPGA_Competition_HDMI
 ```
 ## Modelsim相关
 具体操作在群文件分享的教程里，注意不要直接使用TangDynasty在项目文件夹/simulation/下生成的.do脚本。如果未创建新仿真工程而直接使用该脚本，则会直接覆盖上一个仿真工程产生的文件
+
+
+## Git 安全与发布包规则
+
+1. **任何发布 ZIP 都不得携带 `.git/` 目录。** `.git/` 含 branch/index/remotes/history，本地覆盖可能破坏团队仓库状态。
+2. 必须保留 `.gitignore`；本仓库新增 `.gitattributes`，固定 TD `.al/.adc/.sdc/.cfg/.prj` 为 CRLF，RTL/Markdown/Tcl 为 LF，避免跨平台产生整文件行尾 diff。
+3. TD 的 `*_Runs/`、Questa `work/`、`modelsim.ini`、`.bit/.db/.qdb/.wlf`、日志、minidump 和 `data/` 默认不提交。
+4. 集成发布包应先在一个**没有 `.git/` 的临时目录**检查，再复制到现有 clone；不要反向把临时目录的隐藏文件覆盖回仓库。
+5. 提交前使用 `git status --short`、`git diff --stat`、`git add -p`。若看到上百个仅行尾变化的文件，应先停止并检查 `.gitattributes`/编辑器 EOL 设置。
+6. 厂商加密 IP（例如 `*.enc.v`）不得被格式化、重新编码或自动换行；`.gitattributes` 已将其标为 `-text`。

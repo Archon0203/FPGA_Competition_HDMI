@@ -75,9 +75,9 @@ local emergency framebuffer
 ## 7. 技术展示顺序
 
 1. P0/P1-05A 已有 RTL、TD 和真板证据；
-2. M1 双板协议、1080p 时钟/引脚/带宽契约与 PRBS 基础链；
+2. M1 双板协议/A-B-C 可视化控制闭环（已真板 PASS，Slave-HDMI 为临时诊断 profile）；
 3. M2 双板 TF/BMP 640×480 第一闭环；
-4. M3 720p 链路 bring-up profile；
+4. M3 1080p packed-YUV422 等效数据链吞吐门禁（720p 仅可选排错）；
 5. M4 双板媒体到主板 1080p 静态图和 UI；
 6. M5/M6 视频、1.4 扩展、转场、音频及最终真板验收。
 
@@ -114,11 +114,11 @@ P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把
 
 ```text
 640×480 : P1-05A rollback；也是 M2 双板第一媒体规格
-1280×720: M3 链路 bring-up/debug profile
+1280×720: 仅在 M3 排错时可选，不作为验收节点
 1920×1080 / 双板：M1 起即按此架构设计，M4～M6 完成主目标验收
 ```
 
-双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过待验证的 source-synchronous GPIO 数据面返回媒体包。当前尚无双板 top、板间约束或双板证据；M1 起按双板/1080p 开发不代表功能已完成，必须逐级取得 RTL、STA 和真板证据。
+双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过待验证的 source-synchronous GPIO 数据面返回媒体包。M1-B0 已取得三线 UART 双板真板双向通信证据，正确排针为 J1-8(TX/J13) ↔ 对端 J1-4(RX/F13) 并共地；但这只证明控制面，不等于媒体数据面。M1ABC 的 Master 控制 / Slave HDMI 可视集成已经真板 PASS；aggregate Questa 和两角色 final STA 数值仍需补档。M2 起显示职责回到最终架构：Master HDMI，Slave 媒体生产。source-synchronous 媒体链与真实 1080p 仍必须逐级取得 RTL、STA 和真板证据。
 
 当前便携屏没有 input timing OSD，面板是否把 640×480 输入内部缩放为 1920×1080 全屏暂无法直接确认；色块边缘轻微 halo 也暂记为显示器 scaler/锐化/面板响应的非阻塞观察项。
 
@@ -132,12 +132,13 @@ P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把
 - **P1-05A 已完成 internal SDRAM framebuffer → HDMI 的 Questa、TD6.2.1 routed `[S]`、BitGen 和当前工具链真板闭环；**
 - 当前 TD6.2.1 final STA 为 0 setup / 0 hold，SWNS +0.599 ns、HWNS +0.003 ns；
 - TD6.2.1 BitGen 已生成 bitstream，重新上板后显示稳定，无可见 tearing/jitter/scanline underflow；
-- 1.4 扩展、1280×720 bring-up、双板通信和 1920×1080 主目标已进入计划，但尚未取得对应证据。
+- M1 三线 UART 双板控制通信已经真板通过，M1ABC Master 控制 Slave HDMI 的可视化 board gate 也已 PASS；
+- 1.4 全部扩展与 1920×1080 主目标已进入路线，但尚未取得对应最终证据。
 
 ### 还不能说
 
 - TF→SDRAM→HDMI 已完成；
-- 1280×720 已支持；
+- 1280×720/1080p 已支持；
 - 1080p 已支持；
 - 双板媒体链路已通过；
 - P1-05A 已取得 `[L]` 长稳等级。

@@ -24,6 +24,7 @@ HDMI display
 - P1-02B APUG011 internal SDRAM backend：150 MHz `[S]`；
 - P1-04C HDMI_B：`[B] PASS`；
 - **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；TD6.2.1 真板 `[B] PASS`。**
+- **M1ABC 双板可视化控制闭环：115200 framed UART `[C-sub][B] PASS`，Master 控制 Slave HDMI 的 board gate `[B] PASS`；aggregate M1ABC Questa 与两角色 final STA 待补档。**
 
 ## 3. P1-05A 验收结果
 
@@ -126,15 +127,15 @@ P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需
 
 ```text
 M0: P0/P1-05A 已有基线
-M1: 双板协议、1080p 架构/时钟/引脚契约与开发骨架
+M1: 双板协议、A/B/C 契约与可视化控制闭环（board gate 已通过）
 M2: 双板 640×480 TF/BMP 第一闭环（P1-05B 功能）
-M3: 1280×720 链路 bring-up/debug profile
+M3: 1080p packed-YUV422 等效数据链吞吐门禁（720p 仅可选排错）
 M4: 双板媒体 + 主板 1920×1080 静态图/UI
 M5: 视频、切换、转场、音频
 M6: 选题 1.4 扩展与双板 1080p 最终验收
 ```
 
-1280×720 只用于链路 bring-up，不是最终分辨率，也不作为开启 1080p 设计的长期前置阶段。旧 720p 75/375 MHz candidate 已 STA FAIL，不复用其时钟方案。任何新 profile 都必须独立完成时钟、PHY、P&R、STA 和真板验证。
+1280×720 不再是必经节点，只在 1080p 链路排错时作为可选 profile。M3 正式门禁直接要求 1080p60 packed-YUV422 等效 payload；旧 720p 75/375 MHz candidate 已 STA FAIL，不复用其时钟方案。任何真实 1080p HDMI profile 都必须独立完成时钟、PHY、P&R、STA 和真板验证。
 
 ## 5.1 双板目标边界
 
@@ -168,3 +169,9 @@ M6: 选题 1.4 扩展与双板 1080p 最终验收
 ## 8. Golden boundary 冻结要求
 
 P1-05A rollback baseline 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI PLL、APUG092/EG PHY、reset/EDID/IIC divider、640×480 timing，以及已证明的 cached-adapter/CDC/prefetch/scanout 行为。双板 1080p 使用独立 profile/top 和约束；若修改 frozen baseline，必须重新取得对应 Questa、STA 和 board 证据。
+
+## 8. 2026-10-01 路线修订：1080p 直达 + 分板验证门禁
+
+最终目标不变且不以 720p 作为交付：两块 HX4S20C、1920×1080 图片/视频、HDMI 音频、OSD/字幕、转场、缩放、实时参数和音频可视化。720p 从“必经 M3”降为可选诊断 profile；M3 直接验证宽链路持续吞吐和 1080p 148.5/742.5 MHz 物理可行性，M4 完成 1080p 静态媒体闭环。
+
+从 M1 起，每个节点必须先做 Master-alone 与 Slave-alone，再接控制链路，最后接数据/媒体链路。M1 可视化工程采用“Master 控制、Slave HDMI 输出”并已真板 PASS；该临时拓扑到此停止扩建。当前进入 M2，显示职责开始回到最终架构：Master HDMI、Slave 媒体生产。

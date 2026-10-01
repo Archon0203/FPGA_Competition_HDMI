@@ -1,124 +1,122 @@
 # 项目目录结构
 
-当前已验证基线为 **P1-05A internal SDRAM framebuffer → HDMI_B**。TD6.2.1 routed implementation/timing/BitGen 已通过，bitstream 已重新上板复测正常；P1-04C 八色条 top 继续保留为 HDMI golden rollback。P0/P1-05A 为当前已完成证据，P1-05B loader 仅有 `[U] PASS(225)`，双板和 1080p 尚无集成证据。
+当前仓库固定为 **两个长期 TD6.2.1 工程 + 一套共享 RTL + 两套角色约束**。M1ABC 双板可视化控制闭环已真板 PASS，当前进入 M2。最终职责仍是 Slave 负责媒体生产，Master 负责最终 1080P 合成与 HDMI。
 
-**当前工具链：TD6.2.1。** 2026-09-21 final routed report 为 coverage 99.17%、SWNS +0.599 ns、STNS 0、HWNS +0.003 ns、HTNS 0，setup/hold 违例端点 0；BitGen 已完成。硬件最小裕量仅 3 ps，且仍有两个 SDRAM location warning 和一条 local clock routing warning。
-
-根目录只使用一个 TD 工程：
+## 1. 唯一 TD 构建入口
 
 ```text
-FPGA_Competition_HDMI.al
+FPGA_Competition_HDMI_MASTER.al   # Master 主板
+FPGA_Competition_HDMI_SLAVE.al    # Slave 从板
 ```
+
+| 工程 | 当前 Top | 约束 | 当前 M1 作用 |
+|---|---|---|---|
+| `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/*` | 按键、控制、双向 UART 控制面 |
+| `FPGA_Competition_HDMI_SLAVE.al` | `m1abc_slave_hdmi_top` | `constraints/slave/*` | 服务 mock、链路接收、M1 诊断 HDMI |
+
+两个 `.al` 都直接引用仓库根 `src/`。**工程目录中不再保存 RTL 副本。** 后续 M2~M6 若 Top 演进，只修改这两个工程；不得再增加第三个 active `.al`。
+
+当前 TD Project Path 固定为 `D:/AnlogicProject/FPGA_Competition_HDMI`，与已验证的 TD6.2.1 使用方式一致。
+
+## 2. 目录树
 
 ```text
 FPGA_Competition_HDMI/
-├─ FPGA_Competition_HDMI.al
+├─ FPGA_Competition_HDMI_MASTER.al
+├─ FPGA_Competition_HDMI_SLAVE.al
 ├─ README.md
 ├─ STRUCTURE.md
 ├─ CONTRIBUTING.md
-├─ docs/
-│  ├─ 01_architecture.md             # 当前架构权威
-│  ├─ 02_implementation_goals.md     # 目标与验收边界
-│  ├─ 03_plan_and_status.md          # 唯一进度/状态权威
-│  ├─ 04_use_cases.md                # 场景与演示口径
-│  ├─ 05_line_A_media_plan.md        # A 线计划
-│  ├─ 06_line_B_framebuffer_plan.md   # B 线计划
-│  ├─ 07_line_C_presentation_plan.md  # C 线计划
-│  ├─ 08_three_line_integration_flow.md # 三线集成流程
-│  ├─ develop_records/               # 开发过程记录，可追加，不替代 01~04
-│  │  └─ P1-05A_CLOSEOUT_20260912.md # 本阶段实现/调试/timing 复盘
-│  ├─ evidence/                      # 历史验证证据
-│  └─ olds/                          # 历史主文档，只读
-├─ src/
+├─ constraints/
+│  ├─ README.md
+│  ├─ master/
+│  │  ├─ master.adc
+│  │  └─ master.sdc
+│  └─ slave/
+│     ├─ slave.adc
+│     └─ slave.sdc
+├─ src/                         # 唯一 RTL/source tree
 │  ├─ top/
-│  │  ├─ p1_hx4s20c_hdmi_board_top.v      # P1-04C HDMI rollback top
-│  │  └─ p1_hx4s20c_sdram_hdmi_top.v      # P1-05A active top
-│  ├─ framebuf/
-│  │  ├─ async_fifo.v
-│  │  ├─ sdram_arbiter.v
-│  │  ├─ sdram_adapter.v                   # P1-02 frozen random-word adapter
-│  │  ├─ p1_sdram_cached_adapter.v         # P1-05 sequential adapter; production diagnostics compile-out
-│  │  ├─ line_prefetcher.v
-│  │  ├─ line_buffer_pingpong.v
-│  │  ├─ p1_framebuffer_pattern_writer.v
-│  │  ├─ p1_media_framebuffer_loader.v      # P1-05B [U] media -> abstract SDRAM write source
-│  │  ├─ p1_sdram_read_cdc_bridge.v
-│  │  └─ p1_sdram_hdmi_pipeline.v
-│  ├─ display/
-│  │  ├─ hdmi_official_baseline_source.v
-│  │  └─ hdmi_framebuffer_scanout.v
+│  ├─ app/
 │  ├─ storage/
+│  ├─ dual_board/
+│  ├─ framebuf/
+│  ├─ display/
 │  ├─ audio/
 │  ├─ interact/
-│  ├─ app/
-│  └─ vendor/anlogic/                      # vendor/protected source，只读
-├─ constraints/
-│  ├─ p1_hx4s20c_hdmi_board.adc
-│  ├─ p1_hx4s20c_hdmi_board.sdc
-│  └─ ...                                  # 历史/实验约束
+│  └─ vendor/anlogic/           # vendor/protected source，只读
 ├─ sim_tb/
+│  ├─ m1abc/                    # 当前双板 aggregate regression
+│  ├─ storage/
 │  ├─ framebuf/
 │  ├─ display/
-│  └─ integration/
-│     └─ tb_p1_media_framebuffer_loader.v   # P1-05B provider-realistic write-side [U]
+│  ├─ audio/
+│  └─ app/
+├─ docs/
+│  ├─ 01_architecture.md
+│  ├─ 02_implementation_goals.md
+│  ├─ 03_plan_and_status.md
+│  ├─ 04_use_cases.md
+│  ├─ 05_line_A_media_plan.md
+│  ├─ 06_line_B_framebuffer_plan.md
+│  ├─ 07_line_C_presentation_plan.md
+│  ├─ 08_three_line_integration_flow.md
+│  ├─ develop_records/          # 所有开发/验证记录
+│  │  └─ evidence/              # 日志、截图等原始证据
+│  └─ olds/                     # 历史文档，只读
 ├─ ip/
-├─ tools/
-└─ data/                                   # 默认不入仓库
+└─ tools/
 ```
 
-## Active TD build
+## 3. 当前 M1 构建
+
+Master：
 
 ```text
-TOP = p1_hx4s20c_sdram_hdmi_top
+FPGA_Competition_HDMI_MASTER.al
+  -> shared src/**
+  -> constraints/master/master.adc + master.sdc
+  -> m1abc_master_control_top
+  -> master bitstream
 ```
+
+Slave：
 
 ```text
-50 MHz
-├─ HDMI PLL -> 25 / 125 MHz
-│   └─ P1-04C APUG092 / HDMI_B golden boundary
-│
-└─ 25 MHz -> APUG011 PLL -> 150 / shifted SDRAM clocks
-    ├─ p1_framebuffer_pattern_writer
-    ├─ sdram_arbiter
-    ├─ p1_sdram_cached_adapter
-    ├─ official APUG011
-    └─ EG_PHY_SDRAM_2M_32
-           ↓
-       ordered read CDC
-           ↓ 25 MHz
-       line_prefetcher
-           ↓
-       line_buffer_pingpong
-           ↓
-       hdmi_framebuffer_scanout
+FPGA_Competition_HDMI_SLAVE.al
+  -> shared src/**
+  -> constraints/slave/slave.adc + slave.sdc
+  -> m1abc_slave_hdmi_top
+  -> slave bitstream
 ```
 
-APUG092 的 `axis_user/axis_valid/axis_last` 仍来自 P1-04C free-running source；P1-05A 仅在安全 frame boundary 将 `axis_data` 切换为 SDRAM RGB。
+M1 真板接线继续使用已验证映射：
 
-## 当前约束
+```text
+Master J1-8  / FPGA J13 / TX -> Slave  J1-4 / FPGA F13 / RX
+Slave  J1-8  / FPGA J13 / TX -> Master J1-4 / FPGA F13 / RX
+Master J1-12 / GND            <-> Slave J1-12 / GND
+```
 
-`constraints/p1_hx4s20c_hdmi_board.sdc`：
+当前 M1 可视化仍由 Slave HDMI_B 输出；M2 起逐步把最终显示职责迁回 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
 
-- 50 MHz root clock；
-- `derive_clocks`（TD6.2.1；旧命令只保留在历史/实验约束）；
-- 25 MHz pixel 与 150 MHz SDRAM 明确声明为异步 clock groups，仅通过既有 CDC FIFO/synchronizer 通信。
+## 4. 共享 RTL 纪律
 
-当前 TD6.2.1 final STA：0 setup / 0 hold，SWNS `+0.599 ns`，HWNS `+0.003 ns`，coverage `99.17%`。BitGen 和真板复测均已完成。任何 active RTL/SDC 修改后必须重新实现和 STA。
+- `src/` 是唯一可综合 RTL/source tree；不得在 `projects/`、`td_*` 或角色目录复制源码。
+- Master/Slave 可以引用 `src/` 中不同子集，但公共模块只能存在一份。
+- 当前 `src/dual_board/db_uart_tx.v` 已同步为 M1 真板通过工程使用的版本。
+- `src/vendor/anlogic/**` 为厂商/加密源，不格式化、不改编码。
+- 每次修改共享模块，都必须分别重新构建受影响的 Master/Slave 工程。
 
-## Board pin
+## 5. 约束纪律
 
-| Logical port | Pin | Standard |
-|---|---|---|
-| `clk` | R7 | LVCMOS33 |
-| `HDMI_D0_P` | G5 | LVDS33 |
-| `HDMI_D1_P` | F1 | LVDS33 |
-| `HDMI_D2_P` | E1 | LVDS33 |
-| `HDMI_CLK_P` | C3 | LVDS33 |
-| `HDMI_DDC_SCL` | P2 | LVCMOS33 |
-| `HDMI_DDC_SDA` | R2 | LVCMOS33 |
+- Master 只使用 `constraints/master/`。
+- Slave 只使用 `constraints/slave/`。
+- 板间 pin map、Top port 或时钟变更时，必须更新对应角色约束并重新 synthesis → P&R → STA → BitGen。
+- 禁止在一个工程里同时加载 Master 与 Slave 约束。
 
-P1-05A 没有增加 external board pin。
+## 6. 文档和 Git 纪律
 
-## 文档组织规则
+`docs/` 根目录只保留 `01~08` 规范文档。开发过程、验证记录、阶段说明统一进入 `docs/develop_records/`，日志/截图等证据进入 `docs/develop_records/evidence/`。
 
-主要当前文档包括根 `README.md`、`STRUCTURE.md`、`CONTRIBUTING.md`、`docs/01~04` 四份权威文档，以及并列的 `docs/05~08` 三线计划/集成流程文档。当前执行路线统一编号为 `M0～M6`，详情见 `docs/08_three_line_integration_flow.md`。开发过程记录允许追加到 `docs/develop_records/`，但不能成为状态权威；状态冲突时始终以 `docs/03_plan_and_status.md` 为准。`docs/olds/` 不再更新。
+发布 ZIP 不携带 `.git/`、`*_Runs/`、Questa `work/`、bitstream、minidump、TD 日志等本地生成物；`.gitignore` 与 `.gitattributes` 必须保留。

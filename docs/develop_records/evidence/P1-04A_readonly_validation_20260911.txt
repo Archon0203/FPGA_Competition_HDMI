@@ -1,0 +1,50 @@
+P1-04A read-only validation summary (2026-09-11)
+Tool: QuestaSim 10.7c + Anlogic TD5.6.2/V5.6.71036
+
+Project-owned RTL:
+- hdmi_video_adapter: PASS checks=24
+- line_buffer -> hdmi_video_adapter: PASS checks=57
+- hdmi_test_pattern_line_provider: PASS checks=37
+- line_buffer regression: PASS checks=2204
+- line_prefetcher regression: PASS checks=2713
+- sdram_arbiter regression: PASS checks=39
+- sdram_adapter regression: PASS checks=61
+- P0 media chain regression: PASS checks=1698
+- APUG011 official regression: PASS checks=24
+
+APUG092 protected behavioral simulation:
+- vlog: Errors=0, Warnings=80 (vlog-2600 in protected source)
+- vsim optimization: TOOL_BLOCKED, protected-region error x4
+- This is not classified as project RTL failure.
+
+P1-04A TD synthesis:
+- PASS elaboration / gate DB
+- Device EG4S20BG256
+- 50 MHz input -> 75 MHz pixel / 375 MHz serial@90deg recognized
+- But timing did not close:
+  375 MHz setup: 3 errors, WNS=-0.122 ns, TNS=-3.660 ns
+  75 MHz hold: 10 errors, WNS=-0.102 ns, TNS=-66.601 ns
+  removal: 3 errors, WNS=-0.164 ns
+- Therefore P1-04A remains an experimental 720p clock candidate and is NOT board-safe.
+
+Physically working official lab_ex4_tf facts reported by the user:
+- project TD version: 6.2.175876
+- device: EG4S20BG256
+- top: top
+- board clk: 50 MHz, R7, LVCMOS33
+- HDMI_B 640x480 timing: 800x525 total; H 16/96/48; V 10/2/33; VIC=1
+- PLL outputs: 25 MHz pixel, 125 MHz serial, both 0deg
+- PLL parameters:
+  FIN=50.000000 REFCLK_DIV=2 FBCLK_DIV=1 FEEDBK_MODE=NORMAL
+  FEEDBK_PATH=CLKC0_EXT
+  C0 DIV/CPHASE/FPHASE=40/39/0
+  C1 DIV/CPHASE/FPHASE=8/7/0
+  GMC_GAIN=2 ICP_CURRENT=9 KVCO=2 LPF_CAPACITOR=1 LPF_RESISTOR=8
+- HDMI_B pins:
+  D0 P=G5 LVDS33
+  D1 P=F1 LVDS33
+  D2 P=E1 LVDS33
+  CLK P=C3 LVDS33
+  DDC SCL=P2 LVCMOS33
+  DDC SDA=R2 LVCMOS33
+- KEY1=B2, KEY2=C1 in official project; physical label swap remains NEED_PHYSICAL_CONFIRMATION.
