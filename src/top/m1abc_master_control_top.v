@@ -141,6 +141,16 @@ module m1abc_master_control_top #(
         .link_ok(link_ok), .fault(fault), .ack_toggle(ack_toggle),
         .image_change_toggle(image_change_toggle));
 
+    // M2 local contract gate.  The physical source-synchronous GPIO data
+    // plane is intentionally not claimed here because its 40-pin map is not
+    // frozen yet; this integrated loopback keeps the Master build exercising
+    // the same A/B/C packet and frame-commit logic while retaining M1 UART
+    // rollback behavior.
+    wire m2_diag_pass, m2_diag_busy, m2_diag_error, m2_diag_frame_boundary;
+    m2_abc_loopback_diag u_m2_diag (
+        .clk(clk), .rst_n(core_rst_n), .pass(m2_diag_pass), .busy(m2_diag_busy),
+        .error(m2_diag_error), .frame_boundary(m2_diag_frame_boundary));
+
     // LEDs: activity / link / remote image change / fault.
     assign led[0] = ack_toggle;
     assign led[1] = link_ok;
@@ -150,5 +160,6 @@ module m1abc_master_control_top #(
     wire _unused_status = ^key_level ^ ^selected_image_id ^ play_en ^ emergency ^
                           slide_tick ^ ^transition_mode ^ ^contrast ^ ^brightness ^
                           osd_en ^ beep_alert ^ ^remote_selected_image ^
-                          ^remote_status ^ ^remote_error ^ rx_activity;
+                          ^remote_status ^ ^remote_error ^ rx_activity ^
+                          m2_diag_pass ^ m2_diag_busy ^ m2_diag_error ^ m2_diag_frame_boundary;
 endmodule
