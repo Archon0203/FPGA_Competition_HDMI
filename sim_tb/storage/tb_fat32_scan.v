@@ -10,10 +10,12 @@
 // 结局: PASS / FAIL
 // ================================================================
 
-module tb_fat32_scan;
+module tb_fat32_scan #(
+    parameter integer SUPERFLOPPY = 0
+);
     localparam SECT = 512;
-    localparam LBA_BOOT = 2048;
-    localparam LBA_ROOT = 2051;
+    localparam LBA_BOOT = SUPERFLOPPY ? 0 : 2048;
+    localparam LBA_ROOT = SUPERFLOPPY ? 3 : 2051;
 
     reg        clk = 1'b0;
     reg        rst_n = 1'b0;
@@ -72,6 +74,9 @@ module tb_fat32_scan;
         end else begin
             req_prev <= sector_req;
             if (sector_req && (!req_prev || sector_lba != last_lba)) begin
+                if (sector_lba != 0 && sector_lba != LBA_BOOT &&
+                    sector_lba != LBA_ROOT)
+                    $fatal(1, "unexpected sector LBA %0d", sector_lba);
                 last_lba  <= sector_lba;
                 sidx     <= 9'd0;
                 cursel   <= lba2sel(sector_lba);
@@ -121,6 +126,13 @@ module tb_fat32_scan;
             sectbuf[1][38] = 8'h00; sectbuf[1][39] = 8'h00;  // fat_sz=1
             sectbuf[1][44] = 8'h02; sectbuf[1][45] = 8'h00;
             sectbuf[1][46] = 8'h00; sectbuf[1][47] = 8'h00;  // root_clu=2
+            if (SUPERFLOPPY) begin
+                for (j = 0; j < SECT; j = j + 1)
+                    sectbuf[0][j] = sectbuf[1][j];
+                sectbuf[0][0] = 8'hEB;
+                sectbuf[0][510] = 8'h55;
+                sectbuf[0][511] = 8'hAA;
+            end
 
             // 根目录: "TEST    BMP" cluster=3 size=100
             sectbuf[2][0] = 8'h54; sectbuf[2][1] = 8'h45;  // T E

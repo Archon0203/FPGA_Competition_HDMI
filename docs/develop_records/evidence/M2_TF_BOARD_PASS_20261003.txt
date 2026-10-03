@@ -1,0 +1,14 @@
+2026-10-03 M2-A board evidence summary
+
+Board: HX4S20C / EG4S20BG256 Slave
+Candidate: DIAG5 (CMD17 command end-bit fixed to 1)
+Observed with TF inserted: yellow loading screen -> actual 640x480 BMP image.
+Observed without TF at reset: red fault screen.
+Observed recovery: insert TF and reset -> actual BMP image again.
+Post-success diagnostic observation: 8-LED row LED6+LED7+LED9+LED10+LED11 = 0x3B; four-LED fault remained asserted.
+Code review found repeated standalone OPEN(0) after each media_done; next package changes standalone autoload to one-shot and hands selection to Master after ctrl_link_seen.
+
+Status interpretation:
+- M2-A Slave-alone real TF/FAT32/BMP/internal-SDRAM/HDMI: board PASS.
+- Full M2 dual-board data plane: not yet PASS.
+- Latest archived routed STA before the policy edit: SWNS +0.659 ns, HWNS +0.014 ns, no setup/hold violations.

@@ -64,6 +64,8 @@ module fat32_scan #(
     // MBR 分区
     reg  [7:0]  ptype;
     reg  [31:0] part_lba;
+    reg  [7:0]  sector0_first;
+    reg         sector0_sig_lo;
     // BPB
     reg  [15:0] bps;
     reg  [7:0]  spc;
@@ -88,6 +90,7 @@ module fat32_scan #(
             sector_req <= 1'b0;
             sector_lba <= 32'd0;
             ptype <= 8'd0; part_lba <= 32'd0;
+            sector0_first <= 8'd0; sector0_sig_lo <= 1'b0;
             bps <= 16'd0; spc <= 8'd0; reserved <= 16'd0;
             num_fats <= 8'd0; fat_sz <= 32'd0; root_clu <= 32'd0;
             root_sector_index <= 8'd0;
@@ -116,19 +119,49 @@ module fat32_scan #(
                     if (start) begin
                         state      <= S_MBR;
                         byte_idx   <= 9'd0;
+                        ptype      <= 8'd0;
+                        part_lba   <= 32'd0;
+                        bps        <= 16'd0;
+                        spc        <= 8'd0;
+                        num_fats   <= 8'd0;
+                        fat_sz     <= 32'd0;
+                        root_clu   <= 32'd0;
+                        sector0_first <= 8'd0;
+                        sector0_sig_lo <= 1'b0;
                         sector_lba <= 32'd0;
                         sector_req <= 1'b1;
                     end
                 end
                 S_MBR: begin
                     if (din_valid && sector_ready) begin
+                        if (byte_idx == 9'd0) sector0_first <= din;
+                        if (byte_idx == 9'd11) bps[7:0] <= din;
+                        if (byte_idx == 9'd12) bps[15:8] <= din;
+                        if (byte_idx == 9'd13) spc <= din;
+                        if (byte_idx == 9'd14) reserved[7:0] <= din;
+                        if (byte_idx == 9'd15) reserved[15:8] <= din;
+                        if (byte_idx == 9'd16) num_fats <= din;
+                        if (byte_idx >= 9'd36 && byte_idx <= 9'd39)
+                            fat_sz[(byte_idx-9'd36)*8 +: 8] <= din;
+                        if (byte_idx >= 9'd44 && byte_idx <= 9'd47)
+                            root_clu[(byte_idx-9'd44)*8 +: 8] <= din;
+                        if (byte_idx == 9'd510) sector0_sig_lo <= (din == 8'h55);
                         if (byte_idx == 9'd450) ptype <= din;
                         if (byte_idx >= 9'd454 && byte_idx <= 9'd457)
                             part_lba[(byte_idx-9'd454)*8 +: 8] <= din;
                         if (byte_idx == SECTOR_BYTES-1) begin
                             sector_req <= 1'b0;
                             byte_idx   <= 9'd0;
-                            if (ptype == 8'h0B || ptype == 8'h0C) begin
+                            if ((sector0_first == 8'hEB || sector0_first == 8'hE9) &&
+                                sector0_sig_lo && din == 8'hAA &&
+                                bps == 16'd512 && spc != 0 && num_fats != 0 &&
+                                fat_sz != 0 && root_clu >= 2) begin
+                                // FAT32 superfloppy: sector zero is the BPB.
+                                part_lba <= 32'd0;
+                                state <= S_GAP;
+                                next_state <= S_BOOT;
+                                sector_lba <= 32'd0;
+                            end else if (ptype == 8'h0B || ptype == 8'h0C) begin
                                 state      <= S_GAP;
                                 next_state <= S_BOOT;
                                 sector_lba <= part_lba;

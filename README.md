@@ -2,15 +2,16 @@
 
 这是一个面向校园、园区信息发布和应急广播场景的 FPGA 多媒体终端。项目使用两块安路 HX4S20C / EG4S20BG256，目标是在不依赖外部 CPU/MCU 的前提下完成 TF/FAT32/BMP/视频帧序列读取、双板媒体传输、1920×1080 HDMI 视频/音频、OSD/字幕、缩放、转场、实时参数调节和音频可视化。
 
-## 当前状态（2026-10-01）
+## 当前状态（2026-10-03）
 
-当前已经完成 **M1：A/B/C 公共契约 + 双板可视化控制闭环** 的真板验证：
+当前已经完成 **M1：A/B/C 公共契约 + 双板可视化控制闭环**，并取得 **M2-A Slave-alone 真实 TF/BMP 真板出图**：
 
 - 9600 最小双向 UART：真板 PASS；
 - 115200 framed UART + CRC8 + 4 类命令/ACK：Questa `masks=1111/1111`，真板 PASS；
 - M1ABC 双板可视化：Master 的 KEY2/KEY3/KEY4 能真实控制 Slave HDMI 页面，自动轮播、暂停/恢复、前后切换均正常；
-- Slave HDMI 的 link/fault 标记和两板 LED 状态符合预期；
-- M1ABC Master/Slave RTL 均可在 TD6.2.1 综合并生成可上板 bitstream。
+- 2026-10-03：Slave 插入真实 TF 卡后，经历黄色加载页并稳定输出 640×480、24-bit BMP，确认 `TF -> SPI -> FAT32 -> BMP -> SDRAM -> HDMI` 单板链路真板 PASS；
+- 真板失败根因之一已确认并修复：CMD17 命令尾字节从 `0x00` 改为满足 SD SPI end-bit 的 `0x01`；
+- 当前包继续把真实 catalog/OPEN 接回 Master 控制面，并修复 Slave 重复自动 `OPEN(0)` 抢占选图的问题。
 
 本轮 M1 为了让双板控制链可直接观察，临时采用 **Master 控制、Slave HDMI 显示**。这只是 bring-up profile，不改变最终职责：
 
@@ -31,7 +32,7 @@ Master：控制/状态、接收/CDC、line/tile buffer、缩放、OSD、转场�
 | 板卡角色 | TD 工程 | 当前 Top | 角色约束 |
 |---|---|---|---|
 | Master 主板 | `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/master.adc` + `master.sdc` |
-| Slave 从板 | `FPGA_Competition_HDMI_SLAVE.al` | `m1abc_slave_hdmi_top` | `constraints/slave/slave.adc` + `slave.sdc` |
+| Slave 从板 | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/slave.adc` + `slave.sdc` |
 
 构建主板 bitstream 时只打开 `FPGA_Competition_HDMI_MASTER.al`；构建从板 bitstream 时只打开 `FPGA_Competition_HDMI_SLAVE.al`。**不得复制另一角色的 bitstream，也不得新建第三个 active `.al`。** 后续 M2~M6 只演进这两个工程的 Source_Files/Top/约束；RTL 始终以 `src/` 为唯一源码副本。
 
@@ -45,6 +46,8 @@ P1-05A 640×480 SDRAM→HDMI 仍作为已验证的源码/证据 rollback 基线�
 | M1ABC 验证/关闭记录 | `docs/develop_records/M1ABC_V5_VALIDATION.md` |
 | 双工程重构记录 | `docs/develop_records/M1_TWO_PROJECT_REORGANIZATION_20261001.md` |
 | M2 入口计划 | `docs/develop_records/M2_REAL_MEDIA_ENTRY.md` |
+| M2 真实 Master 控制回归 | `sim_tb/m1abc/run_m2_master_real_control_link.bat` |
+| M2 TF 真板出图 + Master 控制记录 | `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md` |
 
 工具链：Anlogic TD 6.2.1；仿真：QuestaSim 10.7c。
 
@@ -70,6 +73,33 @@ Slave HDMI_B 接显示器后，双板正常时：
 - Master/Slave `LED2` 应亮、`LED4` 应灭；activity LED 使用 toggle，肉眼可能表现为闪烁或较暗常亮。
 
 详细步骤见 `docs/develop_records/M1ABC_V5_VALIDATION.md`。
+
+## M2 真实 TF + Master 控制上板
+
+当前阶段仍由 **Slave HDMI** 显示真实 TF 图片；Master 只承担已经真板验证过的低速控制面。媒体像素仍不走 UART，高速数据面与最终 Master HDMI owner 留在后续 M2-B。
+
+两板断电后连接：
+
+```text
+Master J1-8  / FPGA J13 / TX -> Slave  J1-4  / FPGA F13 / RX
+Slave  J1-8  / FPGA J13 / TX -> Master J1-4  / FPGA F13 / RX
+Master J1-12 / GND            <-> Slave J1-12 / GND
+```
+
+不要互连两块板的 5 V。TF 卡插在 Slave。建议卡根目录准备至少 2 张、最好 4 张当前支持的 640×480 / 24-bit BI_RGB / 8.3 短文件名 BMP；如果 catalog 只有 1 张图，NEXT/PREV/轮播都会回绕到 image 0，因此画面看起来不会变化。
+
+Master 控制：
+
+- KEY2：NEXT；
+- KEY3：PREV；
+- KEY4：PLAY/PAUSE；
+- 默认自动轮播周期：5 s。
+
+本版 Slave 的 standalone fallback 只在上电/无 Master 时自动加载 image 0 **一次**。检测到 Master UART 控制链后，后续图片选择完全由 Master `OPEN(image_id)` 驱动，不再自动重载 image 0；如果 Master 请求的就是当前已完整显示的 image，则直接返回 DONE，不重复读取 TF。
+
+正常静止显示时，Slave 四灯预期为：LED1(catalog) 亮、LED2(busy) 灭、LED3(frame ready) 亮、LED4(fault) 灭；8 灯无 fault 时应回到 `0x81` build marker（LED6 + LED13）。
+
+详细记录见 `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md`。
 
 ## 1080P 双板设计原则
 
@@ -120,3 +150,8 @@ git commit -m "feat(m1): close dual-board ABC bring-up and enter M2"
 ```
 
 不要对工程目录直接执行 `git add .`；先检查 `git status`，确认没有 TD run、Questa work、`.bit`、日志或大媒体文件。详细规则见 `CONTRIBUTING.md`。
+
+
+## 2026-10-03 M2 TF DIAG3
+
+Current board-debug candidate restores the proven P1-05A SDRAM SDC exceptions, removes the DIAG2 wide debug counter, and exposes the raw media failure family by HDMI color plus the low nibble on LEDs. See `docs/develop_records/M2_TF_DIAG3_20261003.md`.

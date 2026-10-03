@@ -43,11 +43,18 @@ module sd_reader #(
     output reg         data_valid,
     output reg  [7:0]  data_out,
     output reg         done,
-    output reg         ok
+    output reg         ok,
+    output wire        init_done,
+    output wire        spi_cs_n,
+    // Sticky detail for the most recent terminal physical-SD failure.
+    // 0x41 CMD0, 0x42 CMD8, 0x43 CMD55, 0x44 ACMD41,
+    // 0x45 CMD17 R1, 0x46 CMD17 data token, 0x47 byte-engine timeout.
+    output reg  [7:0]  fail_code
 );
 
     localparam [3:0] S_IDLE=0, S_PREP=1, S_WAIT=2, S_HANDLE=3,
-                     S_TOKEN=4, S_DATA=5, S_CRC=6, S_DONE=7, S_ABORT=8;
+                     S_TOKEN=4, S_DATA=5, S_CRC=6, S_DONE=7, S_ABORT=8,
+                     S_CMD_GAP=9, S_CMD_GAP_WAIT=10;
 
     reg [3:0] state;
     reg [3:0] dst;               // 读字节后的目标状态(S_TOKEN/DATA/CRC 等)
@@ -62,9 +69,18 @@ module sd_reader #(
     reg        is_read;           // 当前字节是读响应/数据(发送 0xFF)
     reg [1:0]  read_ctx;          // 0=读取响应 1=token 2=data 3=crc
     reg [31:0] timeout_cnt;
-    reg [1:0]  retry_cnt;
+    localparam integer RETRY_W = (RETRY_MAX < 1) ? 1 : $clog2(RETRY_MAX+1);
+    reg [RETRY_W-1:0] retry_cnt;
     reg [15:0] acmd_poll;
     reg [31:0] data_cnt;
+    reg initialized;
+    assign init_done = initialized;
+    assign spi_cs_n = (state == S_IDLE || state == S_DONE ||
+                       state == S_ABORT || state == S_CMD_GAP ||
+                       state == S_CMD_GAP_WAIT);
+    reg [3:0] response_wait;
+    reg [31:0] token_wait;
+    reg        crc_second_byte;
 
     function [7:0] cmd_byte_at;
         input [47:0] c;
@@ -83,7 +99,10 @@ module sd_reader #(
                 3'd1: make_cmd = {8'h48, 32'h000001AA, 8'h87};
                 3'd2: make_cmd = {8'h77, 32'h00000000, 8'h65};
                 3'd3: make_cmd = {8'h69, 32'h40000000, 8'h77};
-                default: make_cmd = {8'h51, arg, 8'h00};   // CMD17
+                // CRC7 is disabled after CMD0/CMD8, but the command frame's
+                // mandatory end bit is still 1.  8'h00 is not a legal final
+                // command byte on a real card; use the conventional dummy 01.
+                default: make_cmd = {8'h51, arg, 8'h01};   // CMD17
             endcase
         end
     endfunction
@@ -96,7 +115,7 @@ module sd_reader #(
             byte_n    <= 3'd0;
             is_read   <= 1'b0;
             tx_byte   <= cmd_byte_at(make_cmd(idx, arg), 3'd0);
-            state     <= S_PREP;
+            state     <= S_CMD_GAP;
             timeout_cnt <= 32'd0;
         end
     endtask
@@ -113,12 +132,15 @@ module sd_reader #(
     endtask
 
     task retry;
+        input [7:0] code;
         begin
-            retry_cnt <= retry_cnt + 1'b1;
+            fail_code <= code;
             acmd_poll <= 16'd0;
+            initialized <= 1'b0;
             if (retry_cnt >= RETRY_MAX) begin
                 state <= S_ABORT;
             end else begin
+                retry_cnt <= retry_cnt + 1'b1;
                 phase <= 3'd0;
                 start_cmd(2'd0, 32'd0);
             end
@@ -134,7 +156,10 @@ module sd_reader #(
             is_read <= 1'b0; read_ctx <= 2'd0;
             data_valid <= 1'b0; data_out <= 8'd0;
             done <= 1'b0; ok <= 1'b0; timeout_cnt <= 32'd0;
-            retry_cnt <= 2'd0; acmd_poll <= 16'd0; data_cnt <= 32'd0;
+            retry_cnt <= 0; acmd_poll <= 16'd0; data_cnt <= 32'd0;
+            initialized <= 1'b0; response_wait <= 0; token_wait <= 0;
+            crc_second_byte <= 1'b0;
+            fail_code <= 8'h00;
         end else begin
             data_valid <= 1'b0;
             case (state)
@@ -143,14 +168,25 @@ module sd_reader #(
                     done <= 1'b0;
                     ok   <= 1'b0;
                     if (start) begin
-                        phase <= 3'd0; retry_cnt <= 2'd0; acmd_poll <= 16'd0;
-                        cmd_bytes <= make_cmd(3'd0, 32'd0);
-                        byte_n    <= 3'd0;
-                        is_read   <= 1'b0;
-                        tx_byte   <= cmd_byte_at(make_cmd(3'd0, 32'd0), 3'd0);
-                        state     <= S_PREP;
-                        timeout_cnt <= 32'd0;
+                        fail_code <= 8'h00;
+                        retry_cnt <= 0; acmd_poll <= 16'd0;
+                        if (initialized) begin
+                            phase <= 3'd4;
+                            start_cmd(3'd4, block_addr);
+                        end else begin
+                            phase <= 3'd0;
+                            start_cmd(3'd0, 32'd0);
+                        end
                     end
+                end
+                S_CMD_GAP: begin
+                    spi_start <= 1'b1;
+                    spi_din <= 8'hff;
+                    state <= S_CMD_GAP_WAIT;
+                end
+                S_CMD_GAP_WAIT: begin
+                    spi_start <= 1'b0;
+                    if (spi_done) state <= S_PREP;
                 end
                 S_PREP: begin
                     spi_start <= 1'b1;
@@ -166,6 +202,7 @@ module sd_reader #(
                         if (!is_read) begin
                             // 发送命令字节
                             if (byte_n >= 3'd5) begin
+                                response_wait <= 0;
                                 case (phase)
                                     3'd0: rs_left <= 4'd1;
                                     3'd1: rs_left <= 4'd5;
@@ -185,29 +222,48 @@ module sd_reader #(
                             // 读取字节
                             case (read_ctx)
                                 2'd0: begin // 响应
-                                    resp[rs_n] <= spi_dout;
-                                    rs_n <= rs_n + 1'b1;
-                                    if (rs_left <= 4'd1) begin
-                                        state <= S_HANDLE;
+                                    if (rs_n == 0 && spi_dout == 8'hff) begin
+                                        if (response_wait == 4'd8) begin
+                                            case (phase)
+                                                3'd0: retry(8'h41);
+                                                3'd1: retry(8'h42);
+                                                3'd2: retry(8'h43);
+                                                3'd3: retry(8'h44);
+                                                default: retry(8'h45);
+                                            endcase
+                                        end
+                                        else begin
+                                            response_wait <= response_wait + 1'b1;
+                                            start_read(2'd0);
+                                        end
                                     end else begin
-                                        rs_left <= rs_left - 1'b1;
-                                        tx_byte <= 8'hFF;
-                                        state   <= S_PREP;
-                                        timeout_cnt <= 32'd0;
+                                        resp[rs_n] <= spi_dout;
+                                        rs_n <= rs_n + 1'b1;
+                                        if (rs_left <= 4'd1) begin
+                                            state <= S_HANDLE;
+                                        end else begin
+                                            rs_left <= rs_left - 1'b1;
+                                            start_read(2'd0);
+                                        end
                                     end
                                 end
                                 2'd1: begin // token
                                     if (spi_dout == 8'hFE) begin
                                         data_cnt <= 32'd0;
+                                        token_wait <= 0;
                                         start_read(2'd2);
+                                    end else if (spi_dout == 8'hff && token_wait < TIMEOUT) begin
+                                        token_wait <= token_wait + 1'b1;
+                                        start_read(2'd1);
                                     end else begin
-                                        retry;
+                                        retry(8'h46);
                                     end
                                 end
                                 2'd2: begin // data
                                     data_valid <= 1'b1; data_out <= spi_dout;
                                     data_cnt <= data_cnt + 1'b1;
                                     if (data_cnt >= DATA_BYTES-1) begin
+                                        crc_second_byte <= 1'b0;
                                         start_read(2'd3);
                                     end else begin
                                         tx_byte <= 8'hFF;
@@ -215,14 +271,19 @@ module sd_reader #(
                                         timeout_cnt <= 32'd0;
                                     end
                                 end
-                                default: begin // crc -> 完成
-                                    done <= 1'b1; ok <= 1'b1;
-                                    state <= S_DONE;
+                                default: begin // two CRC bytes close CMD17
+                                    if (!crc_second_byte) begin
+                                        crc_second_byte <= 1'b1;
+                                        start_read(2'd3);
+                                    end else begin
+                                        done <= 1'b1; ok <= 1'b1;
+                                        state <= S_DONE;
+                                    end
                                 end
                             endcase
                         end
                     end else if (timeout_cnt >= TIMEOUT) begin
-                        retry;
+                        retry(8'h47);
                     end
                 end
                 S_HANDLE: begin
@@ -232,7 +293,7 @@ module sd_reader #(
                                 phase <= 3'd1;
                                 start_cmd(2'd1, 32'd0);
                             end else begin
-                                retry;
+                                retry(8'h41);
                             end
                         end
                         3'd1: begin
@@ -240,15 +301,22 @@ module sd_reader #(
                                 phase <= 3'd2;
                                 start_cmd(2'd2, 32'd0);
                             end else begin
-                                retry;
+                                retry(8'h42);
                             end
                         end
                         3'd2: begin
-                            phase <= 3'd3;
-                            start_cmd(2'd3, 32'd0);
+                            // CMD55 must be accepted before ACMD41.  During
+                            // initialization the expected R1 is idle (0x01).
+                            if (resp[0] == 8'h01) begin
+                                phase <= 3'd3;
+                                start_cmd(2'd3, 32'd0);
+                            end else begin
+                                retry(8'h43);
+                            end
                         end
                         3'd3: begin
                             if (resp[0] == 8'h00) begin
+                                initialized <= 1'b1;
                                 phase <= 3'd4;
                                 start_cmd(3'd4, block_addr); // CMD17
                             end else if (resp[0] == 8'h01 && acmd_poll < ACMD_POLL_MAX) begin
@@ -257,14 +325,14 @@ module sd_reader #(
                                 phase <= 3'd2;
                                 start_cmd(2'd2, 32'd0);
                             end else begin
-                                retry;
+                                retry(8'h44);
                             end
                         end
                         default: begin // CMD17
                             if (resp[0] == 8'h00) begin
                                 start_read(2'd1);
                             end else begin
-                                retry;
+                                retry(8'h45);
                             end
                         end
                     endcase
@@ -274,26 +342,23 @@ module sd_reader #(
                     if (start) begin
                         done <= 1'b0;
                         ok   <= 1'b0;
-                        phase <= 3'd0; retry_cnt <= 2'd0; acmd_poll <= 16'd0;
-                        cmd_bytes <= make_cmd(3'd0, 32'd0);
-                        byte_n    <= 3'd0;
-                        is_read   <= 1'b0;
-                        tx_byte   <= cmd_byte_at(make_cmd(3'd0, 32'd0), 3'd0);
-                        state     <= S_PREP;
-                        timeout_cnt <= 32'd0;
+                        fail_code <= 8'h00;
+                        retry_cnt <= 0; acmd_poll <= 16'd0;
+                        if (initialized) begin
+                            phase <= 3'd4;
+                            start_cmd(3'd4, block_addr);
+                        end else begin
+                            phase <= 3'd0;
+                            start_cmd(3'd0, 32'd0);
+                        end
                     end else begin
                         done <= 1'b1;
                     end
                 end
                 S_ABORT: begin
-                    if (retry_cnt < RETRY_MAX) begin
-                        retry_cnt <= retry_cnt + 1'b1;
-                        acmd_poll <= 16'd0;
-                        phase <= 3'd0;
-                        start_cmd(2'd0, 32'd0);
-                    end else begin
-                        done <= 1'b1; ok <= 1'b0; state <= S_DONE;
-                    end
+                    done <= 1'b1;
+                    ok <= 1'b0;
+                    state <= S_DONE;
                 end
                 default: state <= S_IDLE;
             endcase

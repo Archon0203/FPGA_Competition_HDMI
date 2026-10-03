@@ -39,7 +39,7 @@ module bmp_parser #(
     output reg  [23:0] data_offset
 );
 
-    reg [15:0] byte_idx;           // 当前字节序号(16 位, 容纳大偏移头)
+    reg [23:0] byte_idx;           // Covers a complete 1080p BMP without header wrap.
     reg [7:0]  magic0, magic1;
     reg [7:0]  d10, d11, d12, d13;  // data_offset 小端字节
     reg [7:0]  w18, w19, w20, w21;  // width 小端字节
@@ -51,8 +51,8 @@ module bmp_parser #(
 
     // 字节计数
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) byte_idx <= 16'd0;
-        else if (start) byte_idx <= 16'd0;
+        if (!rst_n) byte_idx <= 24'd0;
+        else if (start) byte_idx <= 24'd0;
         else if (din_valid) byte_idx <= byte_idx + 1'b1;
     end
 

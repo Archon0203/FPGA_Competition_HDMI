@@ -58,10 +58,12 @@ module m2_frame_commit #(
                 pixel_data <= line_data;
                 if (line_start) begin
                     if (!candidate_valid) begin
-                        candidate_valid <= 1'b1;
-                        candidate_frame <= line_frame_id;
-                        expected_line <= line_index;
-                        accepted_lines <= 0;
+                        if (line_index == 0) begin
+                            candidate_valid <= 1'b1;
+                            candidate_frame <= line_frame_id;
+                            expected_line <= 0;
+                            accepted_lines <= 0;
+                        end else commit_error <= 1'b1;
                     end else if (line_frame_id != candidate_frame || line_index != expected_line) begin
                         candidate_valid <= 1'b0;
                         commit_error <= 1'b1;

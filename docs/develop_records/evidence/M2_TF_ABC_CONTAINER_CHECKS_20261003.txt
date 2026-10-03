@@ -1,0 +1,25 @@
+M2 TF/BMP ABC container checks - 2026-10-03
+
+Environment:
+- Uploaded project unpacked successfully.
+- No vsim/vlog/iverilog/verilator executable is installed in this Linux container.
+- Therefore no new RTL simulation PASS is claimed for the newly added UART bridge/top changes.
+
+Checks performed after modification:
+- New/modified Verilog module/endmodule balance: PASS.
+- New/modified Verilog begin/end balance: PASS.
+- New/modified Verilog case/endcase balance: PASS.
+- Master .al file references: 0 missing; top source found.
+- Slave .al file references: 0 missing; top source found.
+- Slave active top remains m2_slave_tf_hdmi_top.
+- Master active top remains m1abc_master_control_top.
+
+Existing QuestaSim 10.7c evidence in uploaded tree:
+- sim_tb/storage/transcript_m2_real_media.txt:
+  PASS: m2_real_media_service checks=10
+  Errors: 0, Warnings: 0
+
+New regression delivered for team execution:
+- sim_tb/m1abc/run_m2_real_media_uart_bridge.bat
+- sim_tb/m1abc/run_m2_real_media_uart_bridge.do
+- sim_tb/m1abc/tb_m2_real_media_uart_bridge.v

@@ -1,6 +1,6 @@
 // ================================================================
 // 模块   : sd_spi
-// 功能   : SD/SPI 字节级主控制器(SPI Mode 0: CPOL=0, CPHA=0)。
+// 功能   : SD/SPI 字节级主控制器，可选 mode 0 或 mode 3。
 //           start 拉起后发送 din 并同步接收对端字节; 数据 MSB 先发。
 //           sclk 由 clk 分频产生; 上升沿采样 miso, 下降沿更新 mosi。
 // 作者   : FPGA 竞赛团队
@@ -22,11 +22,14 @@
 // ================================================================
 
 module sd_spi #(
-    parameter integer CLK_DIV = 2
+    parameter integer CLK_DIV = 2,
+    parameter integer INIT_CLK_DIV = CLK_DIV,
+    parameter integer MODE3 = 0
 )(
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
+    input  wire        slow_mode,
     input  wire [7:0]  din,
     output wire        busy,
     output wire        done,
@@ -36,7 +39,9 @@ module sd_spi #(
     input  wire        miso
 );
 
-    localparam integer DW = $clog2(2 * CLK_DIV);
+    localparam integer MAX_DIV = (INIT_CLK_DIV > CLK_DIV) ? INIT_CLK_DIV : CLK_DIV;
+    localparam integer DW = $clog2(2 * MAX_DIV);
+    wire [DW-1:0] active_div = slow_mode ? INIT_CLK_DIV : CLK_DIV;
     localparam [1:0] S_IDLE = 2'd0, S_RUN = 2'd1, S_DONE = 2'd2;
 
     reg [DW-1:0] div;
@@ -44,19 +49,20 @@ module sd_spi #(
     reg  [1:0]   state;
     reg  [7:0]   tx, rx, dout_r;
     reg  [2:0]   bit_idx;
+    reg          first_fall_seen;
     reg          sclk_q;         // 上一拍 sclk(用于沿检测)
 
     // 分频产生 sclk: div<CLK_DIV 为低, div>=CLK_DIV 为高
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) div <= {DW{1'b0}};
         else if (busy_r) begin
-            if (div == (2*CLK_DIV-1)) div <= {DW{1'b0}};
+            if (div == (2*active_div-1)) div <= {DW{1'b0}};
             else                      div <= div + 1'b1;
         end else begin
             div <= {DW{1'b0}};
         end
     end
-    assign sclk = (div >= CLK_DIV);
+    assign sclk = MODE3 ? (div < active_div) : (div >= active_div);
 
     wire rise = sclk && !sclk_q;
     wire fall = !sclk && sclk_q;
@@ -70,6 +76,7 @@ module sd_spi #(
             rx       <= 8'd0;
             dout_r   <= 8'd0;
             bit_idx  <= 3'd0;
+            first_fall_seen <= 1'b0;
             mosi     <= 1'b0;
             sclk_q   <= 1'b0;
         end else begin
@@ -82,25 +89,42 @@ module sd_spi #(
                         rx      <= 8'd0;
                         dout_r  <= 8'd0;
                         bit_idx <= 3'd0;
+                        first_fall_seen <= 1'b0;
                         mosi    <= din[7];
                         state   <= S_RUN;
                         busy_r  <= 1'b1;
                     end
                 end
                 S_RUN: begin
-                    // 上升沿: 采样 MISO
-                    if (rise) rx <= {rx[6:0], miso};
-                    // 下降沿: 移位/完成
-                    if (fall) begin
-                        if (bit_idx == 3'd7) begin
-                            state  <= S_DONE;
-                            busy_r <= 1'b0;
-                            done_r <= 1'b1;
-                            dout_r <= rx;
-                        end else begin
-                            mosi    <= tx[6];
-                            tx      <= {tx[6:0], 1'b0};
-                            bit_idx <= bit_idx + 1'b1;
+                    if (MODE3) begin
+                        if (fall) begin
+                            if (first_fall_seen) begin
+                                mosi <= tx[6];
+                                tx <= {tx[6:0], 1'b0};
+                            end else first_fall_seen <= 1'b1;
+                        end
+                        if (rise) begin
+                            rx <= {rx[6:0], miso};
+                            if (bit_idx == 3'd7) begin
+                                state <= S_DONE;
+                                busy_r <= 1'b0;
+                                done_r <= 1'b1;
+                                dout_r <= {rx[6:0], miso};
+                            end else bit_idx <= bit_idx + 1'b1;
+                        end
+                    end else begin
+                        if (rise) rx <= {rx[6:0], miso};
+                        if (fall) begin
+                            if (bit_idx == 3'd7) begin
+                                state  <= S_DONE;
+                                busy_r <= 1'b0;
+                                done_r <= 1'b1;
+                                dout_r <= rx;
+                            end else begin
+                                mosi    <= tx[6];
+                                tx      <= {tx[6:0], 1'b0};
+                                bit_idx <= bit_idx + 1'b1;
+                            end
                         end
                     end
                 end

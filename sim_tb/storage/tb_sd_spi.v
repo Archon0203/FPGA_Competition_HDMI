@@ -9,7 +9,9 @@
 // 结局: PASS / FAIL
 // ================================================================
 
-module tb_sd_spi;
+module tb_sd_spi #(
+    parameter integer MODE3 = 0
+);
     localparam CLK_DIV = 2;
 
     reg        clk = 1'b0;
@@ -22,8 +24,8 @@ module tb_sd_spi;
     reg        miso;
     wire       sclk;
 
-    sd_spi #(.CLK_DIV(CLK_DIV)) u_dut (
-        .clk(clk), .rst_n(rst_n), .start(start), .din(din),
+    sd_spi #(.CLK_DIV(CLK_DIV), .MODE3(MODE3)) u_dut (
+        .clk(clk), .rst_n(rst_n), .start(start), .slow_mode(1'b0), .din(din),
         .busy(busy), .done(done), .dout(dout),
         .mosi(mosi), .sclk(sclk), .miso(miso)
     );
@@ -36,20 +38,25 @@ module tb_sd_spi;
     reg  [7:0] sr = 8'hA5;
     reg  [2:0] sbc = 3'd0;
     reg        slave_active = 1'b0;
+    reg        seen_first_rise = 1'b0;
 
     always @(posedge clk) begin
         if (start) begin
             sr <= slave_tx; sbc <= 3'd0; slave_active <= 1'b1;
+            seen_first_rise <= 1'b0;
             miso <= slave_tx[7];
         end
     end
     // 从机在 SCLK 上升沿采集 MOSI
     always @(posedge sclk) begin
-        if (slave_active) slave_rx <= {slave_rx[6:0], mosi};
+        if (slave_active) begin
+            slave_rx <= {slave_rx[6:0], mosi};
+            seen_first_rise <= 1'b1;
+        end
     end
     // 从机在 SCLK 下降沿送出下一位
     always @(negedge sclk) begin
-        if (slave_active && sbc < 3'd7) begin
+        if (slave_active && (!MODE3 || seen_first_rise) && sbc < 3'd7) begin
             miso <= sr[6];
             sr   <= {sr[6:0], 1'b0};
             sbc  <= sbc + 1'b1;
