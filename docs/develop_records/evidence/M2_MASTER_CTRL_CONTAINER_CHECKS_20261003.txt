@@ -1,0 +1,24 @@
+M2 MASTER CONTROL container/static checks - 2026-10-03
+NOTE: container has no QuestaSim/TD6.2.1 executable; no new simulation/synthesis/P&R PASS is claimed.
+
+FPGA_Competition_HDMI_MASTER.al: top=m1abc_master_control_top; file_refs=21; missing=0
+FPGA_Competition_HDMI_SLAVE.al: top=m2_slave_tf_hdmi_top; file_refs=63; missing=0
+
+src/top/m1abc_master_control_top.v: module/end=1/1; begin/end=0/0; structural_balance=PASS
+src/top/m2_slave_tf_hdmi_top.v: module/end=1/1; begin/end=41/41; structural_balance=PASS
+src/dual_board/m2_real_media_uart_bridge.v: module/end=1/1; begin/end=16/16; structural_balance=PASS
+sim_tb/m1abc/tb_m2_real_media_uart_bridge.v: module/end=1/1; begin/end=4/4; structural_balance=PASS
+sim_tb/m1abc/tb_m2_master_real_control_link.v: module/end=1/1; begin/end=13/13; structural_balance=PASS
+sim_tb/storage/tb_m2_real_media_service.v: module/end=1/1; begin/end=21/21; structural_balance=PASS
+
+bridge instance sim_tb/m1abc/tb_m2_master_real_control_link.v: source_valid=PASS
+bridge instance sim_tb/m1abc/tb_m2_real_media_uart_bridge.v: source_valid=PASS
+bridge instance src/top/m2_slave_tf_hdmi_top.v: source_valid=PASS
+
+sim_tb/m1abc/run_m2_real_media_uart_bridge.do: source_refs=2; missing=0
+sim_tb/m1abc/run_m2_master_real_control_link.do: source_refs=20; missing=0
+sim_tb/storage/run_m2_real_media.do: source_refs=21; missing=0
+
+release hygiene forbidden artifacts: 0
+
+RESULT: PASS

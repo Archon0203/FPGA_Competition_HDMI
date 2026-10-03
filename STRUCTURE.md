@@ -9,10 +9,10 @@ FPGA_Competition_HDMI_MASTER.al   # Master 主板
 FPGA_Competition_HDMI_SLAVE.al    # Slave 从板
 ```
 
-| 工程 | 当前 Top | 约束 | 当前 M1 作用 |
+| 工程 | 当前 Top | 约束 | 当前作用 |
 |---|---|---|---|
 | `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/*` | 按键、控制、双向 UART 控制面 |
-| `FPGA_Competition_HDMI_SLAVE.al` | `m1abc_slave_hdmi_top` | `constraints/slave/*` | 服务 mock、链路接收、M1 诊断 HDMI |
+| `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/*` | 真实 TF/FAT32/BMP、本地 SDRAM/HDMI、UART 控制接管 |
 
 两个 `.al` 都直接引用仓库根 `src/`。**工程目录中不再保存 RTL 副本。** 后续 M2~M6 若 Top 演进，只修改这两个工程；不得再增加第三个 active `.al`。
 
@@ -68,7 +68,7 @@ FPGA_Competition_HDMI/
 └─ tools/
 ```
 
-## 3. 当前 M1 构建
+## 3. 当前 M2 控制集成构建
 
 Master：
 
@@ -86,7 +86,7 @@ Slave：
 FPGA_Competition_HDMI_SLAVE.al
   -> shared src/**
   -> constraints/slave/slave.adc + slave.sdc
-  -> m1abc_slave_hdmi_top
+  -> m2_slave_tf_hdmi_top
   -> slave bitstream
 ```
 
@@ -98,7 +98,7 @@ Slave  J1-8  / FPGA J13 / TX -> Master J1-4 / FPGA F13 / RX
 Master J1-12 / GND            <-> Slave J1-12 / GND
 ```
 
-当前 M1 可视化仍由 Slave HDMI_B 输出；M2 起逐步把最终显示职责迁回 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
+当前 M2-A/C bring-up 仍由 Slave HDMI_B 输出真实 TF 图片，Master 通过三线 UART 控制选图；后续 M2-B 再把真实媒体数据面与最终显示职责迁回 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
 
 ## 4. 共享 RTL 纪律
 

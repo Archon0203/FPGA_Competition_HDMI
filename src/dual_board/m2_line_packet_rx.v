@@ -18,12 +18,12 @@ module m2_line_packet_rx #(
     input  wire        in_last,
     output wire        in_ready,
 
-    output reg         line_valid,
-    output reg  [31:0] line_data,
+    output wire        line_valid,
+    output wire [31:0] line_data,
     input  wire        line_ready,
-    output reg         line_start,
-    output reg         line_end,
-    output reg         frame_end,
+    output wire        line_start,
+    output wire        line_end,
+    output wire        frame_end,
     output reg  [15:0] frame_id,
     output reg  [15:0] line_index,
     output reg  [7:0]  image_id,
@@ -33,21 +33,18 @@ module m2_line_packet_rx #(
     output reg  [7:0]  expected_sequence
 );
     localparam [2:0] ST_MAGIC=0, ST_META1=1, ST_META2=2, ST_PAY=3,
-                     ST_CRC=4, ST_EMIT=5;
+                     ST_CRC=4, ST_EMIT=5, ST_DROP=6;
     reg [2:0] state;
     reg [15:0] crc;
     reg [15:0] payload_words;
     reg [15:0] payload_count;
     reg [15:0] emit_count;
     reg header_error;
+    reg magic_ok;
     reg [15:0] frame_q, line_q;
     reg [7:0] image_q;
-    // M2 first specification is four words/line.  Keeping the four entries
-    // explicit avoids an unintended vendor RAM inference in the small local
-    // diagnostic; the same interface can be widened to a BRAM-backed line
-    // store for the M3 tile profile.
-    reg [31:0] line_mem0, line_mem1, line_mem2, line_mem3;
-    reg [31:0] emit_word;
+    reg [7:0] sequence_q;
+    reg [31:0] line_mem [0:LINE_WORDS-1];
 
     function [15:0] crc16_byte;
         input [15:0] crc_in; input [7:0] data;
@@ -69,6 +66,11 @@ module m2_line_packet_rx #(
     endfunction
 
     assign in_ready = (state != ST_EMIT);
+    assign line_valid = (state == ST_EMIT);
+    assign line_data = line_mem[emit_count];
+    assign line_start = line_valid && (emit_count == 0);
+    assign line_end = line_valid && (emit_count + 1'b1 == payload_words);
+    assign frame_end = line_end && (line_q == FRAME_LINES-1);
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -78,35 +80,17 @@ module m2_line_packet_rx #(
             payload_count <= 0;
             emit_count <= 0;
             header_error <= 1'b0;
+            magic_ok <= 1'b0;
             frame_q <= 0; line_q <= 0; image_q <= 0;
-            line_mem0 <= 0; line_mem1 <= 0; line_mem2 <= 0; line_mem3 <= 0;
-            emit_word <= 0;
-            line_valid <= 1'b0; line_data <= 0;
-            line_start <= 1'b0; line_end <= 1'b0; frame_end <= 1'b0;
+            sequence_q <= 0;
             frame_id <= 0; line_index <= 0; image_id <= 0;
             frame_accept <= 1'b0; protocol_error <= 1'b0;
             link_ready <= 1'b0; expected_sequence <= 0;
         end else begin
-            line_valid <= 1'b0;
-            line_start <= 1'b0;
-            line_end <= 1'b0;
-            frame_end <= 1'b0;
             frame_accept <= 1'b0;
             protocol_error <= 1'b0;
 
             if (state == ST_EMIT) begin
-                line_valid <= 1'b1;
-                case (emit_count)
-                    0: emit_word = line_mem0;
-                    1: emit_word = line_mem1;
-                    2: emit_word = line_mem2;
-                    default: emit_word = line_mem3;
-                endcase
-                line_data <= emit_word;
-                line_start <= (emit_count == 0);
-                line_end <= (emit_count + 1'b1 >= payload_words);
-                frame_end <= ((emit_count + 1'b1 >= payload_words) &&
-                              (line_q == FRAME_LINES-1));
                 if (line_ready) begin
                     if (emit_count + 1'b1 >= payload_words) begin
                         frame_accept <= (line_q == FRAME_LINES-1);
@@ -121,36 +105,49 @@ module m2_line_packet_rx #(
                     ST_MAGIC: begin
                         crc <= crc16_word(16'hffff,in_data);
                         header_error <= (in_data != 32'h4d314c31);
+                        magic_ok <= (in_data == 32'h4d314c31);
                         payload_count <= 0;
-                        state <= ST_META1;
+                        state <= in_last ? ST_MAGIC : ST_META1;
+                        if (in_last) protocol_error <= 1'b1;
                     end
                     ST_META1: begin
                         frame_q <= in_data[31:16];
                         line_q <= in_data[15:0];
                         crc <= crc16_word(crc,in_data);
-                        state <= ST_META2;
+                        state <= in_last ? ST_MAGIC : ST_META2;
+                        if (in_last) protocol_error <= 1'b1;
                     end
                     ST_META2: begin
                         image_q <= in_data[31:24];
+                        sequence_q <= in_data[23:16];
                         payload_words <= in_data[15:0];
                         if (in_data[23:16] != expected_sequence ||
-                            in_data[15:0] == 0 || in_data[15:0] > LINE_WORDS)
+                            in_data[15:0] != LINE_WORDS)
                             header_error <= 1'b1;
                         crc <= crc16_word(crc,in_data);
-                        state <= (in_data[15:0] == 0 || in_data[15:0] > LINE_WORDS) ? ST_CRC : ST_PAY;
+                        state <= in_last ? ST_MAGIC :
+                                 (in_data[15:0] != LINE_WORDS) ? ST_DROP : ST_PAY;
+                        if (in_last || in_data[15:0] != LINE_WORDS)
+                            protocol_error <= 1'b1;
+                    end
+                    ST_DROP: if (in_last) begin
+                        expected_sequence <= sequence_q + 1'b1;
+                        state <= ST_MAGIC;
+                        crc <= 16'hffff;
                     end
                     ST_PAY: begin
-                        case (payload_count)
-                            0: line_mem0 <= in_data;
-                            1: line_mem1 <= in_data;
-                            2: line_mem2 <= in_data;
-                            default: line_mem3 <= in_data;
-                        endcase
-                        crc <= crc16_word(crc,in_data);
-                        if (payload_count + 1'b1 >= payload_words) begin
+                        if (in_last) begin
+                            protocol_error <= 1'b1;
+                            expected_sequence <= sequence_q + 1'b1;
+                            state <= ST_MAGIC;
+                        end else begin
+                            line_mem[payload_count] <= in_data;
+                            crc <= crc16_word(crc,in_data);
+                        end
+                        if (!in_last && payload_count + 1'b1 >= payload_words) begin
                             payload_count <= 0;
                             state <= ST_CRC;
-                        end else payload_count <= payload_count + 1'b1;
+                        end else if (!in_last) payload_count <= payload_count + 1'b1;
                     end
                     ST_CRC: begin
                         if (!header_error && in_last && in_data[31:16] == 16'hc16c && in_data[15:0] == crc) begin
@@ -161,6 +158,9 @@ module m2_line_packet_rx #(
                             state <= ST_EMIT;
                         end else begin
                             protocol_error <= 1'b1;
+                            if (in_last && in_data[31:16] == 16'hc16c &&
+                                magic_ok && payload_words == LINE_WORDS)
+                                expected_sequence <= sequence_q + 1'b1;
                             state <= ST_MAGIC;
                             crc <= 16'hffff;
                         end

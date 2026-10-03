@@ -48,6 +48,7 @@ module framebuffer_writer #(
     input  wire [15:0]  pixel_x,
     input  wire [15:0]  pixel_y,
     output wire         pixel_ready,
+    output wire         fifo_near_full,
 
     // Source-frame completion. source_done may arrive while writes are pending.
     input  wire         source_done,
@@ -84,6 +85,8 @@ module framebuffer_writer #(
 
     localparam integer PTR_W = clog2(PIXEL_FIFO_DEPTH);
     localparam integer CNT_W = clog2(PIXEL_FIFO_DEPTH + 1);
+    localparam integer FLOW_STOP_LEVEL = (PIXEL_FIFO_DEPTH > 4) ?
+                                          PIXEL_FIFO_DEPTH - 4 : 1;
 
     function [31:0] mul16x16;
         input [15:0] a;
@@ -121,6 +124,7 @@ module framebuffer_writer #(
     assign mem_wr_data  = fifo_data[rd_ptr];
 
     assign pixel_ready = busy && !source_done_seen && fifo_has_space;
+    assign fifo_near_full = (fifo_count >= FLOW_STOP_LEVEL);
 
     wire coord_valid = (pixel_x < frame_width_latched) &&
                        (pixel_y < frame_height_latched);

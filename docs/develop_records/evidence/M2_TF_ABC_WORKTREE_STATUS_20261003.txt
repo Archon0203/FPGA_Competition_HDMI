@@ -1,0 +1,77 @@
+=== git status --short ===
+ M FPGA_Competition_HDMI_MASTER.al
+ M FPGA_Competition_HDMI_SLAVE.al
+ M constraints/slave/slave.adc
+ M docs/03_plan_and_status.md
+ M sim_tb/storage/tb_fat32_scan.v
+ M sim_tb/storage/tb_sd_reader.v
+ M sim_tb/storage/tb_sd_spi.v
+ M src/dual_board/m2_frame_commit.v
+ M src/dual_board/m2_line_packet_rx.v
+ M src/framebuf/framebuffer_writer.v
+ M src/framebuf/p1_media_framebuffer_loader.v
+ M src/storage/bmp_parser.v
+ M src/storage/fat32_scan.v
+ M src/storage/sd_reader.v
+ M src/storage/sd_spi.v
+?? docs/develop_records/M2_ABC_REAL_MEDIA_CANDIDATE_20261003.md
+?? docs/develop_records/M2_TF_ABC_HANDOFF_20261003.md
+?? docs/develop_records/M2_TF_HDMI_BOARD_INTEGRATION_20261003.md
+?? docs/develop_records/evidence/M2_TF_ABC_CONTAINER_CHECKS_20261003.txt
+?? docs/develop_records/evidence/M2_TF_ABC_WORKTREE_STATUS_20261003.txt
+?? docs/develop_records/evidence/fpga_schematic_review.png
+?? sim_tb/m1abc/run_m2_abc.do
+?? sim_tb/m1abc/run_m2_b_640.do
+?? sim_tb/m1abc/run_m2_frame_packet_source_timeout.do
+?? sim_tb/m1abc/run_m2_gpio7_word_link.do
+?? sim_tb/m1abc/run_m2_gpio7_word_phy.do
+?? sim_tb/m1abc/run_m2_master_frame_store.do
+?? sim_tb/m1abc/run_m2_master_line_core.do
+?? sim_tb/m1abc/run_m2_real_media_uart_bridge.bat
+?? sim_tb/m1abc/run_m2_real_media_uart_bridge.do
+?? sim_tb/m1abc/run_m2_stream_640_frame.do
+?? sim_tb/m1abc/tb_m2_frame_packet_source_timeout.v
+?? sim_tb/m1abc/tb_m2_gpio7_word_link.v
+?? sim_tb/m1abc/tb_m2_gpio7_word_phy.v
+?? sim_tb/m1abc/tb_m2_line_packet_rx_640.v
+?? sim_tb/m1abc/tb_m2_master_frame_store.v
+?? sim_tb/m1abc/tb_m2_master_line_core.v
+?? sim_tb/m1abc/tb_m2_real_media_uart_bridge.v
+?? sim_tb/m1abc/tb_m2_stream_640_frame.v
+?? sim_tb/storage/run_fat32_superfloppy.do
+?? sim_tb/storage/run_m2_bmp_640.do
+?? sim_tb/storage/run_m2_card_snapshot.do
+?? sim_tb/storage/run_m2_card_spi_snapshot.do
+?? sim_tb/storage/run_m2_media_write_cdc.do
+?? sim_tb/storage/run_m2_no_card.do
+?? sim_tb/storage/run_m2_real_media.do
+?? sim_tb/storage/run_m2_slave_tf_media_core.do
+?? sim_tb/storage/run_m2_slave_tf_superfloppy.do
+?? sim_tb/storage/run_sd_spi_mode3.do
+?? sim_tb/storage/tb_m2_bmp_640.v
+?? sim_tb/storage/tb_m2_card_snapshot.v
+?? sim_tb/storage/tb_m2_card_spi_snapshot.v
+?? sim_tb/storage/tb_m2_media_write_cdc.v
+?? sim_tb/storage/tb_m2_no_card.v
+?? sim_tb/storage/tb_m2_real_media_service.v
+?? sim_tb/storage/tb_m2_slave_tf_media_core.v
+?? src/dual_board/m2_frame_packet_source.v
+?? src/dual_board/m2_gpio7_word_rx.v
+?? src/dual_board/m2_gpio7_word_tx.v
+?? src/dual_board/m2_real_media_uart_bridge.v
+?? src/framebuf/m2_master_frame_store.v
+?? src/framebuf/m2_master_line_core.v
+?? src/framebuf/m2_media_write_cdc.v
+?? src/storage/m2_official_spi_master.v
+?? src/storage/m2_real_media_service.v
+?? src/storage/m2_slave_tf_media_core.v
+?? src/storage/m2_tf_sector_provider.v
+?? src/top/m2_slave_tf_hdmi_top.v
+
+=== newly added handoff files ===
+src/dual_board/m2_real_media_uart_bridge.v
+sim_tb/m1abc/tb_m2_real_media_uart_bridge.v
+sim_tb/m1abc/run_m2_real_media_uart_bridge.do
+sim_tb/m1abc/run_m2_real_media_uart_bridge.bat
+docs/develop_records/M2_TF_ABC_HANDOFF_20261003.md
+docs/develop_records/evidence/M2_TF_ABC_CONTAINER_CHECKS_20261003.txt

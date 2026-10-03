@@ -59,6 +59,7 @@ module p1_media_framebuffer_loader #(
     input  wire         sector_ready,
     input  wire         sector_din_valid,
     input  wire [7:0]   sector_din,
+    output wire         sector_consume_ready,
 
     // Frozen abstract write interface toward sdram_arbiter.
     output wire         mem_wr_valid,
@@ -70,6 +71,7 @@ module p1_media_framebuffer_loader #(
     output reg          done,
     output reg          ok,
     output reg          protocol_error,
+    output reg  [3:0]   protocol_detail,
     output reg          source_error,
     output reg          overflow,
 
@@ -109,6 +111,7 @@ module p1_media_framebuffer_loader #(
     wire [15:0] pixel_y;
 
     wire        pixel_ready;
+    wire        fifo_near_full;
     wire        writer_busy;
     wire        writer_done;
     wire        writer_ok;
@@ -127,6 +130,9 @@ module p1_media_framebuffer_loader #(
                               (({1'b0, frame_base} + FRAME_PIXELS) <= 22'd2097152);
 
     assign ready = !busy;
+    // Leave room for bytes already in the file/parser/pixel pipeline.
+    assign sector_consume_ready = !writer_issued || !writer_busy ||
+                                  pixels_done || !fifo_near_full;
 
     fat32_file_reader #(
         .SECTOR_BYTES(SECTOR_BYTES),
@@ -204,6 +210,7 @@ module p1_media_framebuffer_loader #(
         .pixel_x           (pixel_x),
         .pixel_y           (pixel_y),
         .pixel_ready       (pixel_ready),
+        .fifo_near_full    (fifo_near_full),
         .source_done       (pixels_done),
         .source_ok         (pixels_ok),
         .mem_wr_valid      (mem_wr_valid),
@@ -230,6 +237,7 @@ module p1_media_framebuffer_loader #(
             done                <= 1'b0;
             ok                  <= 1'b0;
             protocol_error      <= 1'b0;
+            protocol_detail     <= 4'd0;
             source_error        <= 1'b0;
             overflow            <= 1'b0;
         end else begin
@@ -237,8 +245,10 @@ module p1_media_framebuffer_loader #(
             writer_start <= 1'b0;
             done         <= 1'b0;
 
-            if (start && busy)
+            if (start && busy) begin
                 protocol_error <= 1'b1;
+                if (protocol_detail == 4'd0) protocol_detail <= 4'h9;
+            end
 
             if (start && !busy) begin
                 frame_base_latched <= frame_base;
@@ -248,6 +258,8 @@ module p1_media_framebuffer_loader #(
                 bad_metadata       <= !start_config_valid;
                 terminal_reported  <= 1'b0;
                 ok                 <= 1'b0;
+                protocol_error     <= 1'b0;
+                protocol_detail    <= 4'd0;
                 source_error       <= 1'b0;
                 overflow           <= 1'b0;
 
@@ -259,6 +271,7 @@ module p1_media_framebuffer_loader #(
                     done           <= 1'b1;
                     ok             <= 1'b0;
                     protocol_error <= 1'b1;
+                    protocol_detail <= 4'hA;
                     source_error   <= 1'b1;
                     terminal_reported <= 1'b1;
                 end
@@ -285,11 +298,14 @@ module p1_media_framebuffer_loader #(
                 if (pixel_valid && (!writer_issued || !pixel_ready)) begin
                     source_error   <= 1'b1;
                     protocol_error <= 1'b1;
+                    if (protocol_detail == 4'd0)
+                        protocol_detail <= !writer_issued ? 4'hB : 4'hC;
                 end
 
                 if (writer_overflow) begin
                     overflow     <= 1'b1;
                     source_error <= 1'b1;
+                    protocol_detail <= 4'hD;
                 end
 
                 // writer_done is a one-cycle pulse and can precede file_done:
@@ -314,8 +330,28 @@ module p1_media_framebuffer_loader #(
                                          !source_error && !writer_overflow;
                     if (!(file_ok && pixels_ok && writer_issued &&
                           (writer_finished ? writer_result_ok : writer_ok) &&
-                          !bad_metadata && !source_error && !writer_overflow))
+                          !bad_metadata && !source_error && !writer_overflow)) begin
                         source_error <= 1'b1;
+
+                        // Never leave a terminal loader failure as the ambiguous
+                        // legacy protocol-detail 0.  This is diagnostic metadata
+                        // only; it does not alter the file/pixel/write datapath.
+                        if (protocol_detail == 4'd0) begin
+                            protocol_error <= 1'b1;
+                            if (!file_ok)
+                                protocol_detail <= 4'h1; // FAT/file reader terminal failure
+                            else if (!pixels_ok)
+                                protocol_detail <= 4'h2; // BMP pixel decoder terminal failure
+                            else if (bad_metadata)
+                                protocol_detail <= 4'hA; // BMP geometry/metadata rejected
+                            else if (!writer_issued)
+                                protocol_detail <= 4'hB; // framebuffer writer never armed
+                            else if (!(writer_finished ? writer_result_ok : writer_ok))
+                                protocol_detail <= 4'hE; // writer terminal count/result mismatch
+                            else
+                                protocol_detail <= 4'hF; // other terminal consistency failure
+                        end
+                    end
                 end
             end
         end
