@@ -45,6 +45,8 @@ P1-05A 640×480 SDRAM→HDMI 仍作为已验证的源码/证据 rollback 基线�
 | M1ABC 验证/关闭记录 | `docs/develop_records/M1ABC_V5_VALIDATION.md` |
 | 双工程重构记录 | `docs/develop_records/M1_TWO_PROJECT_REORGANIZATION_20261001.md` |
 | M2 入口计划 | `docs/develop_records/M2_REAL_MEDIA_ENTRY.md` |
+| M2 真实 Master 控制回归 | `sim_tb/m1abc/run_m2_master_real_control_link.bat` |
+| M2 TF 真板出图 + Master 控制记录 | `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md` |
 
 工具链：Anlogic TD 6.2.1；仿真：QuestaSim 10.7c。
 
@@ -70,6 +72,33 @@ Slave HDMI_B 接显示器后，双板正常时：
 - Master/Slave `LED2` 应亮、`LED4` 应灭；activity LED 使用 toggle，肉眼可能表现为闪烁或较暗常亮。
 
 详细步骤见 `docs/develop_records/M1ABC_V5_VALIDATION.md`。
+
+## M2 真实 TF + Master 控制上板
+
+当前阶段仍由 **Slave HDMI** 显示真实 TF 图片；Master 只承担已经真板验证过的低速控制面。媒体像素仍不走 UART，高速数据面与最终 Master HDMI owner 留在后续 M2-B。
+
+两板断电后连接：
+
+```text
+Master J1-8  / FPGA J13 / TX -> Slave  J1-4  / FPGA F13 / RX
+Slave  J1-8  / FPGA J13 / TX -> Master J1-4  / FPGA F13 / RX
+Master J1-12 / GND            <-> Slave J1-12 / GND
+```
+
+不要互连两块板的 5 V。TF 卡插在 Slave。建议卡根目录准备至少 2 张、最好 4 张当前支持的 640×480 / 24-bit BI_RGB / 8.3 短文件名 BMP；如果 catalog 只有 1 张图，NEXT/PREV/轮播都会回绕到 image 0，因此画面看起来不会变化。
+
+Master 控制：
+
+- KEY2：NEXT；
+- KEY3：PREV；
+- KEY4：PLAY/PAUSE；
+- 默认自动轮播周期：5 s。
+
+本版 Slave 的 standalone fallback 只在上电/无 Master 时自动加载 image 0 **一次**。检测到 Master UART 控制链后，后续图片选择完全由 Master `OPEN(image_id)` 驱动，不再自动重载 image 0；如果 Master 请求的就是当前已完整显示的 image，则直接返回 DONE，不重复读取 TF。
+
+正常静止显示时，Slave 四灯预期为：LED1(catalog) 亮、LED2(busy) 灭、LED3(frame ready) 亮、LED4(fault) 灭；8 灯无 fault 时应回到 `0x81` build marker（LED6 + LED13）。
+
+详细记录见 `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md`。
 
 ## 1080P 双板设计原则
 

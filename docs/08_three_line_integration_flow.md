@@ -115,3 +115,9 @@ Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
 2026-10-04 状态更正：M2 Slave 的真实 TF/FAT32/BMP -> internal SDRAM -> 640×480 Slave HDMI 已取得本地图像 `[B] PASS`；但首版真实媒体 Dual-control 真板表现为周期闪动但图片不变，NEXT/PREV 多数不能完成切换，因此 **real-media 双板控制未通过**。DUALCTRL2 提出的 `OPEN -> ACCEPTED -> STATUS -> DONE` 完成门控在首次综合时又暴露 `source_valid` 未声明，FIX1 已做源码接口修复但尚无新的综合/Questa/真板证据。通过该门禁后才继续 M2-B0 高速媒体数据面。
 
 > 开发过程、验证记录、日志和截图不得直接新增到 `docs/` 根目录；统一放入 `docs/develop_records/`，其中原始证据放 `docs/develop_records/evidence/`。`docs/` 根目录只保留 01～08 的规范文档。
+## 2026-10-03 M2-A board gate update
+
+真实 TF 卡已经在 Slave 单板完成 `TF -> FAT32 -> 640×480 BMP -> internal SDRAM -> HDMI` 真板显示：烧录/复位后先黄色加载页，随后出现真实图片。无卡复位为红色错误页，插卡后复位可恢复。CMD17 end-bit `0x00 -> 0x01` 修复后首次取得该结果。
+
+当前下一门禁是 Dual-control：继续使用 M1 已真板验证的三线 UART（TX/RX/GND），Master 消费真实 `catalog_count` 并发送 `OPEN(image_id)`；Slave HDMI 暂时保留为可视输出。此门禁通过后才进入 M2-B source-synchronous 媒体数据面，不能把“Master 控制 Slave 本地 HDMI”写成完整 M2 双板媒体闭环。
+

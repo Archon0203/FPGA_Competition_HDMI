@@ -9,7 +9,7 @@ FPGA_Competition_HDMI_MASTER.al   # Master 主板
 FPGA_Competition_HDMI_SLAVE.al    # Slave 从板
 ```
 
-| 工程 | 当前 Top | 约束 | 当前 M1 作用 |
+| 工程 | 当前 Top | 约束 | 当前作用 |
 |---|---|---|---|
 | `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/*` | 按键、控制、双向 UART 控制面 |
 | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/*` | 当前 M2 Slave TF/BMP/SDRAM/诊断 HDMI 候选 |
