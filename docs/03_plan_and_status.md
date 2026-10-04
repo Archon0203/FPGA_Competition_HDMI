@@ -1,6 +1,6 @@
 # 03 · 计划与状态
 
-> **本文件是项目进度和证据状态的唯一权威。** 其他 README 或 develop record 与本文件冲突时，以本文件为准。
+> **本文件是项目进度、证据等级和“当前是否通过”的唯一权威。** 其他 README、三线计划或 `docs/develop_records/` 中的阶段记录若与本文冲突，以本文为准。开发记录可以保留当时的判断，但不得覆盖这里的当前状态。
 
 ## 1. 状态定义
 
@@ -9,18 +9,19 @@
 | `[U]` | 单模块 Questa/ModelSim 自检 PASS |
 | `[C-sub]` | 真实模块子链 PASS |
 | `[C]` | 阶段端到端 RTL chain PASS |
-| `[S]` | TD synthesis + P&R + timing 达标 |
-| `[B]` | 真板目标功能可观察 PASS |
+| `[S]` | 对**对应 active candidate** 完成 TD synthesis + P&R + final STA，setup/hold 达标 |
+| `[B]` | 对**对应 active candidate** 完成真板目标功能 PASS |
 | `[L]` | 长稳/压力/恢复 PASS |
-| `—` | 尚未取得该级证据，不等价于 FAIL |
+| `—` | 尚未取得该级证据；不等价于 FAIL |
+| `未通过` | 已有明确反例或板级现象，当前候选不能作为通过版本 |
 
-## 2. 文档维护约束
+证据不得跨候选继承。旧版本的 `[S]` 或 `[B]` 可以继续证明旧基线，但不能自动给后续修改后的 RTL/bitstream 升级状态。
 
-主要当前文档包括：
+## 2. 文档权威与目录纪律
+
+`docs/` 根目录只保留以下 8 份规范文档：
 
 ```text
-README.md
-STRUCTURE.md
 docs/01_architecture.md
 docs/02_implementation_goals.md
 docs/03_plan_and_status.md
@@ -31,293 +32,206 @@ docs/07_line_C_presentation_plan.md
 docs/08_three_line_integration_flow.md
 ```
 
-`docs/01~04` 是四份权威文档；`docs/05~08` 是三线计划与集成流程。M1ABC 验证、M2 入口计划以及所有阶段调试/候选实现/复盘统一放在 `docs/develop_records/`；`docs/olds/` 只读。
+职责固定为：
 
-双板重构后的计划仍以 `docs/01~04` 为架构、目标和状态权威，以 `docs/05~08` 为执行计划。双板、1080p 和板间链路属于主交付计划，除非取得对应 `[C]`、`[S]`、`[B]` 证据，不得写成已实现能力。
+- `01`：系统架构与最终职责边界；
+- `02`：目标与证据门槛；
+- `03`：唯一进度/证据状态权威；
+- `04`：场景与演示口径；
+- `05~07`：A/B/C 三线计划；
+- `08`：M0~M6 统一路线。
 
-## 3. 已收口基础证据
+开发过程、验证步骤、候选说明、复盘、日志和截图统一放入 `docs/develop_records/`；原始证据统一放入 `docs/develop_records/evidence/`；历史方案放入 `docs/olds/` 或 `docs/develop_records/`，且不得改写本文的当前状态。
 
-### P0
+两个指定的阶段入口记录是：
+
+```text
+docs/develop_records/M1ABC_V5_VALIDATION.md
+docs/develop_records/M2_REAL_MEDIA_ENTRY.md
+```
+
+## 3. 已关闭基线
+
+### 3.1 P0 Media Core
 
 ```text
 P0 full media chain [C] PASS(1698)
 ```
 
-### P1-02B SDRAM
+该证据继续作为文件流、BMP、framebuffer 抽象链的 RTL 基线。
 
-| 项目 | 状态 | 证据 |
+### 3.2 P1-02B SDRAM backend
+
+| 项目 | 状态 | 证据摘要 |
 |---|---|---|
 | `sdram_arbiter` | `[U]` | PASS(39) |
 | `sdram_adapter v0.4` | `[U]` | PASS(61) |
 | arbiter→adapter | `[C-sub]` | PASS(42) |
 | adapter→official APUG011→IS42 | `[C-sub]` | PASS(24) |
-| `p1_apug011_bist` | `[U]` | PASS(9) |
 | P1-02B TD backend | `[S]` | 150 MHz setup/hold 0 violation |
 
-P1-02B final WNS `+0.059 ns`。
+### 3.3 P1-04C HDMI baseline
 
-### P1-03/P1-04 HDMI
+`P1-04C HDMI_B` 已取得 `[B] PASS`，作为 HDMI rollback/golden boundary。P1-04A 720p candidate 的历史 STA FAIL 不用于描述当前能力。
 
-| 项目 | 状态 | 证据 |
+### 3.4 P1-05A internal SDRAM framebuffer baseline
+
+P1-05A 640×480 internal SDRAM framebuffer → HDMI_B 已关闭：
+
+```text
+TD6.2.1 routed [S] PASS
+SWNS +0.599 ns
+STNS 0.000 ns
+HWNS +0.003 ns
+HTNS 0.000 ns
+
+HX4S20C board [B] PASS
+```
+
+这是冻结的 rollback baseline。3 ps hold 裕量很小，因此只能表述为“该 routed 实现无违例”，不能表述为“时序裕量充足”。
+
+## 4. M1 双板控制基线
+
+M1ABC 使用临时拓扑“Master 控制 → Slave HDMI deterministic 页面”验证控制平面，不代表最终媒体数据面。
+
+已取得：
+
+```text
+115200 8N1 framed UART + CRC8              [C-sub][B] PASS
+M1ABC aggregate QuestaSim 10.7c            [C] PASS
+Master KEY2/KEY3/KEY4 控制 Slave 页面       [B] PASS
+```
+
+M1 的 `[B]` 只证明低速三线 UART 控制、角色 bitstream 和 mock/deterministic media-service 可视闭环。它**不证明**真实 TF 图片切换、source-synchronous 高速数据面或 1080p。
+
+M1 关闭记录以 `docs/develop_records/M1ABC_V5_VALIDATION.md` 为准。
+
+## 5. 当前节点：M2
+
+M2 的完整目标仍是：
+
+```text
+Slave TF/FAT32/BMP
+  -> media service
+  -> inter-board media data plane
+  -> Master RX/buffer/safe commit
+  -> Master HDMI
+```
+
+M2 **尚未关闭**。当前只完成了其中的“Slave 本地真实媒体子门禁”。
+
+### 5.1 已通过：Slave 本地真实 TF/BMP 第一图
+
+2026-10-03，修正 `sd_reader.v` 中 CMD17 command 尾字节的 end bit（`8'h00 -> 8'h01`）后，真板首次稳定显示 TF 卡内 640×480 BMP：
+
+```text
+TF -> SPI SD -> FAT32/catalog -> BMP
+   -> Slave SDRAM -> Slave 640×480 HDMI
+```
+
+板级现象：插卡并复位后先出现黄色加载页，随后出现真实 BMP；无卡复位进入红色 fault，重新插卡并复位可恢复。
+
+因此只记：
+
+```text
+M2-A local TF/BMP -> Slave HDMI [B] PASS
+```
+
+该 `[B]` 不等价于 M2 双板 `[B]`，也不证明多图切换/轮播已经通过。
+
+### 5.2 M2 时序与资源证据边界
+
+已归档的一次 M2 Slave routed 实现报告（早于 DIAG5/CMD17 修复和后续双板控制修改）为：
+
+```text
+SWNS +0.659 ns
+STNS 0.000 ns
+HWNS +0.014 ns
+HTNS 0.000 ns
+```
+
+同一阶段的 area 记录为：
+
+```text
+LUT      13133 / 19600 = 67.01%
+REG       7227 / 19600 = 36.87%
+BRAM9K      10 / 64
+BRAM32K       0 / 16
+```
+
+这组报告只证明当时对应 netlist 的实现状态，**不能作为 DIAG5、DUALCTRL、DUALCTRL2 或 FIX1 的 `[S]` 证据**。当前 FIX1 仍需重新 synthesis → P&R → final STA → BitGen 后才能记 `[S]`。
+
+资源分析记录显示 `line_buffer_pingpong` 是显著 LUT 消耗项；但资源优化属于后续任务，不能与当前控制正确性证据混写。本轮文档整理不改变任何 RTL。
+
+### 5.3 未通过：真实媒体双板切换/轮播
+
+第一次把 M1 控制接到真实 TF 媒体后，板上出现：
+
+- 自动播放约每几秒使画面闪/抖一次，但通常仍显示原图；
+- NEXT/PREV 多数只能造成画面扰动，不能稳定切换；
+- 取出 TF、等待、重新插卡后，按键曾能成功切换一次。
+
+因此：
+
+```text
+M2 real-media NEXT/PREV                 未通过
+M2 real-media PLAY/PAUSE + carousel     未通过
+M2 dual-control board gate              未通过
+```
+
+后续代码审查提出 `OPEN -> ACCEPTED` 被 Master 过早视为“整图完成”的问题，并形成 `OPEN -> ACCEPTED -> STATUS polling -> DONE` 的 DUALCTRL2 候选；但该候选首次综合又暴露 `source_valid` 未声明的接口错误。
+
+当前 FIX1 已在源码层补齐 `source_valid` 端口并连接到 `media_succeeded`，但**用户尚未提供 FIX1 重新综合、Questa 或真板结果**。因此当前 FIX1 只能记为“待验证候选”，不能写 PASS：
+
+```text
+DUALCTRL2 FIX1 compile/synthesis         —
+DUALCTRL2 FIX1 Questa                    —
+DUALCTRL2 FIX1 final STA                 —
+DUALCTRL2 FIX1 board switching           —
+```
+
+### 5.4 Slave TD 工程文件问题
+
+协作者从仓库主分支打开 `FPGA_Competition_HDMI_SLAVE.al` 时曾出现 TD6.2.1 “Unable to write the project file / Save As”。对上传仓库快照的比较发现，记录的 `origin/main` Slave 工程文件含 5 个重复 `<File Path=...>` 条目，而用户本机可打开版本无重复。
+
+这属于工程文件维护问题，不属于 M2 媒体功能 PASS。当前候选包使用去重 `.al`，并提供 `tools/check_td_project.py` 做重复路径/CRLF 检查；是否已合并回团队主分支仍由团队 Git 流程确认。
+
+## 6. M2 关闭门槛
+
+M2 只有同时满足以下条件才可关闭：
+
+1. `[C]`：真实 TF/FAT32/BMP 经完整双板媒体链到 Master 显示可复现；
+2. `[S]`：Master/Slave 对应最终 M2 candidate 均完成 TD6.2.1 final STA，setup/hold 0 violation；
+3. `[B]`：显示器接 Master HDMI，至少 4 张真实 BMP 可稳定 NEXT/PREV 与自动轮播；
+4. `[B]`：断链、错包、坏文件或重置时不提交半帧，能保持上一帧或 fallback；
+5. 控制命令必须以真实媒体事务完成为边界，不能把 UART ACK/`ACCEPTED` 当成整帧完成。
+
+当前状态：**以上 M2 汇合门槛均未全部满足。**
+
+## 7. 后续节点状态
+
+| 节点 | 目标 | 当前状态 |
 |---|---|---|
-| `hdmi_video_adapter` | `[U]` | PASS(24) |
-| line-buffer→adapter | `[C-sub]` | PASS(57) |
-| test pattern line provider | `[U]` | PASS(37) |
-| APUG092 protected behavior sim | TOOL_BLOCKED | protected-region simulator incompatibility |
-| P1-04C HDMI_B | `[B]` | 真板稳定八色条 |
+| M2 | 640×480 真实媒体双板第一闭环 | **进行中；local TF/BMP 子门禁 `[B] PASS`，双板切换未通过** |
+| M3 | source-synchronous 数据面达到 1080p packed-YUV422 等效持续吞吐；720p 仅作排错 | 未开始完整验收 |
+| M4 | Master 真实 1920×1080 静态图 + UI/OSD | 未完成 |
+| M5 | 视频、切换、转场、音频 | 未完成 |
+| M6 | 最终双板 1080p 长稳与故障恢复 | 未完成 |
 
-P1-04A 720p 75/375 MHz 为历史 STA FAIL；P1-04B 为 TD 可实现但 board 无 HDMI；P1-04C 对齐 official startup 后成为 HDMI golden baseline。
+当前没有任何证据允许对外表述“1080p 已支持”或“真实双板媒体链已通过”。
 
-## 4. P1-05A 状态
+## 8. 当前验证顺序
 
-### 4.1 目标
+在继续 M2 前按以下顺序收口，不并行引入新的资源优化：
 
-真实 EG4S20 internal SDRAM 固定 framebuffer → APUG011 → CDC/prefetch/line-buffer → HDMI_B。
+1. FIX1 重新跑 Slave/Master 源码分析与综合；
+2. 跑 real-media UART bridge / coordinator / dispatcher / media-write CDC 相关 Questa 回归；
+3. 两角色重新 P&R + final STA + BitGen；
+4. Slave-alone：确认单图加载后长期稳定，不周期性重载；
+5. Dual-control：暂停自动轮播，单步验证 `0 -> 1 -> 2 -> ...` 与 PREV；
+6. 再恢复自动轮播，确认“图片完成后计时”而不是“ACK 后计时”；
+7. 只有低速真实媒体控制稳定后，才继续 M2-B0 高速 source-synchronous PRBS/CRC/sequence 门禁。
 
-### 4.2 最终验证
+## 9. 更新纪律
 
-| 项目 | 状态 | 证据 |
-|---|---|---|
-| `p1_framebuffer_pattern_writer` | `[U]` | PASS(259) |
-| `p1_sdram_read_cdc_bridge` | `[U]` | PASS(13) |
-| `hdmi_framebuffer_scanout` | `[U]` | PASS(35) |
-| `p1_sdram_hdmi_pipeline` | `[C-sub]` | PASS(258) |
-| `p1_sdram_cached_adapter` | `[U]` | PASS(58), reads=8, app_reads=8, hits=6, misses=2 |
-| cached provider chain | `[C-sub]` | PASS(260), pixels=256, underflow=0 |
-| cached adapter + official APUG011 | `[C-sub]` | PASS(24) |
-| combined TD5.6.2 | `[S]` | 历史 closeout：0 setup / 0 hold, WNS +0.068 ns, WHS +0.131 ns |
-| TD6.2.1 routed final + BitGen | `[S]` | 2026-09-25 report：0 setup / 0 hold，SWNS +0.599 ns，HWNS +0.003 ns；bitstream 已生成 |
-| HX4S20C board | `[B]` | TD6.2.1 bitstream 已重新上板，framebuffer 稳定显示，无可见撕裂/抖动/移动黑线 |
-
-因此，当前证据应写为：
-
-```text
-P1-05A TD6.2.1 [S] PASS
-P1-05A TD6.2.1 [B] PASS
-```
-
-未取得 `[L]`，所以暂不声称长时间压力/掉电恢复等级。
-
-### 4.3 TD6.2.1 final timing
-
-```text
-Generated         2026-09-25 13:53:29
-STA coverage      99.17%
-Setup violations  0
-Hold violations   0
-SWNS              +0.599 ns
-STNS              0.000 ns
-HWNS              +0.003 ns
-HTNS              0.000 ns
-```
-
-| Clock | Target | R-Period | R-Freq | SWNS / HWNS |
-|---|---:|---:|---:|---:|
-| `u_hdmi_pll/u_pll.clkc[0]` | 25 MHz | 21.022 ns | 47.569 MHz | +9.489 / +0.003 ns |
-| `u_sdram_pll/pll_inst.clkc[1]` | 150.015 MHz | 5.914 ns | 169.090 MHz | +0.752 / +0.067 ns |
-| `hx4s20c_clk50m` | 50 MHz | 9.784 ns | 102.208 MHz | +10.216 / +0.648 ns |
-| `u_hdmi_pll/u_pll.clkc[1]` | 125 MHz | 6.802 ns | 147.016 MHz | +0.599 / +0.285 ns |
-
-**Timing caveat：当前硬件最小 hold 裕量为 +0.003 ns（3 ps）。P1-05A 是“当前 routed STA 无违例”，不是“时序裕量宽裕”。后续每次影响 active netlist 的修改必须重新 STA。**
-
-### 4.3A TD6.2.1 实现记录与 warning
-
-官方要求已将工具链切换至 TD6.2.1。此前 2026-09-17 的负 SWNS 是预优化历史结果：
-
-```text
-STA coverage 99.15%
-SWNS         -7.098 ns
-HWNS         +0.011 ns
-150 MHz SWNS -1.119 ns
-150 MHz HWNS +0.182 ns
-post-place LUT 7437 / 19600
-```
-
-其中 `-7.098 ns` 和 `-1.119 ns` 只用于说明优化前问题，不代表当前 2026-09-25 routed result。
-
-当前 source tree 已采用的优化：
-
-- production `p1_sdram_cached_adapter` 使用 `.ENABLE_RUNTIME_DIAGNOSTICS(0)`，将非数据通路的 debug counters / redundant assertions 从 150 MHz active cone 中剔除；默认参数仍为 `1`，因此现有 Questa 单测/集成 TB 不改变。
-- HDMI reset release 使用官方例程的 50 MHz rising edge；下降沿实验缩短了 125 MHz serial-domain recovery window，已恢复上升沿实现，功能时序仍保持约 20 ms reset hold。
-
-当前 TD6.2.1 已完成 `read_design → synthesis → P&R → final STA → BitGen`，并满足 `[S]`。但以下 warning 仍须保留在风险清单中：
-
-1. `u_internal_sdram` 的两个初始 location `(12, 12)`、`(164, 288)` 未被采用，ECO placement 移动了实例；
-2. 1 条时钟网使用 local routing resource，目标为 `u_sdram_pll/pll_inst.clkc[2] -> SDRAM_CLK`。
-
-这些 warning 当前没有形成 final STA violation；后续若修改 ADC/布局约束或时钟资源，必须重新生成 report 并重新评估。
-
-### 4.4 Current post-route resource
-
-```text
-LUT      7416 / 19600 = 37.84%
-REG      2554 / 19600 = 13.03%
-LE       7891
-DSP         1 / 29    = 3.45%
-BRAM9K     10 / 64    = 15.62%
-BRAM32K     0 / 16
-PLL         2 / 4     = 50.00%
-GCLK        2 / 16    = 12.50%
-IO          7 / 188   = 3.72%
-```
-
-TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.1 routed netlist。当前 LUT 约 37.84%，但 local clock routing warning 和 3 ps hold 裕量仍是实现风险。
-
-### 4.5 Board result
-
-最终画面：白色边框 + 红/绿/蓝/黄四象限 + 洋红竖条 + 青色横条，同时稳定存在。之前的三类 bring-up failure 已全部解决：
-
-```text
-八色 fallback     -> framebuffer 未进入显示
-全屏洋红          -> startup/prefetch protocol diagnostic
-移动彩色窄线      -> sustained provider bandwidth underflow
-```
-
-TD6.2.1 bitstream 已重新上板复测：白边、四象限、洋红竖条和青色横条均稳定显示，未观察到抖动、抽搐、撕裂或移动黑线。
-
-详细实现与调试过程见：`docs/develop_records/P1-05A_CLOSEOUT_20260912.md`。
-
-## 5. P1-05A 冻结事项
-
-默认冻结：
-
-- P1-04C HDMI_B pin/PLL/APUG092/PHY/reset/EDID；
-- 25↔150 MHz CDC 结构和 asynchronous clock-group SDC；
-- cached-adapter read cache；
-- registered write request slice；
-- `lb_fill_ready` prefetch scheduling invariant；
-- framebuffer scanout cadence。
-
-修改上述任一项，必须重新取得对应 lower-level regression、combined STA 和 board 证据。
-
-## 6. 当前主线：M1 → M2（P1-05B 双板第一闭环）
-
-目标：从板 TF/FAT32/BMP → media service → 板间 packet → 主板 buffer/HDMI，完成 P1-05B 图片能力并恢复安全的 A/B/frame-boundary 提交。
-
-P1-05B 的独立功能开发和 active top 集成进入条件已经满足；P1-05B 第一原则是**复用并保护已完成真板复测的 P1-05A display baseline**，先验证 TF/BMP 写入，不再次修改 HDMI low-level bring-up。
-
-### 6.0 双板与 1.4 计划状态
-
-```text
-主板 M：HDMI/APUG092、最终 raster、UI/OSD、缩放、转场、音频
-从板 S：TF/FAT32/BMP、vseq/视频预取、媒体缓存、帧/行/tile 生产
-```
-
-当前仓库已收敛为两个长期 TD6.2.1 工程：`FPGA_Competition_HDMI_MASTER.al` 与 `FPGA_Competition_HDMI_SLAVE.al`。两者共享唯一 `src/` RTL tree，并分别只加载 `constraints/master/`、`constraints/slave/`；P1-05A rollback 只保留源码与历史证据，不再保留第三个 `.al`。Master 仍为 `m1abc_master_control_top` 控制基线；Slave 为 `m2_slave_tf_hdmi_top`，接入官方 TF SPI 字节核心、FAT32/BMP loader、内部 SDRAM 和 640×480 HDMI 扫描路径。2026-10-03 真板已经确认：插入真实 TF 卡并复位/烧录后，画面先显示黄色加载页，随后稳定输出真实 640×480 BMP；无卡复位显示红色，插卡后再次复位可恢复。该结果记为 **M2-A Slave-alone real TF/BMP `[B] PASS`**，范围仅为 Slave 本地 HDMI，不代表 M2 双板媒体数据面完成。CMD17 命令 end-bit 修复（尾字节 `0x00 -> 0x01`）是本轮关键真板修复。最近已归档的 routed STA（DIAG4）为 SWNS `+0.659 ns`、STNS `0`、HWNS `+0.014 ns`、HTNS `0`；DIAG5/本控制集成修改后的新 STA 仍必须重新归档，不能自动继承 `[S]`。Master 动态 SDRAM/HDMI owner、source-synchronous 双板媒体数据面和真实 1080p HDMI profile 尚未接入最终主线。M1 最小控制面已完成独立两板验证：50 MHz、115200/8N1 GPIO UART，帧为 `0x55 0xA5 opcode length payload crc8`。正确物理映射已由真板确认：FPGA `J13` 是本板 TX、经 J1-8 引出；FPGA `F13` 是本板 RX、经 J1-4 引出；两板 J1-12 共地。该结果继续作为 **M1-B0 UART 控制链 `[B] PASS`**。
-
-`M1ABC-v5` 已完成真板可视化闭环：A 线 `m1a_uart_service_bridge` 把已验证 UART transport 接到 media-service contract；B 线提供 payload control frame、line packet/sequence/CRC16/PRBS/CDC 合同；C 线提供 coordinator、frame-boundary config CDC 与可视 pattern compositor。Master 的自动轮播以及 KEY2/KEY3/KEY4 能稳定改变 Slave 在 P1-04C 640×480 HDMI_B 上的 4 个 deterministic 页面，link/fault 视觉标记与 LED 状态均符合预期，因此记 **M1ABC board `[B] PASS`**。两个角色 TD6.2.1 工程均可综合并生成可上板 bitstream；M1ABC aggregate Questa 已再次得到 `Errors: 0, Warnings: 0`。最终 STA 报告尚未在本记录中归档，因此不把“BitGen 成功”自动升级成 `[S]`。
-
-两块 HX4S20C 的低速双向控制链已经真板验证；尚未验证的是 **source-synchronous 高速媒体数据面**。两块板之间继续按 40-pin DC3 GPIO 自定义连接规划：正式控制面候选为 SPI，媒体数据面为 source-synchronous GPIO；原理图未提供专用板间 SPI/高速串行接口。板载 USB 不能直接作为两 FPGA 之间的 USB 通道；USB-UART 适合连接电脑观察日志。当前只有杜邦线，因此 M1 先用三根 GPIO 杜邦线完成低速 UART `TX→RX/RX→TX/GND` 握手，之后再评审 SPI 和并行数据 pin map。千兆 Ethernet 暂作为调试/文件搬运后备，不作为首版原始 1080P60 数据面。
-
-M1 最小 UART 门禁与 M1ABC 双板可视化门禁均已实际通过。低速 UART 仍只承担控制面，不传媒体数据；高速 source-synchronous 媒体数据面的真板 PRBS/CRC/sequence 门禁现在成为 **M2-B0**，必须在真实媒体 packet 进入前完成。当前工作位置正式切换到 M2，详见 `docs/08_three_line_integration_flow.md`、`docs/develop_records/M1ABC_V5_VALIDATION.md` 与 `docs/develop_records/M2_REAL_MEDIA_ENTRY.md`。
-
-双板必须生成并单独验证两个 bitstream：`master_top + master ADC/SDC -> master.bit`，`slave_top + slave ADC/SDC -> slave.bit`。每次更换 Top、角色约束、板间 pin map 或时钟参数，都必须分别重新 synthesis、P&R、STA、BitGen；不得复制或混用另一角色的实现结果。
-
-### 6.1 2026-10-03 M2-A 真板出图与 M2-C 真实控制接管
-
-已取得的新增证据：
-
-| 项目 | 状态 | 证据 |
-|---|---|---|
-| Slave 真实 TF/FAT32/BMP -> internal SDRAM -> HDMI | `[B]` | 真板黄色加载页后输出真实 640×480 BMP |
-| 无卡故障页 / 插卡复位恢复 | `[B]` | 无卡复位红屏；插卡后复位恢复出图 |
-| DIAG4 Slave routed STA | `[S]`（历史相邻候选） | SWNS +0.659 ns / HWNS +0.014 ns / 0 setup / 0 hold |
-| DIAG5 CMD17 end-bit 修复 | `[B]` | 修复后首次取得真实卡出图；新 STA 尚待归档 |
-| Master->Slave real catalog/OPEN 控制 | `候选` | 本包接回已验证 UART coordinator；需双板真板复测 |
-
-真板成功后发现 Slave standalone fallback 会在每次 `media_done` 后再次自动 `OPEN(0)`，导致后续 Master 选图被抢回 image 0，并可触发残留 `0x3B` fault。当前集成已改为：上电/无 Master 时只自动加载 image 0 一次；一旦 `ctrl_link_seen`，后续 load 只接受 Master `OPEN(image_id)`；已显示的相同 image_id 会幂等 ACK，不重复读卡。Master 默认轮播周期从 2 s 调整为 5 s，以覆盖当前真实 TF 读取一张约 900 KiB BMP 的时间预算。
-
-这一阶段的双板控制仍属于 **Dual-control**：HDMI 仍接 Slave，UART 只传命令/状态，不传像素。M2 最终 `[C]/[B]` 关闭仍要求 source-synchronous 媒体数据面把真实帧送到 Master，并由 Master HDMI owner 安全提交。
-
-### M1 closeout 与当前节点 M2
-
-M1 的公共边界沿用并扩展已冻结契约：C 线在主板只通过 `media_cmd_valid/ready/image_id/mode` 表达用户媒体意图；A 线是唯一 `p1_media_framebuffer_loader` writer；B 线拥有写入 fence、`writer_done/writer_ok`、front/back metadata 与 `frame_boundary` swap。C 线不得直接驱动 loader、SDRAM、framebuffer base 或板间 GPIO。双板 SPI 控制面、source-synchronous GPIO 数据面、descriptor/packet、credit、CRC 和 CDC 也必须在 M1 冻结。
-
-需要特别区分两种依赖：C 的按键/旋钮/菜单/OSD/转场状态机可用 deterministic raster 和固定 catalog mock 开发；C 的真实选图范围、媒体类型、播放完成/错误必须消费 A 的 `catalog/descriptor/status`，C 的真实缩放、OSD 合成和转场验收必须消费 B 的 `canonical raster/frame_boundary/underflow`。M2 起，mock 只能作为回归源，不能作为双板完成证据。
-
-`src/app/media_command_controller.v` 已完成主板 C 线命令控制器，并由 QuestaSim 10.7c 单元回归验证 `PASS(52)`。它覆盖 `valid/ready` payload 保持、忙碌期间的选图意图合并、播放/暂停、轮播以及本地应急 UI 边界；`key_filter`、`sw_filter`、`menu_fsm`、`app_scenario`、`image_enhance`、`image_scaler`、`osd_overlay`、`transition` 的关联回归亦通过。
-
-2026-09-25 的 TD6.2.1 完整综合、布局布线和 BitGen 无 error。`FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 对 `p1_hx4s20c_sdram_hdmi_top` 报告 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0.000 ns`、HWNS `+0.003 ns`、HTNS `0.000 ns`，setup/hold violating endpoints 均为 0；bitstream 生成时间为 2026-09-25 13:53:33。
-
-该实现报告的 active top 尚未列入 `media_command_controller`，因此它证明的是冻结 P1-05A display baseline 的 TD 实现状态，不能替代新增 C 控制器的独立 Questa 证据，也不能宣称 P1-05B 已完成。M1 的公共契约仍在开发骨架和 mock 验证阶段；A loader -> B sink/manager 的真实写事务桥、一次 `start/done`、write fence 和 `pending_swap`，以及双板 packet 链路，仍未取得端到端集成 PASS。当前工作位置为 M1。
-
-M1A 从板媒体服务骨架已加入 `src/storage/m1a_*`：SPI Mode 0 字节 ingress、命令 CRC-16/CCITT 解码、provider 异步 FIFO CDC、deterministic catalog/descriptor/credit/mock line source，以及组合 shell。新增 `m1a_fat32_catalog` 将现有 `fat32_scan` 与 catalog table 接通；八个 QuestaSim 10.7c testbench 全部通过，受控 MBR/BPB/多扇区根目录 sector-stream 用例验证文件 descriptor 中的 cluster/size/FAT 与 data LBA base/SPC。scanner 可遍历根目录首簇内各扇区，但尚未跟随 FAT 链读取后续目录簇，真实 TF/SPI provider 也尚未连接。此证据仅为模块/受控 sector-stream `[U]/[C-sub]`；不含 B 线线上 packet sequence/CRC、GPIO 链路或 frame commit，也未进入 TD active top，不能记作 M1 汇合或双板完成。
-
-### P1-05B-01 写入侧媒体 loader — `[U] PASS`
-
-`p1_media_framebuffer_loader` 已将冻结的 P0 `fat32_file_reader -> bmp_parser/bmp_pixel_stream -> framebuffer_writer` 封装为 P1 150 MHz abstract SDRAM write source，并通过：
-
-```text
-fragmented FAT32 sector provider
- -> p1_media_framebuffer_loader
- -> sdram_arbiter
- -> p1_sdram_cached_adapter
- -> mock APUG011 application port
-```
-
-ModelSim 10.6d：
-
-```text
-PASS: p1_media_framebuffer_loader fragmented BMP -> cached APUG011 chain
-checks=225, app_writes=816
-```
-
-测试覆盖 17×12、24-bit BI_RGB、BGR/bottom-up、每行 1-byte padding、`data_offset=54` 与 FAT cluster `3 -> 7 -> EOC`，并检查每一个 provider memory word 的独立 RGB golden。P0 full chain 亦回归 `PASS(1698)`；cached adapter 单测回归 `PASS(58)`。
-
-此项仅为 `[U]`：当前 loader 未接入 active board top；真实 TF physical reader 到 150 MHz write domain 的 CDC/provider wrapper、640×480 真 BMP 写入、A/B frame swap、P1-05B active top 的 combined TD6.2.1 STA 及 board evidence 均未完成。当前 TD6.2.1 report 对应 P1-05A active top，不能作为 P1-05B 的实现证据。不得据此宣称 P1-05B 或 TF→HDMI 已完成。
-
-## 7. 2026-10-01 M1 双板控制链与 M1ABC 真板关闭记录
-
-已取得的控制链证据：
-
-```text
-9600 8N1 A5/5A minimal link                         [B] PASS
-115200 8N1 framed link, CRC8, opcodes 01..04         [C-sub][B] PASS
-Questa v4: masks=1111/1111, master_err=0, slave_err=0
-```
-
-真板三线固定为：
-
-```text
-Master J1-8 / J13 TX -> Slave J1-4 / F13 RX
-Slave  J1-8 / J13 TX -> Master J1-4 / F13 RX
-J1-12 GND <-> J1-12 GND
-```
-
-M1ABC 可视化集成已经真板通过。用户实际观察到：
-
-- Slave-alone 能稳定输出默认页面；
-- 双板连接后两板 link 状态正常、fault 熄灭；
-- Slave HDMI 页面按约 2 s 自动轮播；
-- Master KEY2/KEY3 能前后切页，KEY4 能暂停/恢复；
-- 左上 link 标记与页面切换均符合设计；
-- activity LED 使用 toggle，肉眼可能表现为闪烁或较暗常亮，这是预期表现。
-
-因此 M1ABC **board gate `[B] PASS`**。该验证使用临时拓扑“Master 控制 -> Slave HDMI”，只用于观察 A/B/C 集成；最终架构仍是 Slave 媒体生产、Master 1080p HDMI 输出。
-
-证据边界仍然严格：
-
-1. 本轮 M1ABC RTL 可以在 TD6.2.1 综合并生成并上板 bitstream，但最终 STA 数值尚未归档到本文件，不自动记 `[S]`；
-2. 上一验证包 `run_all.bat` 在用户环境未正常执行，本发布包已经重写脚本；aggregate 7 项 M1ABC Questa 需要补跑后再记完整 `[C]`；
-3. `hdmi_1080p_raster.v` 只冻结 1920×1080 / 2200×1125 canonical timing，不证明 148.5/742.5 MHz PLL/APUG092/board；
-4. M1 UART 只证明控制面，不证明 source-synchronous 高速媒体数据面。
-
-当前进入 M2，下一硬门禁是：**真实 TF/FAT32/BMP 在 Slave 产生 -> 高速/受控数据面 -> Master 端接收/缓存 -> Master HDMI 可视输出**。详见 `docs/develop_records/M2_REAL_MEDIA_ENTRY.md`。
-
-### 2026-10-03 M2 ABC RTL candidate
-
-Slave 侧 TF/SPI 扇区缓存、FAT32 catalog、BMP framebuffer loader、SDRAM 抽象读回/行 packet 源，以及 Master 侧 640 词 packet RX、back-buffer 写入/帧边界提交核心已经形成 RTL 候选。QuestaSim 10.7c 的受控 SPI 卡模型到 Master front 小规格闭环、640×480 BMP 全帧 307200 次写入、以及 480 行 packet 到 Master commit 的全尺寸子链均通过。坏 BMP、CRC、非法包长、反压和半帧保留 front 已覆盖。详细命令、结果及限制见 `docs/develop_records/M2_ABC_REAL_MEDIA_CANDIDATE_20261003.md`。这些证据只记 `[U]/[C-sub]`；Slave 工程现已切到 M2 本地 TF-to-HDMI 候选，Master 工程仍保留 M1 控制顶层。已有十一根杜邦线但宽媒体数据面尚未成为最终上板工程；真实 TF 卡、Master HDMI 和双板 `[S]/[B]` 均未完成，因此 **M2 尚未关闭**。
-
-### 2026-10-03 M2 Slave TF board feedback（历史过程，已被 DIAG5 真板结果取代）
-
-Slave 工程切换到 `m2_slave_tf_hdmi_top` 后，早期曾经历无卡黄屏、红黄循环和插卡持续红屏等失败现象。DIAG4 最终把问题稳定收敛为：黄色加载页后进入红色故障页，八灯组 LED6+LED10 对应诊断字节 `0x11`，即 FAT/catalog 扫描阶段的 `sector_error`。这段记录属于 **DIAG5 修复前的历史失败过程**，不再代表当前项目状态。
-
-该阶段还暴露了旧 SDC 丢失 APUG011 已验证 hard-macro 相位边界例外的问题。恢复 P1-05A 的受限 `clkc[1]↔clkc[2]` hard-macro 约束后，DIAG4 routed STA 已闭合：SWNS `+0.659 ns`、STNS `0`、HWNS `+0.014 ns`、HTNS `0`。因此旧的 `-7.098 ns` 报告仅保留为历史诊断证据，不再作为当前时序状态。
-
-### 2026-10-03 M2 TF DIAG5 真板关闭结果
-
-DIAG4 的 `0x11` 将问题定位到真实卡物理扇区读取。随后检查发现一个仿真模型此前没有约束到的真卡命令帧缺陷：CMD17 第 6 字节为 `8'h00`，导致 SD SPI 48-bit command 的 mandatory end bit 为 0。DIAG5 将其修正为 `8'h01`，同时检查 CMD55 的 R1，并让模拟卡断言 command end bit，避免后续再次出现“模型接受、真卡拒绝”的假 PASS。
-
-用户在 DIAG5 上完成真板复测后确认：**插入真实 TF 卡并烧录/复位，屏幕先显示黄色加载页，随后稳定出现真实 640×480 BMP 图片；无卡复位显示红色错误页，插卡后再次复位即可恢复。** 因此当前正式状态更新为 **M2-A Slave-alone TF→FAT32→BMP→internal SDRAM→Slave HDMI `[B] PASS`**。该结论只覆盖 Slave 本地媒体闭环，不包含 Slave→Master 高速媒体数据面。
-
-首次成功出图后仍观察到八灯组 `0x3B` 与四灯 fault 同时存在。代码审查确认这是另一个确定性控制缺陷：standalone fallback 在每次 `media_done` 后会再次自动 `OPEN(0)`，导致已经显示成功的 image 0 被反复重读，后续冗余事务可能失败而旧帧仍留在屏幕上。当前 Master-control 集成包已把 standalone 行为改为“一次上电只自动加载 image 0 一次”，检测到 Master 后完全交由 Master `OPEN(image_id)` 接管；对已经显示的相同 image_id 直接幂等返回 DONE，不再重复读卡。
+每次候选状态变化只在本文修改“当前状态”。`docs/develop_records/` 只追加过程记录，不回写成新的权威结论。任何 `[S]` 必须注明对应 Top/candidate/report；任何 `[B]` 必须注明实际板上目标现象。BitGen 成功、代码完成、静态接口检查或旧版本 PASS 均不得替代对应证据等级。

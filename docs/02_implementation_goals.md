@@ -1,5 +1,7 @@
 # 02 · 实现目标与验收边界
 
+> 本文定义目标和证据门槛，不作为当前进度日志。当前 PASS/未通过/待验证状态只以 `docs/03_plan_and_status.md` 为准。
+
 ## 1. 最终作品目标
 
 在 HX4S20C / EG4S20BG256 上实现无外部 CPU/MCU 的 HDMI 多媒体信息发布终端：
@@ -18,13 +20,14 @@ APUG092 HDMI video/audio
 HDMI display
 ```
 
-## 2. 当前已成立证据
+## 2. 稳定基线证据（非当前状态权威）
 
 - P0 media core：`[C] PASS(1698)`；
 - P1-02B APUG011 internal SDRAM backend：150 MHz `[S]`；
 - P1-04C HDMI_B：`[B] PASS`；
 - **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；TD6.2.1 真板 `[B] PASS`。**
-- **M1ABC 双板可视化控制闭环：115200 framed UART `[C-sub][B] PASS`，Master 控制 Slave HDMI 的 board gate `[B] PASS`；aggregate M1ABC Questa 与两角色 final STA 待补档。**
+- **M1ABC 双板可视化控制闭环：115200 framed UART 与 deterministic 页面真板门禁已通过；其用途是控制面基线，不代表真实媒体切换。**
+- **M2 已取得 Slave 本地真实 TF/FAT32/BMP 640×480 → Slave SDRAM → Slave HDMI 的板级子门禁；M2 双板切换/轮播与 Master-owned display 尚未通过。**
 
 ## 3. P1-05A 验收结果
 
@@ -68,9 +71,9 @@ BitGen       = PASS
 
 **Timing caution：150 MHz closure 只有约 68 ps setup margin。P1-05A 可以标 `[S]`，但后续不能把它当作宽裕的性能余量。任何影响 active design 的修改都需要重新 STA。**
 
-### 3.4 TD6.2.1 current routed result
+### 3.4 P1-05A TD6.2.1 routed result
 
-当前工具链为 TD6.2.1。2026-09-21 的 `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 已完成 routed final STA，Top 为 `p1_hx4s20c_sdram_hdmi_top`，coverage `99.17%`：
+P1-05A 的当前工具链基线为 TD6.2.1。2026-09-21 的 `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 已完成 routed final STA，Top 为 `p1_hx4s20c_sdram_hdmi_top`，coverage `99.17%`：
 
 ```text
 SWNS +0.599 ns    STNS 0.000 ns
@@ -100,7 +103,7 @@ GCLK        2 / 16     = 12.50%
 
 ## 4. P1-05B 媒体能力并入双板主线
 
-P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需能力，但按最终主从架构直接开发，不要求先完成独立单板闭环再开始双板。640×480 是双板第一闭环的媒体规格；P1-05A 保留为单板 rollback/display baseline。
+P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需能力，并最终按主从架构完成。640×480 是双板第一闭环的媒体规格；P1-05A 保留为单板 rollback/display baseline。当前已经通过的 Slave 本地 TF/BMP 显示只算 M2 子门禁，不等价于双板闭环。
 
 - TF card initialization / block read；
 - FAT32；
@@ -110,9 +113,7 @@ P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需
 - frame-boundary swap；
 - 手动/自动切图。
 
-当前第一项子证据：`p1_media_framebuffer_loader` 已 `[U] PASS`。它把 P0 FAT32/BMP/framebuffer writer 连接至 P1 cached APUG011 写后端的抽象接口；fragmented BMP provider-realistic chain 为 `PASS(225)`。该证据不包含真实 TF physical reader CDC、active board top、TD6.2.1 或真板显示。
-
-当前 `p1_media_framebuffer_loader` 仅 `[U] PASS(225)`。只有双板主线中真实 TF 图片经过从板媒体服务和板间数据面，在主板完成安全提交并取得真板证据后，才能对外表述“TF 图片经双板输出完成”。
+`p1_media_framebuffer_loader` 的历史模块证据为 `[U] PASS(225)`；此后真实 TF physical reader、FAT32/BMP 与 Slave SDRAM/HDMI 已取得一次板级本地显示 PASS。该本地 PASS 允许表述“Slave 本地 TF 图片显示成功”，但只有真实图片经过板间媒体数据面并由 Master 安全提交后，才能表述“TF 图片经双板输出完成”。
 
 ### P1-05B 验收约束
 
@@ -174,4 +175,4 @@ P1-05A rollback baseline 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI
 
 最终目标不变且不以 720p 作为交付：两块 HX4S20C、1920×1080 图片/视频、HDMI 音频、OSD/字幕、转场、缩放、实时参数和音频可视化。720p 从“必经 M3”降为可选诊断 profile；M3 直接验证宽链路持续吞吐和 1080p 148.5/742.5 MHz 物理可行性，M4 完成 1080p 静态媒体闭环。
 
-从 M1 起，每个节点必须先做 Master-alone 与 Slave-alone，再接控制链路，最后接数据/媒体链路。M1 可视化工程采用“Master 控制、Slave HDMI 输出”并已真板 PASS；该临时拓扑到此停止扩建。当前进入 M2，显示职责开始回到最终架构：Master HDMI、Slave 媒体生产。
+从 M1 起，每个节点必须先做 Master-alone 与 Slave-alone，再接控制链路，最后接数据/媒体链路。M1 可视化工程采用“Master 控制、Slave HDMI 输出”并已真板 PASS。M2 允许继续使用 Slave HDMI 作为真实媒体诊断出口，但 **M2 完整验收仍要求 Master 成为最终显示 owner**；不能把 Slave 本地显示写成双板闭环。

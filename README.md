@@ -2,18 +2,19 @@
 
 这是一个面向校园、园区信息发布和应急广播场景的 FPGA 多媒体终端。项目使用两块安路 HX4S20C / EG4S20BG256，目标是在不依赖外部 CPU/MCU 的前提下完成 TF/FAT32/BMP/视频帧序列读取、双板媒体传输、1920×1080 HDMI 视频/音频、OSD/字幕、缩放、转场、实时参数调节和音频可视化。
 
-## 当前状态（2026-10-03）
+## 当前状态（以 `docs/03_plan_and_status.md` 为唯一权威）
 
-当前已经完成 **M1：A/B/C 公共契约 + 双板可视化控制闭环**，并取得 **M2-A Slave-alone 真实 TF/BMP 真板出图**：
+当前节点为 **M2**。已确认的关键边界：
 
-- 9600 最小双向 UART：真板 PASS；
-- 115200 framed UART + CRC8 + 4 类命令/ACK：Questa `masks=1111/1111`，真板 PASS；
-- M1ABC 双板可视化：Master 的 KEY2/KEY3/KEY4 能真实控制 Slave HDMI 页面，自动轮播、暂停/恢复、前后切换均正常；
-- 2026-10-03：Slave 插入真实 TF 卡后，经历黄色加载页并稳定输出 640×480、24-bit BMP，确认 `TF -> SPI -> FAT32 -> BMP -> SDRAM -> HDMI` 单板链路真板 PASS；
-- 真板失败根因之一已确认并修复：CMD17 命令尾字节从 `0x00` 改为满足 SD SPI end-bit 的 `0x01`；
-- 当前包继续把真实 catalog/OPEN 接回 Master 控制面，并修复 Slave 重复自动 `OPEN(0)` 抢占选图的问题。
+- M1 115200 framed UART + deterministic 双板可视控制门禁已通过；
+- M2 已取得 **真实 TF/FAT32/BMP 640×480 -> Slave SDRAM -> Slave HDMI 的本地真板 PASS**；
+- 真实媒体双板 NEXT/PREV、PLAY/PAUSE、自动轮播 **尚未通过**。已观察到周期闪动但图片不变、按键多数不能完成切换；
+- DUALCTRL2 为修复“把 `ACCEPTED` 误当整图完成”的候选；FIX1 已补齐 `source_valid` 接口，但尚未取得用户侧重新综合/Questa/真板证据；
+- source-synchronous 高速媒体数据面、Master-owned 最终媒体显示和 1920×1080 均未完成。
 
-本轮 M1 为了让双板控制链可直接观察，临时采用 **Master 控制、Slave HDMI 显示**。这只是 bring-up profile，不改变最终职责：
+详细状态、证据等级和下一门禁只维护在 [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md)。开发过程和历史推断不覆盖该文件。
+
+最终职责仍保持：
 
 ```text
 Slave：TF/FAT32/BMP/vseq、媒体目录、预取、源缓存、line/tile packet 生产
@@ -21,9 +22,7 @@ Slave：TF/FAT32/BMP/vseq、媒体目录、预取、源缓存、line/tile packet
 Master：控制/状态、接收/CDC、line/tile buffer、缩放、OSD、转场、音频、1080P HDMI
 ```
 
-最终 HDMI owner 是 **Master**。Slave 的 HDMI 只保留为 M1 诊断/回退工程。M2 从真实 TF/BMP 双板第一闭环开始，把显示职责逐步切回 Master。
-
-> 1920×1080 HDMI 目前尚未取得真实 148.5 MHz pixel / 742.5 MHz serial 的 TD/STA/真板证据；`hdmi_1080p_raster.v` 只冻结 canonical raster。项目不会把当前 640×480 M1 可视化演示表述成 1080P 已完成。
+当前 Slave HDMI 仅作为 M2 本地真实媒体诊断出口，不代表最终显示职责发生变化。
 
 ## 当前工程入口
 
@@ -46,8 +45,6 @@ P1-05A 640×480 SDRAM→HDMI 仍作为已验证的源码/证据 rollback 基线�
 | M1ABC 验证/关闭记录 | `docs/develop_records/M1ABC_V5_VALIDATION.md` |
 | 双工程重构记录 | `docs/develop_records/M1_TWO_PROJECT_REORGANIZATION_20261001.md` |
 | M2 入口计划 | `docs/develop_records/M2_REAL_MEDIA_ENTRY.md` |
-| M2 真实 Master 控制回归 | `sim_tb/m1abc/run_m2_master_real_control_link.bat` |
-| M2 TF 真板出图 + Master 控制记录 | `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md` |
 
 工具链：Anlogic TD 6.2.1；仿真：QuestaSim 10.7c。
 
@@ -73,33 +70,6 @@ Slave HDMI_B 接显示器后，双板正常时：
 - Master/Slave `LED2` 应亮、`LED4` 应灭；activity LED 使用 toggle，肉眼可能表现为闪烁或较暗常亮。
 
 详细步骤见 `docs/develop_records/M1ABC_V5_VALIDATION.md`。
-
-## M2 真实 TF + Master 控制上板
-
-当前阶段仍由 **Slave HDMI** 显示真实 TF 图片；Master 只承担已经真板验证过的低速控制面。媒体像素仍不走 UART，高速数据面与最终 Master HDMI owner 留在后续 M2-B。
-
-两板断电后连接：
-
-```text
-Master J1-8  / FPGA J13 / TX -> Slave  J1-4  / FPGA F13 / RX
-Slave  J1-8  / FPGA J13 / TX -> Master J1-4  / FPGA F13 / RX
-Master J1-12 / GND            <-> Slave J1-12 / GND
-```
-
-不要互连两块板的 5 V。TF 卡插在 Slave。建议卡根目录准备至少 2 张、最好 4 张当前支持的 640×480 / 24-bit BI_RGB / 8.3 短文件名 BMP；如果 catalog 只有 1 张图，NEXT/PREV/轮播都会回绕到 image 0，因此画面看起来不会变化。
-
-Master 控制：
-
-- KEY2：NEXT；
-- KEY3：PREV；
-- KEY4：PLAY/PAUSE；
-- 默认自动轮播周期：5 s。
-
-本版 Slave 的 standalone fallback 只在上电/无 Master 时自动加载 image 0 **一次**。检测到 Master UART 控制链后，后续图片选择完全由 Master `OPEN(image_id)` 驱动，不再自动重载 image 0；如果 Master 请求的就是当前已完整显示的 image，则直接返回 DONE，不重复读取 TF。
-
-正常静止显示时，Slave 四灯预期为：LED1(catalog) 亮、LED2(busy) 灭、LED3(frame ready) 亮、LED4(fault) 灭；8 灯无 fault 时应回到 `0x81` build marker（LED6 + LED13）。
-
-详细记录见 `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md`。
 
 ## 1080P 双板设计原则
 
@@ -155,3 +125,12 @@ git commit -m "feat(m1): close dual-board ABC bring-up and enter M2"
 ## 2026-10-03 M2 TF DIAG3
 
 Current board-debug candidate restores the proven P1-05A SDRAM SDC exceptions, removes the DIAG2 wide debug counter, and exposes the raw media failure family by HDMI color plus the low nibble on LEDs. See `docs/develop_records/M2_TF_DIAG3_20261003.md`.
+
+
+## 2026-10-03 M2 TF local PASS / dual-control candidate
+
+真实 TF/FAT32/BMP 640×480 本地 HDMI 已取得真板 PASS。当前双板候选新增 `m2_open_dispatcher`，修复成功加载后无限重复 `OPEN(0)` 导致 Master 换图被覆盖的问题。Master 继续使用 KEY2=NEXT、KEY3=PREV、KEY4=PLAY/PAUSE 和约 2 s 自动轮播。详见 `docs/develop_records/M2_TF_LOCAL_PASS_AND_DUAL_CONTROL_20261003.md`。
+
+### 2026-10-04 M2 dual-control candidate
+
+真实 TF 首图路径保持真板 PASS。双板控制现改为“OPEN 只确认排队，Master STATUS 轮询直到 requested image 真正 DONE 后才允许下一条命令”，避免 2 s 轮播和按键在 TF 加载中覆盖请求。另已修复/规避 Git main 中 Slave `.al` 的 5 个重复 source-file entries，并提供 `tools/check_td_project.py` 检查 TD 工程文件。见 `docs/develop_records/M2_DUAL_CONTROL_COMPLETION_GATE_AND_TD_PROJECT_FIX_20261004.md`。

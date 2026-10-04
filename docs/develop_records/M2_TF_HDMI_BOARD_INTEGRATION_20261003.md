@@ -1,5 +1,8 @@
 # M2 TF to 640x480 HDMI integration, 2026-10-03
 
+> **开发过程/候选记录：保留当时的现象、推断和修复方案，不作为当前 PASS 状态权威。当前状态以 `docs/03_plan_and_status.md` 为准。**
+
+
 ## Implemented
 
 - Added `m2_slave_tf_hdmi_top`: Slave TF SPI pins feed the existing FAT32/24-bit BMP loader, the loader writes the 640x480 RGB frame to the internal APUG011 SDRAM path, and the existing 640x480 HDMI scanout switches to the completed frame at a frame boundary.

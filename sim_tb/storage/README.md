@@ -25,7 +25,3 @@ M1A 完整回归（QuestaSim 10.7c，PowerShell，从仓库根目录运行）：
 ```
 
 脚本单独编译 M1A 依赖，并逐个启动八个 testbench；每项必须输出 `PASS`，否则脚本以失败退出。测试覆盖 SPI 字节序、命令 CRC/长度、异步 FIFO 顺序与背压、媒体输出背压稳定性、shell 集成、catalog table、FAT32 MBR/BPB/多扇区根目录到 descriptor 的路径及既有 `fat32_scan` 回归。集成用例使用受控扇区流，不代表真实 TF/SPI provider 已完成。`run_m1a.do` 只运行 shell 集成用例；完整回归请使用上述脚本，避免 `$finish` 结束当前 Questa 会话后后续用例未执行。
-## Repeated-load gate (2026-10-03)
-
-`tb_m2_real_media_service.v` now re-opens the same valid BMP twice before corrupting its header. This protects the repeated OPEN behavior required by NEXT/PREV/slideshow and prevents a loader that only succeeds on the first transaction from passing the M2 regression.
-

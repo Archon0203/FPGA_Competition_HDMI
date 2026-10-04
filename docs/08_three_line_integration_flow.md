@@ -1,6 +1,6 @@
 # 三线统一集成流程图
 
-开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。图中箭头从项目开始指向最终交付，`M1` 已完成 A/B/C 双板可视化门禁，当前节点为 `M2`。
+开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。`M1` 已完成 deterministic 双板可视化控制门禁，当前节点为 `M2`。**M2 只完成 Slave 本地真实 TF/BMP 子门禁，真实媒体双板切换/轮播尚未通过；状态以 `docs/03_plan_and_status.md` 为准。**
 
 图例：绿色 = 已完成；黄色 = 当前节点/当前任务；白色 = 未完成；蓝色 = 三线汇合；紫色 = 双板 + 1080P 主线；A/B/C 使用不同边框颜色；实线 = 必须完成的真实依赖；点划线 = 可先用 mock、随后必须替换为真实接口的依赖；虚线 = rollback/fallback。C 线的 A/B 依赖专门画在每个节点旁，避免把“可独立写代码”误读成“可以脱离 A/B 完成验收”。
 
@@ -22,10 +22,10 @@ flowchart TD
     M1C --> M1E
 
     M1E --> V1["M1 板级验证门禁<br/>分别构建 master.bit / slave.bit<br/>J1-8→J1-4、J1-8←J1-4、GND↔GND<br/>GPIO UART 115200/8N1 framed control<br/>Master KEY2/KEY3/KEY4 → Slave HDMI 4 patterns<br/>复位后重新握手；[B] PASS"]
-    V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑 [C] PASS<br/>source-sync GPIO 高速媒体数据面仍需 P&R/STA/真板<br/>UART PASS 不等于媒体吞吐；[M2-B0 当前任务]"]
-    V2 --> M2A["M2 · A 线 · 当前<br/>✓ 真实 TF/SPI/FAT32/BMP Slave-alone 真板出图 [B]<br/>✓ 640×480 本地 SDRAM→Slave HDMI<br/>→ 多图 catalog/重复 OPEN/packet 输出继续验证"]
-    V2 --> M2B["M2 · B 线 · 当前<br/>B-S packet TX + B-M RX/FIFO<br/>write sink、front/back、dynamic read<br/>一次 start → fence → done"]
-    V2 --> M2C["M2 · C 线 · 当前<br/>真实 catalog/OPEN 接回 Master UART coordinator<br/>NEXT/PREV/PLAY-PAUSE + 5 s 轮播<br/>Slave standalone OPEN(0) 改为 one-shot<br/>→ 双板真板控制复测"]
+    V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑骨架已有 [U/C-sub] 仿真<br/>source-sync GPIO 高速媒体数据面仍需 P&R/STA/真板<br/>UART PASS 不等于媒体吞吐；[M2-B0 当前任务]"]
+    V2 --> M2A["M2 · A 线 · 当前<br/>✓ CMD17 end-bit 修复后真实 TF/FAT32/BMP<br/>✓ Slave 本地 640×480 HDMI 首图 [B] PASS<br/>→ 多图事务、packet/双板供给待完成"]
+    V2 --> M2B["M2 · B 线 · 当前<br/>Slave 本地 SDRAM/scanout 子链已有板级现象<br/>→ B-S packet TX + B-M RX/FIFO<br/>→ 高速 source-sync PRBS/CRC/sequence 与安全 commit 待完成"]
+    V2 --> M2C["M2 · C 线 · 当前<br/>M1 deterministic 控制 [B] PASS<br/>真实 TF NEXT/PREV/轮播板级未通过<br/>FIX1 完成语义候选待重新综合/仿真/上板"]
     M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>TF → 从板服务 → 板间 packet/loopback → 主板安全提交 → HDMI<br/>坏文件、短帧、CRC 错误不得污染 front；[未完成]"]
     M2B --> M2E
     M2C --> M2E
@@ -33,9 +33,9 @@ flowchart TD
     M2B -->|真实 raster/frame_boundary/health| M2C
 
     M2E --> M3A["M3 · A 线<br/>从板 SDRAM 预取、line/tile 切分<br/>credit 下连续 packet TX<br/>重试、超时、错误隔离"]
-    M2E --> M3B["M3 · B 线<br/>1280×720 link bring-up<br/>CDC/CRC/line-tile buffer/YUV-RGB<br/>underflow/fallback/STA"]
-    M2E --> M3C["M3 · C 线<br/>720p 输入适配与缩放<br/>链路状态、credit、CRC、错误 UI<br/>保留 640×480 fallback"]
-    M3A --> M3E["M3 汇合门禁 · 720p bring-up<br/>双板持续传输、无丢包/重包/CRC 错误、无 underflow<br/>720p 仅是链路门禁，不是最终验收；[未完成]"]
+    M2E --> M3B["M3 · B 线<br/>1080p packed-YUV422 等效持续吞吐<br/>CDC/CRC/line-tile buffer/YUV-RGB<br/>underflow/fallback/STA；720p 仅排错"]
+    M2E --> M3C["M3 · C 线<br/>1080p 等效输入适配/状态 UI<br/>链路状态、credit、CRC、错误 UI<br/>保留 640×480 fallback；720p 仅排错"]
+    M3A --> M3E["M3 汇合门禁 · 1080p 等效数据面压力<br/>持续传输、无丢包/重包/CRC 错误、无 underflow<br/>720p 仅允许作排错 profile；[未完成]"]
     M3B --> M3E
     M3C --> M3E
     M3A -->|媒体类型/帧数/完成状态| M3C
@@ -112,10 +112,6 @@ Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
 
 当前 M1 已按此方法完成控制面与可视化真板闭环：Master 的 KEY2/KEY3/KEY4 可通过 115200 framed UART 控制 Slave HDMI 的 4 个 deterministic pattern；Questa aggregate 回归也已通过。M2 从真实 TF/FAT32/BMP 与高速媒体数据面开始，最终 HDMI owner 按 `01_architecture.md` 回归 Master。
 
+2026-10-04 状态更正：M2 Slave 的真实 TF/FAT32/BMP -> internal SDRAM -> 640×480 Slave HDMI 已取得本地图像 `[B] PASS`；但首版真实媒体 Dual-control 真板表现为周期闪动但图片不变，NEXT/PREV 多数不能完成切换，因此 **real-media 双板控制未通过**。DUALCTRL2 提出的 `OPEN -> ACCEPTED -> STATUS -> DONE` 完成门控在首次综合时又暴露 `source_valid` 未声明，FIX1 已做源码接口修复但尚无新的综合/Questa/真板证据。通过该门禁后才继续 M2-B0 高速媒体数据面。
+
 > 开发过程、验证记录、日志和截图不得直接新增到 `docs/` 根目录；统一放入 `docs/develop_records/`，其中原始证据放 `docs/develop_records/evidence/`。`docs/` 根目录只保留 01～08 的规范文档。
-## 2026-10-03 M2-A board gate update
-
-真实 TF 卡已经在 Slave 单板完成 `TF -> FAT32 -> 640×480 BMP -> internal SDRAM -> HDMI` 真板显示：烧录/复位后先黄色加载页，随后出现真实图片。无卡复位为红色错误页，插卡后复位可恢复。CMD17 end-bit `0x00 -> 0x01` 修复后首次取得该结果。
-
-当前下一门禁是 Dual-control：继续使用 M1 已真板验证的三线 UART（TX/RX/GND），Master 消费真实 `catalog_count` 并发送 `OPEN(image_id)`；Slave HDMI 暂时保留为可视输出。此门禁通过后才进入 M2-B source-synchronous 媒体数据面，不能把“Master 控制 Slave 本地 HDMI”写成完整 M2 双板媒体闭环。
-

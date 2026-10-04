@@ -5,7 +5,7 @@
 //   KEY1/A2 : reset (rst_n)
 //   KEY2/B2 : next image
 //   KEY3/B1 : previous image
-//   KEY4/C1 : play/pause automatic 5 s rotation
+//   KEY4/C1 : play/pause automatic 2 s rotation
 //
 // The master owns C-line user intent/coordinator and drives the proven UART
 // control link. The slave owns the temporary M1 diagnostic HDMI output.
@@ -15,7 +15,7 @@
 module m1abc_master_control_top #(
     parameter integer UART_CLKS_PER_BIT = 434,
     parameter integer POR_CYCLES = 1_000_000,
-    parameter integer SLIDE_PERIOD_CLKS = 250_000_000,
+    parameter integer SLIDE_PERIOD_CLKS = 100_000_000,
     parameter integer DISCOVERY_INTERVAL_CYCLES = 5_000_000,
     parameter integer ACK_TIMEOUT_CYCLES = 2_500_000
 )(

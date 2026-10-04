@@ -27,6 +27,9 @@ module m2_real_media_uart_bridge (
     input  wire [7:0]  catalog_count,
     input  wire        source_busy,
     input  wire        source_done,
+    // Persistent indication that the most recently requested image has
+    // completed successfully.  source_done is only a pulse; source_valid
+    // keeps STATUS=DONE visible to the Master until the next OPEN begins.
     input  wire        source_valid,
     input  wire        source_error,
     input  wire [7:0]  source_error_code,
@@ -49,7 +52,7 @@ module m2_real_media_uart_bridge (
 
     wire [7:0] live_status = source_error ? `M1A_STATUS_ERROR :
                               source_busy  ? `M1A_STATUS_ACCEPTED :
-                              source_done  ? `M1A_STATUS_DONE :
+                              (source_done || source_valid) ? `M1A_STATUS_DONE :
                                              `M1A_STATUS_READY;
     wire [7:0] live_error = source_error ? source_error_code : 8'h00;
 
@@ -110,14 +113,6 @@ module m2_real_media_uart_bridge (
                                 fault <= 1'b1;
                                 queue_response(8'h81, `M1A_STATUS_ERROR,
                                                `M1A_ERR_BAD_IMAGE);
-                            end else if (source_valid && !source_busy && !source_error &&
-                                                 (rx_frame_payload[7:0] == selected_image_id)) begin
-                                // The Slave standalone profile may already have
-                                // image 0 on screen before Master discovery. Do
-                                // not needlessly re-read the same ~900 KiB BMP.
-                                // ACK the idempotent OPEN as already DONE.
-                                fault <= 1'b0;
-                                queue_response(8'h81, `M1A_STATUS_DONE, 8'h00);
                             end else begin
                                 // OPEN is acknowledged when queued, not when a
                                 // ~1 MB BMP has finished loading. The Master

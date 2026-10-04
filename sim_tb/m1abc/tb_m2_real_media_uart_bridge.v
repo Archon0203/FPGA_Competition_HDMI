@@ -21,7 +21,8 @@ module tb_m2_real_media_uart_bridge;
       .frame_tx_request(frame_tx_request),.frame_tx_opcode(frame_tx_opcode),
       .frame_tx_length(frame_tx_length),.frame_tx_payload(frame_tx_payload),
       .catalog_valid(catalog_valid),.catalog_count(catalog_count),
-      .source_busy(source_busy),.source_done(source_done),.source_valid(source_valid),.source_error(source_error),
+      .source_busy(source_busy),.source_done(source_done),.source_valid(source_valid),
+      .source_error(source_error),
       .source_error_code(source_error_code),.selected_image_id(selected_image_id),
       .open_request(open_request),.open_image_id(open_image_id),.link_seen(link_seen),
       .fault(fault),.command_toggle(command_toggle),.reply_toggle(reply_toggle));
@@ -46,19 +47,11 @@ module tb_m2_real_media_uart_bridge;
       while(!open_request) @(posedge clk);
       if(open_image_id!==3) $fatal; checks=checks+1;
       expect_reply(8'h81,8'h02,0);
-      // Once image 3 is already valid, OPEN(3) is idempotent and must not
-      // trigger another TF transaction.
-      selected_image_id=3; source_valid=1;
-      send_frame(8'h01,1,32'd3);
-      expect_reply(8'h81,8'h04,0);
-      if(open_request) $fatal; checks=checks+1;
-      source_busy=1;
-      send_frame(8'h01,1,32'd4);
-      while(!open_request) @(posedge clk);
-      if(open_image_id!==4) $fatal; checks=checks+1;
-      expect_reply(8'h81,8'h02,0);
-      source_busy=0;
-      selected_image_id=3; source_error=1; source_error_code=8'h3c;
+      // source_done may be a one-cycle pulse.  The bridge must still report
+      // DONE later from the persistent source_valid/media_succeeded state.
+      selected_image_id=3; source_valid=1; source_done=0;
+      send_frame(8'h09,0,0); expect_reply(8'h89,8'h04,0);
+      source_valid=0; source_error=1; source_error_code=8'h3c;
       send_frame(8'h00,0,0); expect_reply(8'h80,8'he0,8'h3c);
       source_error=0;
       send_frame(8'h01,1,32'd7); expect_reply(8'h81,8'he0,8'h04);

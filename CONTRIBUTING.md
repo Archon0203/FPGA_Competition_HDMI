@@ -19,7 +19,7 @@
 
 ### 集成与阶段规则
 
-1. `M0` 是已完成的 P0/P1-05A 基线；`M1` 是当前的双板 + 1080p 公共契约和开发骨架节点。P1-05B 作为 `M2` 的双板架构第一闭环，不单独开一条单板开发线。
+1. `M0` 是已完成的 P0/P1-05A 基线；`M1` deterministic 双板控制门禁已关闭；**当前节点为 `M2`**。P1-05B 作为 `M2` 的双板架构第一闭环。Slave 本地 TF/BMP 诊断 PASS 不等于 M2 双板完成。
 2. `M1` 的双板可视化控制闭环已经在真板通过；当前进入 `M2`。`M3` 直接以 1080p packed-YUV422 等效吞吐和 1080p PHY 可行性为硬门禁，1280×720 只允许作为故障隔离 profile，不能作为节点完成条件。
 3. 公共接口（`media_cmd`、descriptor/packet、板间链路、时钟/复位、显示提交等）由集成负责人先定义并冻结；接口变更必须先在 PR 中说明影响范围，再由集成负责人协调 A/B/C 三线同步修改。
 4. C 线可先用 deterministic raster、固定 catalog 和 PRBS mock 开发按键/旋钮/转轮/UI；真实选图范围、媒体类型、播放完成/错误必须接入 A 线 `catalog/descriptor/status`，真实缩放/OSD/转场验收必须接入 B 线 `canonical raster/frame_boundary/underflow`。mock 通过不等于双板集成通过。
@@ -52,7 +52,7 @@ M2~M6 顶层演进也沿用这两个 `.al`：可以修改其 `TOP_MODULE` 和 So
 4. 每个 src/ 模块必须有对应 sim_tb/tb_*.v，仿真输出 PASS；贴结果到 PR。
 5. 不提交生成物：*.bit、*.db、*.area、sim_work/ 产物、data/ 均不入库。
 6. 网络：连不上 GitHub 先配代理 git config http.proxy http://127.0.0.1:7890。
-7. 文档组织：`docs/01_architecture.md` ~ `docs/04_use_cases.md` 是四份权威文档；`docs/05_line_A_media_plan.md` ~ `docs/08_three_line_integration_flow.md` 是并列的三线计划与集成流程文档。旧版文档只留在 `docs/olds/`，不再更新；开发过程记录统一放 `docs/develop_records/`。
+7. 文档组织：`docs/` 根目录只保留 `01~08` 规范文档；其中 `docs/03_plan_and_status.md` 是**唯一进度/证据状态权威**。开发过程、验证步骤、阶段说明统一放 `docs/develop_records/`，原始日志/截图/报告统一放 `docs/develop_records/evidence/`；历史方案放 `docs/olds/` 或 `docs/develop_records/`，不得覆盖 `03` 的当前状态。
 
 ## 快速开始
 ```powershell

@@ -1,6 +1,6 @@
 # B 线计划：板间链路、缓冲与主板显示输出
 
-> 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；**720p 只保留为可选故障隔离 profile，不再是必经验收节点**，最终和中期硬门禁均围绕 1080P 等效数据率与真实 1080P HDMI 展开。P1-05A 只作为不可破坏的 rollback baseline。
+> 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；**720p 只保留为可选故障隔离 profile，不再是必经验收节点**。当前进度和 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。
 
 ## 1. 责任边界与当前状态
 
@@ -18,6 +18,9 @@ B-S 不拥有主板 front/back，也不读取 TF；B-M 不解析 FAT，也不建
 在没有 40-pin 排线时，M1 先使用三线 GPIO UART bring-up：`master TX -> slave RX`、`slave TX -> master RX`、`GND -> GND`，115200 baud、8N1、短控制帧。该测试只验证 bitstream 和 GPIO 通路；不能把 UART 的低带宽结果当作媒体链路吞吐，也不能因此取消后续 SPI/source-synchronous 数据面验证。
 
 已完成并冻结的基线：P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]` 和真板 `[B]`。该基线的 640×480 raster、HDMI PHY/PLL、CDC、prefetch 和 cadence 必须可随时回退。
+
+
+当前 M2 已证明 Slave 本地真实 TF/BMP 可以写入并显示，但这只验证了本地写入/读出子链，**没有证明 B-S→B-M 的高速媒体数据面、Master buffer commit 或多帧双板切换**。这些仍是 M2-B 的未完成门禁。
 
 ## 2. 文件所有权
 
@@ -118,7 +121,7 @@ C 可以在 M1 用 deterministic raster 或 PRBS mock 编写处理链；M2 的 p
 | 统一节点 | B 线任务 | B 线完成证据 |
 |---|---|---|
 | `M0` | 回归 P1-05A cached adapter、CDC、prefetch、line buffer、HDMI cadence；固定 pattern 可回退 | 既有 `[C-sub]/[S]/[B]` 证据保持通过 |
-| `M1`（board gate 已通过） | 三线 GPIO UART 已完成真板双向 115200 控制链；冻结 payload control frame、line packet/sequence/CRC16、PRBS selftest、canonical 1080p raster；提供 M1ABC Master/Slave 两角色 Top | UART `masks=1111/1111` + 真板 link 已通过；新 M1ABC 双板可视控制已真板 PASS；aggregate Questa 脚本已修复待补跑；packet/1080p contract 仍不是物理高速链路证据 |
+| `M1`（board gate 已通过） | 三线 GPIO UART 已完成真板双向 115200 控制链；冻结 payload control frame、line packet/sequence/CRC16、PRBS selftest、canonical 1080p raster；提供 M1ABC Master/Slave 两角色 Top | UART `masks=1111/1111` + 真板 link 已通过；新 M1ABC 双板可视控制已真板 PASS；aggregate Questa 已补证 PASS；packet/1080p contract 仍不是物理高速链路证据 |
 | `M2`（当前） | 完成 640×480 第一媒体闭环，并在任何真实媒体 packet 之前完成 source-synchronous 物理 PRBS/CRC/sequence 门禁；B-S packet TX、B-M RX/FIFO/line buffer、write sink、front/back 和动态 read wrapper | 各板先本地压力；再双板低速→高速 PRBS；真实 A packet 可写入 back；一次 start/done；失败不污染 front；C pass-through 能观察真实状态 |
 | `M3` | 完成 **1080p packed-YUV422 等效吞吐**的双板链路压力：credit、line/tile buffer、YUV/RGB、underflow/fallback；720p 仅在排错时可选 | 持续 payload ≥1080p60 active 需求，CRC/sequence/underflow 门禁通过；记录最大稳定 link clock 和余量 |
 | `M4` | 完成主板 1920×1080 HDMI profile、148.5 MHz pixel/742.5 MHz serial 预算、1080p line/tile scanout | 1080p 静态图 RTL、P&R、STA 和真板证据 |

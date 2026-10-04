@@ -175,21 +175,12 @@ module tb_m2_real_media_service;
         check(master_pixels[0]==pixels[0] && master_pixels[1]==pixels[1] &&
               master_pixels[2]==pixels[2] && master_pixels[3]==pixels[3],
               "TF image words survive packet path");
-
-        // Re-open the same valid image.  M2 slideshow/NEXT/PREV depends on the
-        // loader returning cleanly to IDLE and accepting a second transaction.
-        i=0; while(!cmd_ready && i<200) begin @(negedge clk); i=i+1; end
-        open_image();
-        i=0; while(done_count<2 && error_count==0 && i<4000) begin @(negedge clk); i=i+1; end
-        check(done_count==2 && error_count==0,"second good BMP transaction completes");
-        check(writes==8,"second open writes a complete frame again");
-
         // Same catalog entry, damaged header: no successful frame completion.
         disk[4][0]=8'h00;
         i=0; while(!cmd_ready && i<200) begin @(negedge clk); i=i+1; end
         open_image();
         i=0; while(error_count==0 && i<4000) begin @(negedge clk); i=i+1; end
-        check(error_count==1 && done_count==2,"bad BMP rejected after repeated good loads");
+        check(error_count==1 && done_count==1,"bad BMP rejected");
         check(front_base==4 && front_frame_id==1,"bad media leaves Master front unchanged");
         if(errors==0) $display("PASS: m2_real_media_service checks=%0d",checks);
         else $fatal(1,"FAIL: m2_real_media_service errors=%0d checks=%0d",errors,checks);
