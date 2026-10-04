@@ -1,4 +1,8 @@
-# 10 · M2 真实媒体双板第一闭环入口
+# M2 真实媒体双板第一闭环入口
+
+> **记录性质：M2 入口/执行记录，不是当前状态权威。当前状态只看 `docs/03_plan_and_status.md`。**
+> 2026-10-04 更新：Slave 本地真实 TF/BMP 首图已经真板通过；真实媒体双板 NEXT/PREV/轮播仍未通过，DUALCTRL2 FIX1 尚待重新综合、仿真和上板。
+
 
 ## 1. M2 的唯一目标
 
@@ -135,3 +139,23 @@ M2  640×480 real-media dual-board first loop
 ```
 
 720p 只用于诊断，不作为最终或必经节点。
+
+
+## 7. 2026-10-04 执行状态更正
+
+M2 入口目标没有改变，但执行过程中先取得了一个必要的 Slave-alone 子门禁：
+
+```text
+TF -> SPI SD -> FAT32/catalog -> BMP -> Slave SDRAM -> Slave 640×480 HDMI
+```
+
+CMD17 command 尾字节固定 end bit 由 `8'h00` 修正为 `8'h01` 后，插卡复位可以从黄色加载页进入真实 BMP；无卡复位进入 fault。该现象只记为 **local `[B] PASS`**，不能把 M2 整体关闭。
+
+随后将 M1 控制面接入真实媒体时，真板出现“约每几秒画面扰动但图片不变、NEXT/PREV 多数不能稳定切换”的反例。由此确认：
+
+- `OPEN/ACCEPTED` 只能表示命令已排队，不能表示整张图片完成；
+- real-media NEXT/PREV/PLAY/PAUSE/carousel 当前不得写 PASS；
+- DUALCTRL2 的 STATUS/DONE 完成门控属于修复候选；
+- FIX1 补齐 `source_valid` 接口后仍需重新取得编译、Questa、final STA 和真板证据。
+
+M2 只有在真实 TF 图片经双板媒体数据面到 Master，并在 Master HDMI 上稳定切换/轮播后才能关闭。

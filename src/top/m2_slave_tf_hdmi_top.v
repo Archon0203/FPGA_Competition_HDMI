@@ -115,8 +115,8 @@ module m2_slave_tf_hdmi_top (
     // ============================================================
     // TF media service and framebuffer writer (25 MHz media domain)
     // ============================================================
-    reg  media_cmd_valid;
-    reg  [7:0] media_cmd_image_id;
+    wire media_cmd_valid;
+    wire [7:0] media_cmd_image_id;
     reg        media_load_toggle;
     reg  frame_ready_sdr;
     reg  frame_write_error;
@@ -141,7 +141,6 @@ module m2_slave_tf_hdmi_top (
     wire        mem_wr_ready;
     wire        media_rst_n = pix_rst_n && rst_n;
     reg         media_started;
-    reg         media_load_requested;
     reg         media_failed;
     reg  [7:0]  media_failure_code;
     reg  [7:0]  media_sector_failure_detail;
@@ -149,10 +148,6 @@ module m2_slave_tf_hdmi_top (
     reg         media_scan_start;
     reg         media_retrying;
     reg  [24:0] media_retry_count;
-    // Standalone fallback is intentionally one-shot.  It gets image 0 onto
-    // HDMI when no Master is connected, but must never re-open image 0 after
-    // a completed load and fight the remote NEXT/PREV/slideshow controller.
-    reg         standalone_boot_load_done;
 
     // ============================================================
     // M2 C/A control integration over the already-proven UART link.
@@ -172,10 +167,23 @@ module m2_slave_tf_hdmi_top (
     wire [31:0] ctrl_tx_payload;
     wire remote_open_request;
     wire [7:0] remote_open_image_id;
+    reg  frame_ready_media_ff1;
+    reg  frame_ready_media_ff2;
     wire ctrl_link_seen, ctrl_fault, ctrl_command_toggle, ctrl_reply_toggle;
     reg  [7:0] selected_image_id;
-    reg        queued_open_valid;
-    reg  [7:0] queued_open_image_id;
+
+    // Synchronize the SDRAM-domain publish state back into the media domain.
+    // After a successful media transaction, the next OPEN is held until the
+    // previous frame is fully fenced in SDRAM.
+    always @(posedge pixel_clk or negedge media_rst_n) begin
+        if (!media_rst_n) begin
+            frame_ready_media_ff1 <= 1'b0;
+            frame_ready_media_ff2 <= 1'b0;
+        end else begin
+            frame_ready_media_ff1 <= frame_ready_sdr;
+            frame_ready_media_ff2 <= frame_ready_media_ff1;
+        end
+    end
 
     db_uart_rx #(.CLKS_PER_BIT(217)) u_m2_uart_rx (
         .clk(pixel_clk), .rst_n(media_rst_n), .rx(uart_rx),
@@ -194,6 +202,12 @@ module m2_slave_tf_hdmi_top (
         .opcode(ctrl_tx_opcode), .length(ctrl_tx_length), .payload(ctrl_tx_payload),
         .uart_ready(uart_byte_ready), .uart_start(uart_byte_start),
         .uart_data(uart_byte_tx_data), .busy(ctrl_tx_busy));
+    wire       dispatch_cmd_valid;
+    wire [7:0] dispatch_cmd_image_id;
+    wire       dispatch_cmd_is_remote;
+    wire       dispatch_bootstrap_issued;
+    wire       dispatch_remote_queued;
+
     m2_real_media_uart_bridge u_m2_real_ctrl (
         .clk(pixel_clk), .rst_n(media_rst_n),
         .rx_frame_valid(ctrl_rx_frame_valid), .rx_frame_opcode(ctrl_rx_frame_opcode),
@@ -204,11 +218,37 @@ module m2_slave_tf_hdmi_top (
         .frame_tx_payload(ctrl_tx_payload), .catalog_valid(media_catalog_valid),
         .catalog_count(media_catalog_count), .source_busy(media_busy),
         .source_done(media_done), .source_valid(media_succeeded),
-        .source_error(media_failed), .source_error_code(media_failure_code),
-        .selected_image_id(selected_image_id),
+        .source_error(media_error),
+        .source_error_code(media_error_code), .selected_image_id(selected_image_id),
         .open_request(remote_open_request), .open_image_id(remote_open_image_id),
         .link_seen(ctrl_link_seen), .fault(ctrl_fault),
         .command_toggle(ctrl_command_toggle), .reply_toggle(ctrl_reply_toggle));
+
+    // One-shot standalone bootstrap + Master-owned selection after startup.
+    // This prevents the old behavior where every completed image immediately
+    // triggered another automatic OPEN(0), which masked Master NEXT/PREV and
+    // could produce a later 0x3B fault after an otherwise successful display.
+    m2_open_dispatcher u_m2_open_dispatcher (
+        .clk                  (pixel_clk),
+        .rst_n                (media_rst_n),
+        .catalog_valid        (media_catalog_valid),
+        .catalog_count        (media_catalog_count),
+        .cmd_ready            (media_cmd_accept_ready),
+        .remote_open_request  (remote_open_request),
+        .remote_open_image_id (remote_open_image_id),
+        .catalog_restart      (media_scan_start),
+        .cmd_valid            (dispatch_cmd_valid),
+        .cmd_image_id         (dispatch_cmd_image_id),
+        .cmd_is_remote        (dispatch_cmd_is_remote),
+        .bootstrap_issued     (dispatch_bootstrap_issued),
+        .remote_queued        (dispatch_remote_queued)
+    );
+
+    wire media_cmd_accept_ready = media_cmd_ready &&
+                                  (!media_succeeded || frame_ready_media_ff2);
+    assign media_cmd_valid    = dispatch_cmd_valid && media_cmd_accept_ready;
+    assign media_cmd_image_id = dispatch_cmd_image_id;
+    wire dispatch_fire = dispatch_cmd_valid && media_cmd_accept_ready;
 
     m2_slave_tf_media_core #(.SPI_CLK_DIV(4), .SPI_INIT_CLK_DIV(32),
                              .SPI_MODE3(1),
@@ -257,14 +297,9 @@ module m2_slave_tf_hdmi_top (
 
     always @(posedge pixel_clk or negedge media_rst_n) begin
         if (!media_rst_n) begin
-            media_cmd_valid <= 0;
-            media_cmd_image_id <= 0;
             media_load_toggle <= 0;
             selected_image_id <= 0;
-            queued_open_valid <= 0;
-            queued_open_image_id <= 0;
             media_started <= 0;
-            media_load_requested <= 0;
             media_failed <= 0;
             media_failure_code <= 0;
             media_sector_failure_detail <= 0;
@@ -272,70 +307,46 @@ module m2_slave_tf_hdmi_top (
             media_scan_start <= 0;
             media_retrying <= 0;
             media_retry_count <= 0;
-            standalone_boot_load_done <= 1'b0;
         end else begin
-            media_cmd_valid <= 0;
             media_scan_start <= 0;
 
-            // Keep one remote OPEN queued while TF/FAT/BMP is busy. The UART
-            // response is immediate, so the Master never blocks on card I/O.
-            // Seeing the real control plane permanently disables the one-shot
-            // standalone autoload until the next board reset.
-            if (ctrl_link_seen)
-                standalone_boot_load_done <= 1'b1;
-            if (remote_open_request) begin
-                queued_open_valid <= 1'b1;
-                queued_open_image_id <= remote_open_image_id;
-                standalone_boot_load_done <= 1'b1;
-            end
+            if (media_busy || media_catalog_valid)
+                media_started <= 1'b1;
 
-            if (media_busy || media_catalog_valid) media_started <= 1;
+            // No-card / media-failure recovery remains autonomous.  A retry
+            // rebuilds the catalog and re-arms exactly one bootstrap OPEN(0)
+            // through m2_open_dispatcher.
             if (media_failed && !media_busy && !media_succeeded) begin
                 if (media_retry_count == 25'd24999999) begin
                     media_retry_count <= 0;
-                    media_scan_start <= 1;
-                    media_retrying <= 1;
-                    media_load_requested <= 0;
-                end else media_retry_count <= media_retry_count + 1'b1;
-            end else media_retry_count <= 0;
-
-            if (media_cmd_ready) begin
-                if (queued_open_valid) begin
-                    media_cmd_image_id <= queued_open_image_id;
-                    media_cmd_valid <= 1'b1;
-                    media_load_toggle <= ~media_load_toggle;
-                    queued_open_valid <= 1'b0;
-                    media_load_requested <= 1'b1;
-                    media_succeeded <= 1'b0;
-                    media_failed <= 1'b0;
-                    media_failure_code <= 0;
-                    media_sector_failure_detail <= 0;
-                end else if (!media_scan_start && (!media_failed || media_retrying) &&
-                             !media_load_requested && !standalone_boot_load_done &&
-                             !ctrl_link_seen) begin
-                    if (media_catalog_count != 0) begin
-                        // Standalone board behavior: load image 0 exactly once
-                        // after reset/card recovery.  After that, keep the current
-                        // framebuffer until a Master OPEN arrives.
-                        media_cmd_image_id <= 8'd0;
-                        media_cmd_valid <= 1'b1;
-                        media_load_toggle <= ~media_load_toggle;
-                        media_load_requested <= 1'b1;
-                        standalone_boot_load_done <= 1'b1;
-                    end else if (media_catalog_valid) begin
-                        media_failed <= 1;
-                        media_failure_code <= 8'h20;
-                    end
+                    media_scan_start <= 1'b1;
+                    media_retrying <= 1'b1;
+                end else begin
+                    media_retry_count <= media_retry_count + 1'b1;
                 end
+            end else begin
+                media_retry_count <= 0;
             end
+
+            // The dispatcher is the only normal source of OPEN commands.
+            // Before a Master is attached it emits one bootstrap OPEN(0); after
+            // that, only queued remote OPEN requests can generate new loads.
+            if (dispatch_fire) begin
+                media_load_toggle <= ~media_load_toggle;
+                media_succeeded <= 1'b0;
+                media_failed <= 1'b0;
+                media_failure_code <= 0;
+                media_sector_failure_detail <= 0;
+            end
+
+            if (media_catalog_valid && (media_catalog_count == 0)) begin
+                media_failed <= 1'b1;
+                media_failure_code <= 8'h20;
+            end
+
             if (media_error) begin
-                media_failed <= 1;
-                media_retrying <= 0;
-                media_load_requested <= 0;
-                // With no Master present, a failed standalone transaction may
-                // retry scan and then perform one new boot load after recovery.
-                if (!ctrl_link_seen)
-                    standalone_boot_load_done <= 1'b0;
+                media_failed <= 1'b1;
+                media_retrying <= 1'b0;
                 media_failure_code <= media_error_code;
                 // Capture physical-SD detail in the same cycle as the
                 // service-level 0x11/0x14 error before the sector provider
@@ -343,12 +354,12 @@ module m2_slave_tf_hdmi_top (
                 if (media_error_code == 8'h11 || media_error_code == 8'h14)
                     media_sector_failure_detail <= media_sector_error_detail;
             end
+
             if (media_done) begin
                 selected_image_id <= media_cmd_image_id;
-                media_succeeded <= 1;
-                media_failed <= 0;
-                media_retrying <= 0;
-                media_load_requested <= 0;
+                media_succeeded <= 1'b1;
+                media_failed <= 1'b0;
+                media_retrying <= 1'b0;
                 media_failure_code <= 0;
                 media_sector_failure_detail <= 0;
             end

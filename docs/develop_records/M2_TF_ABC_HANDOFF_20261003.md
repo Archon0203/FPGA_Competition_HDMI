@@ -1,5 +1,8 @@
 # M2 TF/BMP 640x480 ABC handoff — 2026-10-03
 
+> **开发过程/候选记录：保留当时的现象、推断和修复方案，不作为当前 PASS 状态权威。当前状态以 `docs/03_plan_and_status.md` 为准。**
+
+
 ## Goal of this handoff
 
 This patch keeps the current M2 board-first gate deliberately narrow:

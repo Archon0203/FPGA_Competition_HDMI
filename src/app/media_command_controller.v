@@ -60,7 +60,9 @@ module media_command_controller #(
     wire manual_next = catalog_active && catalog_usable && !emergency && key_event[1];
     wire manual_prev = catalog_active && catalog_usable && !emergency &&
                        !key_event[1] && key_event[2];
+    wire command_idle = media_cmd_ready;
     wire auto_advance = catalog_active && catalog_usable && play_en && !emergency &&
+                        command_idle &&
                         !key_event[0] && !key_event[3] && !key_event[1] && !key_event[2] &&
                         (slide_counter == SLIDE_PERIOD_CLKS - 1);
     wire selection_request = manual_next || manual_prev || auto_advance || catalog_rebased;
@@ -145,7 +147,7 @@ module media_command_controller #(
                 if (manual_next || manual_prev || auto_advance || catalog_rebased ||
                     !play_en || emergency || key_event[0] || key_event[3]) begin
                     slide_counter <= {TIMER_WIDTH{1'b0}};
-                end else begin
+                end else if (command_idle) begin
                     slide_counter <= slide_counter + 1'b1;
                 end
 

@@ -1,16 +1,16 @@
 # 01 · 系统架构（P0 → P4）
 
-> 本文是当前架构权威。功能与真板基线为 P1-05A internal SDRAM framebuffer → HDMI_B；当前 active top 已在 TD6.2.1 完成 routed STA/BitGen，并已重新上板稳定显示。P1-04C 继续作为 HDMI rollback baseline。
+> 本文只定义系统架构、最终职责边界和长期冻结接口，不维护日常进度。**所有当前 PASS/未通过/待验证状态只以 `docs/03_plan_and_status.md` 为准。** P1-05A 与 P1-04C 继续作为已关闭的 rollback baseline。
 
 ## 1. 总体阶段
 
-| 阶段 | 职责 | 当前证据 |
+| 阶段 | 职责 | 架构定位 |
 |---|---|---|
-| P0 · Media Core | 文件流、BMP、framebuffer、抽象 SDRAM、整行预取、连续 RGB888 | `[C]` |
-| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | P1-02B `[S]`；P1-04C `[B]`；P1-05A TD6.2.1 `[S][B]` |
-| P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 待整合 |
-| P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | 待整合 |
-| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | M1 控制/可视化双板 `[B]` PASS；高速媒体数据面与真实 1080p 仍待 M2~M4 |
+| P0 · Media Core | 文件流、BMP、framebuffer、抽象 SDRAM、整行预取、连续 RGB888 | 已关闭基础媒体 RTL |
+| P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | 已关闭 board/vendor rollback baseline |
+| P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 最终由 Master 合成 |
+| P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | Slave 生产媒体、Master 显示 |
+| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | 最终交付架构；状态见 `03` |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
 
@@ -41,7 +41,7 @@ Master = coordinator / final renderer / HDMI owner
 
 1920×1080 一帧为 2,073,600 像素。若继续使用 P0/P1 历史的 32-bit/像素表示，单帧几乎占满 2M×32 SDRAM，无法在一块 EG4S20 内简单维持两张完整 1080p RGB888 framebuffer 再叠加文件系统/OSD 缓冲。因此最终链路采用 **Slave 源缓存 + packed YUV422 line/tile 流 + Master 小规模 FIFO/line/tile buffer + frame-boundary commit**，而不是“先把两张完整 1080p 帧都复制到 Master”。
 
-M1 的 Slave HDMI 工程永久保留为诊断回退：它证明控制平面和 A/B/C 组合可观察；M2 开始，真实媒体从 Slave 送到 Master，最终 HDMI 输出逐步切回 Master。
+M1 的 Slave HDMI 工程永久保留为诊断回退：它证明控制平面和 A/B/C 组合可观察。M2 的**完整验收目标**要求真实媒体从 Slave 送到 Master，并逐步把最终 HDMI owner 切回 Master；开发期间 Slave HDMI 可继续承担本地媒体诊断。
 
 控制平面首选主板 SPI master / 从板 SPI slave；数据平面首选 40Pin GPIO 上的 source-synchronous 32-bit packed YUV422 链路，目标时钟先定为 74.25 MHz。该配置只作为候选，必须先通过 PRBS、CRC、CDC、持续带宽和 P&R 门禁；不能把千兆以太网当作原始 1080p60 像素链路。以太网可作为调试、文件搬运或压缩媒体的后备通道。
 
@@ -228,7 +228,7 @@ TNS           0
 
 150 MHz domain：Min Period `6.598 ns`，Max Freq `151.561 MHz`。因此 P1-05A 已达到 `[S]`，但 68 ps 的整体 setup margin 很薄。**后续 P1-05B 每次影响 active design 的修改都必须重新 P&R + STA；不得把本次 closure 当作可继承裕量。**
 
-### 6.1 TD6.2.1 current routed result
+### 6.1 P1-05A TD6.2.1 routed result
 
 报告 `FPGA_Competition_HDMI_Runs/phy_1/final_timing.rpt` 于 2026-09-21 11:40:27 生成，Top 为 `p1_hx4s20c_sdram_hdmi_top`，工具为 TD 6.2.168116。该报告为 routed/final STA，coverage `99.17%`，所有报告端点均无 setup/hold violation：
 
@@ -256,13 +256,13 @@ violating endpoints  0 / 0
 - `u_internal_sdram` 两个初始 location 未被接受，ECO placement 已移动实例；
 - 1 条时钟网使用 local routing resource，目标为 `u_sdram_pll/pll_inst.clkc[2] -> SDRAM_CLK`。
 
-## 7. 当前 TD6.2.1 资源边界
+## 7. P1-05A baseline 资源边界
 
-当前 post-route area report：LUT `7416/19600 = 37.84%`、REG `2554/19600 = 13.03%`、BRAM9K `10/64 = 15.62%`、BRAM32K `0/16`、DSP `1/29 = 3.45%`、PLL `2/4 = 50%`、GCLK `2/16 = 12.5%`。
+P1-05A 已关闭实现的 post-route area report：LUT `7416/19600 = 37.84%`、REG `2554/19600 = 13.03%`、BRAM9K `10/64 = 15.62%`、BRAM32K `0/16`、DSP `1/29 = 3.45%`、PLL `2/4 = 50%`、GCLK `2/16 = 12.5%`。
 
 TD5.6.2 historical closeout 的 LUT/REG `9977/2825` 不用于描述当前 TD6.2.1 routed netlist。
 
-资源尚可继续推进，当前 LUT 使用率约 37.84%。此前 `ram_style` 尝试没有显著增加 BRAM 使用，line-buffer ERAM 化作为后续资源优化项保留；不要在 P1-05A closeout 后立即重构已稳定路径，除非 P1-05B 资源/时序确实要求。
+该数字只描述 P1-05A rollback netlist，**不得用来描述当前 M2 Slave 资源占用**。M2 当前资源状态统一见 `docs/03_plan_and_status.md`。
 
 ## 8. P1-05A 冻结边界
 
@@ -279,7 +279,7 @@ P1-05A closeout 后默认冻结：
 
 ## 9. 双板 + 1080p 主线中的 P1-05B
 
-P1-05A 是持续保留的 rollback baseline。P1-05B 的 TF/FAT32/BMP 图片能力仍是必需交付，但不再先独立完成一条单板链、然后才开始双板开发；它作为双板主线的第一种媒体规格接入：
+P1-05A 是持续保留的 rollback baseline。P1-05B 的 TF/FAT32/BMP 图片能力是双板主线的第一种媒体规格。开发过程中允许使用 Slave 本地 HDMI 做真实 TF/BMP 诊断门禁，但该本地门禁**不改变**最终双板职责，也不能代替 Master-owned M2 完整闭环：
 
 ```text
 从板 TF -> FAT32/BMP -> media service -> 板间 packet

@@ -27,13 +27,15 @@ media_ready / source_busy / source_done / source_error
 
 因此 C 的 `NEXT/PREV/转轮范围/图片或视频类型显示/播放完成后的自动推进` 在真实系统中依赖 A 的 descriptor 和 status。M1 允许 C 用固定 catalog mock 开发；从 M2 起，C 的真实命令验收必须接入 A 的 catalog/status。A 不依赖 C 的 UI 状态，只消费 coordinator 发出的高层 `OPEN/PLAY/PAUSE/ABORT`。
 
-当前可复用证据：
+当前可复用证据（实际状态以 `03` 为准）：
 
 - P0 full media chain：`[C] PASS(1698)`；
 - `p1_media_framebuffer_loader`：`[U] PASS(225)`，覆盖 fragmented FAT、BGR/bottom-up/padding 和 mock APUG011；
-- P1-05A 真板显示已完成，但 A 线尚未完成真实 TF、双板 packet、1080p 持续供给。
+- P1-05A 真板显示已完成；
+- M2 已取得 **真实 TF/FAT32/BMP -> Slave SDRAM -> Slave HDMI 本地 `[B] PASS`**；
+- A 线仍未完成真实媒体经双板 packet 到 Master 的闭环，也未完成 1080p 持续供给。
 
-当前正在进入 `M1`：先冻结双板控制/数据协议、descriptor、credit、错误和 CDC，再把已有 loader 接入统一服务端。不得先做只适用于单板的私有接口。
+当前节点为 `M2`。M1 的控制/descriptor 契约已作为基线保留；M2-A 的本地真实 TF/BMP 读取已经通过，但多图事务、双板 packet 和 Master 侧最终消费仍需按统一服务契约完成。
 
 ## 2. 文件所有权
 
@@ -110,7 +112,7 @@ A 只报告 `source_done/source_error`；不得生成主板 `swap`。`mem_wr_val
 |---|---|---|
 | `M0` | 继承 P0/P1-05A 证据；整理 loader、TF、BMP 的输入输出边界 | 既有 `[C] PASS(1698)`、`[U] PASS(225)` 可复现 |
 | `M1`（board gate 已通过） | descriptor/credit/error/provider CDC 与 SPI service shell 已有模块级回归；本轮新增 `m1a_uart_service_bridge`，把已真板验证的 UART transport 接入同一 service contract，并在 Slave HDMI top 中实际返回 catalog/status、响应 OPEN | M1A 既有 `[U]/[C-sub]` + M1ABC 双板 control/A-service TB；Slave 单板与双板 HDMI 可视控制。真实 TF 仍明确留在 M2，不用 mock 冒充 |
-| `M2`（当前） | 完成真实 TF/SPI provider、FAT32 mount/catalog、至少 4 幅 BMP；将 loader 输出转换为统一 packet 或受控本地写入事务；冻结 C 可消费的 descriptor/status 实现 | fragmented FAT、非法文件、真实卡模型/受控镜像、四图 golden；C 的真实选图命令能收到 ready/busy/done/error |
+| `M2`（当前） | **已通过：** 真 TF/SPI、FAT32/BMP 到 Slave 本地 SDRAM/HDMI 第一图；**待完成：** 稳定多图事务、真实 catalog/status 驱动切换、统一 packet/双板数据面 | 本地 `[B]` 只算子门禁；只有真实 NEXT/PREV/轮播和双板链路通过后才完成 M2-A 汇合 |
 | `M3` | 按 descriptor 生成持续 line/tile 数据并响应 credit；实现帧边界、重试和错误隔离；配合 B 做 1080p packed-YUV422 等效吞吐压力。720p 只可选排错 | 在 1080p 等效 payload 下持续输出，无丢包/重包/CRC 错误；记录 source buffer 水位 |
 | `M4` | 将媒体生产扩展到 1920×1080：packed YUV422、帧/行/tile descriptor、带宽预算和 underflow 预警 | 1080p 静态图连续 packet，带宽和 buffer 水位有记录 |
 | `M5` | 接入 `vseq_reader`/视频帧调度；支持图片、视频、NEXT/PREV/PLAY/PAUSE 和双源切换所需的两路媒体描述 | 视频帧序号连续，切换不会提交坏帧 |
@@ -137,3 +139,8 @@ QuestaSim 10.7c：SPI slave、command decoder、provider CDC、media mock、serv
 M1 真板阶段新增 `m1a_uart_service_bridge.v`，把已经真板通过的 115200 UART frame 临时适配到 A 线 `cmd_valid/opcode/arg -> catalog/descriptor/status` 语义。它只负责 M1 可观察集成；`m1a_service_shell.v` 中 SPI/command-decoder/provider-CDC 仍保留为后续正式控制/provider 契约。
 
 M1 slave HDMI candidate 直接例化 deterministic `m1a_media_service_mock`，使 Master 的 OPEN(image_id) 能在从板得到 descriptor 并驱动 pattern 选择。该结果即使真板通过，也只能证明 A 的服务语义与双板控制集成；真实 TF/FAT32 仍以 M2 为完成门禁。
+
+
+## 7. 2026-10-04 M2-A 当前边界
+
+CMD17 end-bit 修复后，真实 TF 第一图本地显示已通过。随后双板真实媒体控制出现“周期闪动但仍为原图、按键多数不能完成切换”的板级反例，因此 A 线不能把 `OPEN/ACCEPTED` 或一次首图成功扩写为“多图媒体服务已完成”。当前 FIX1 的 `STATUS/DONE` 持久完成语义仍需重新综合、仿真和上板确认；状态只在 `docs/03_plan_and_status.md` 更新。

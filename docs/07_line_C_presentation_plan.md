@@ -1,6 +1,6 @@
 # C 线计划：主板 UI、交互、转场与音频
 
-> 本文件只描述 C 线任务。全项目使用统一节点 `M0～M6`；A/B/C 在同一节点并行，节点汇合后再前进。C 线从 `M1` 就按主板 M + 双板 + 1920×1080 的接口设计，640×480/720p 只用于验证和回退。
+> 本文件只描述 C 线任务。全项目使用统一节点 `M0～M6`；A/B/C 在同一节点并行，节点汇合后再前进。C 线从 `M1` 就按主板 M + 双板 + 1920×1080 的接口设计，640×480/720p 只用于验证和回退。当前 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。
 
 ## 1. 责任边界与当前状态
 
@@ -30,7 +30,7 @@ C 线分成“可用 mock 独立开发”和“必须真实合并验收”两部
 
 初步交互方案按“按键进入选择 → 暂停当前源 → 旋钮浏览 → 按压确认 → OPEN 新源 → 首帧安全提交 → 恢复播放”实现。旋钮不是板载资源，默认采用外接增量式正交编码器 A/B + 按压开关，接入 40-pin GPIO；必须先完成 pin ownership、输入电平、消抖和 CDC 约束，不能把未确认的管脚写进正式约束。若旋钮硬件尚未到位，M1/M2 使用按键仿真接口，不能因此改变 A/B 契约。
 
-已有证据：`media_command_controller` `[U] PASS(52)`，关联 key/switch、menu/app、display unit 和音频单元回归已通过；尚未与 A media-service、B packet RX 和双板 top 形成端到端证据。
+已有稳定基线：`media_command_controller` `[U] PASS(52)`；M1 deterministic 页面上的 NEXT/PREV/PLAY/PAUSE 真板可视控制已通过。**真实 TF 媒体的 NEXT/PREV/自动轮播当前未通过**，不能把 M1 mock/deterministic 控制 PASS 继承为 M2 real-media PASS。
 
 ## 2. 公共视频接口
 
@@ -98,8 +98,8 @@ C 不等待 A 的内部 writer 信号，也不修改 B 的 front/back metadata�
 | 统一节点 | C 线任务 | C 线完成证据 |
 |---|---|---|
 | `M0` | 回归现有 raster、enhance、scaler、transition、OSD、交互和 audio 单元；保留 P1-05A fixed-pattern bypass | 既有单元回归通过；`media_command_controller` `[U] PASS(52)` |
-| `M1`（board gate 已通过） | 冻结 `media_cmd`、transport-independent command/status、descriptor/credit 状态、canonical sideband 和 1080p 参数快照；已新增 `m1c_coordinator_uart`、`m1c_frame_config_cdc`、`m1c_axis_pattern_mux`，并用板载按键作为旋钮未到位时的输入抽象；Master 控制 Slave HDMI 4 个可视页面 | `media_command_controller` 既有 `[U]`；Slave HDMI 真板可视控制已 PASS；aggregate Questa 待修复脚本补跑；旋钮硬件未接入不影响 M1，但 M2/M4 前需补 pin/decoder |
-| `M2`（当前） | 将 `media_cmd` 接入 A 的真实 catalog/status 和 B 的 640×480 双板第一闭环；实现基本选图、NEXT/PREV、PLAY/PAUSE、轮播和 pass-through UI | 一次命令对应一次 OPEN；收到 A 的 ready/done/error；B 的真实 frame_boundary 才允许提交；无半帧参数混合 |
+| `M1`（board gate 已通过） | 冻结 `media_cmd`、transport-independent command/status、descriptor/credit 状态、canonical sideband 和 1080p 参数快照；已新增 `m1c_coordinator_uart`、`m1c_frame_config_cdc`、`m1c_axis_pattern_mux`，并用板载按键作为旋钮未到位时的输入抽象；Master 控制 Slave HDMI 4 个可视页面 | `media_command_controller` 既有 `[U]`；Slave HDMI 真板可视控制已 PASS；aggregate Questa 已补证 PASS；旋钮硬件未接入不影响 M1，但 M2/M4 前需补 pin/decoder |
+| `M2`（当前） | 将 `media_cmd` 接入 A 的真实 catalog/status；完成真实媒体 NEXT/PREV、PLAY/PAUSE、轮播，并等待 B 的双板安全提交 | **当前板级切换/轮播未通过。** FIX1 的 `OPEN -> ACCEPTED -> STATUS -> DONE` 完成门控需重新综合/仿真/上板；通过前不得关闭 C 线 M2 |
 | `M3` | 接入 B 的 1080p 等效 line/tile 压力输入、链路状态/credit/CRC/underflow UI 和 fallback；完成基础缩放；接入 A 的媒体类型/帧数 descriptor。720p 只允许作排错 profile | 在 1080p 等效吞吐下 canonical stream/状态接口无循环等待；任何 720p PASS 不计作最终分辨率证据 |
 | `M4` | 适配 1920×1080 raster：字体/图标/OSD、缩放、亮度/对比度、1080p audio timing 和资源预算 | B 的 1080p profile + A 的 1080p descriptor/数据均已通过；1080p 静态图 + UI 的 `[C]`、资源和时序记录 |
 | `M5` | 视频播放控制、图片/视频切换、淡入淡出/擦除等转场、音频 pack/tone/可视化；所有模块可旁路 | 视频和转场不改变 sideband，不产生半帧；音频流自洽 |
@@ -134,3 +134,8 @@ M1-C v5 candidate 新增 `m1c_coordinator_uart.v`、`m1c_frame_config_cdc.v`、`
 M1 采用临时可观察拓扑：Master KEY2=NEXT、KEY3=PREV、KEY4=PLAY/PAUSE，Slave 用 P1-04C 已知可工作的 640×480 HDMI boundary 显示四种 deterministic pattern。该测试的目的，是同时看见 C 高层命令、B 双向控制、A descriptor 与 frame-boundary CDC 是否真实贯通；它不是最终 1080p 显示证明。
 
 `hdmi_1080p_raster` 已冻结 1920/88/44/148 与 1080/4/5/36 canonical geometry。M3/M4 必须再取得真实 148.5 MHz pixel / 742.5 MHz serial、APUG092、TD6.2.1 STA 和显示器证据。
+
+
+## 8. 2026-10-04 real-media 控制边界
+
+真实 TF 首图已经能在 Slave HDMI 显示，但首版双板控制表现为周期画面闪动、图片不变，NEXT/PREV 多数不能完成切换。当前 DUALCTRL2 FIX1 仅完成源码接口修复，尚无新的 `[S]` 或 `[B]` 证据。C 线必须以“目标 image_id 对应图片真正稳定显示”为完成条件；UART `ACCEPTED` 只表示命令排队，不表示媒体事务完成。

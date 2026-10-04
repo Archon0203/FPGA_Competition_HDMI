@@ -1,5 +1,8 @@
 # M2 ABC implementation record
 
+> **开发过程/候选记录：保留当时的现象、推断和修复方案，不作为当前 PASS 状态权威。当前状态以 `docs/03_plan_and_status.md` 为准。**
+
+
 ## Delivered RTL
 
 - `src/dual_board/m2_media_line_source.v`: deterministic A-line source used for bring-up; catalog, descriptor, play/pause and credit handshakes are explicit.

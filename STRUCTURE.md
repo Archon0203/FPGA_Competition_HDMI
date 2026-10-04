@@ -1,6 +1,6 @@
 # 项目目录结构
 
-当前仓库固定为 **两个长期 TD6.2.1 工程 + 一套共享 RTL + 两套角色约束**。M1ABC 双板可视化控制闭环已真板 PASS，当前进入 M2。最终职责仍是 Slave 负责媒体生产，Master 负责最终 1080P 合成与 HDMI。
+当前仓库固定为 **两个长期 TD6.2.1 工程 + 一套共享 RTL + 两套角色约束**。当前节点为 M2；具体 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。最终职责仍是 Slave 负责媒体生产，Master 负责最终 1080P 合成与 HDMI。
 
 ## 1. 唯一 TD 构建入口
 
@@ -12,7 +12,7 @@ FPGA_Competition_HDMI_SLAVE.al    # Slave 从板
 | 工程 | 当前 Top | 约束 | 当前作用 |
 |---|---|---|---|
 | `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/*` | 按键、控制、双向 UART 控制面 |
-| `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/*` | 真实 TF/FAT32/BMP、本地 SDRAM/HDMI、UART 控制接管 |
+| `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/*` | 当前 M2 Slave TF/BMP/SDRAM/诊断 HDMI 候选 |
 
 两个 `.al` 都直接引用仓库根 `src/`。**工程目录中不再保存 RTL 副本。** 后续 M2~M6 若 Top 演进，只修改这两个工程；不得再增加第三个 active `.al`。
 
@@ -68,7 +68,7 @@ FPGA_Competition_HDMI/
 └─ tools/
 ```
 
-## 3. 当前 M2 控制集成构建
+## 3. 当前双工程构建
 
 Master：
 
@@ -98,7 +98,7 @@ Slave  J1-8  / FPGA J13 / TX -> Master J1-4 / FPGA F13 / RX
 Master J1-12 / GND            <-> Slave J1-12 / GND
 ```
 
-当前 M2-A/C bring-up 仍由 Slave HDMI_B 输出真实 TF 图片，Master 通过三线 UART 控制选图；后续 M2-B 再把真实媒体数据面与最终显示职责迁回 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
+当前 M2 仍允许 Slave HDMI_B 作为真实媒体本地诊断出口；M2 的完整验收目标仍要求最终媒体显示职责回到 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
 
 ## 4. 共享 RTL 纪律
 
@@ -120,3 +120,16 @@ Master J1-12 / GND            <-> Slave J1-12 / GND
 `docs/` 根目录只保留 `01~08` 规范文档。开发过程、验证记录、阶段说明统一进入 `docs/develop_records/`，日志/截图等证据进入 `docs/develop_records/evidence/`。
 
 发布 ZIP 不携带 `.git/`、`*_Runs/`、Questa `work/`、bitstream、minidump、TD 日志等本地生成物；`.gitignore` 与 `.gitattributes` 必须保留。
+
+
+### M2 2026-10-03 dual-control additions
+
+- `src/dual_board/m2_open_dispatcher.v`: one-shot Slave standalone OPEN(0) + queued Master OPEN dispatcher.
+- `sim_tb/m1abc/tb_m2_open_dispatcher.v`: dispatcher regression.
+- `docs/develop_records/M2_TF_LOCAL_PASS_AND_DUAL_CONTROL_20261003.md`: TF local board PASS and dual-control handoff.
+
+## 2026-10-04 M2 control/project additions
+
+- `sim_tb/app/tb_m1c_coordinator_realmedia.v` / `run_m1c_coordinator_realmedia.do`: verifies OPEN/ACCEPTED is followed by STATUS polling until DONE before another media command is accepted.
+- `tools/check_td_project.py`: checks TD `.al` files for duplicate source paths and CRLF formatting; added after a Git main merge duplicated five M2 entries in the Slave project file.
+- `docs/develop_records/M2_DUAL_CONTROL_COMPLETION_GATE_AND_TD_PROJECT_FIX_20261004.md`: board symptom, control root cause, TD project-file root cause and verification plan.

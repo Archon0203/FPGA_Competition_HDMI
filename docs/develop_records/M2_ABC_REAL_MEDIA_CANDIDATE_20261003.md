@@ -1,5 +1,8 @@
 # M2 ABC real-media RTL candidate, 2026-10-03
 
+> **开发过程/候选记录：保留当时的现象、推断和修复方案，不作为当前 PASS 状态权威。当前状态以 `docs/03_plan_and_status.md` 为准。**
+
+
 ## Scope and ownership
 
 - Slave A: `m2_slave_tf_media_core` connects the SD SPI sector cache to the FAT32 catalog and BMP framebuffer loader. The loader writes `0x00RRGGBB` words to an abstract SDRAM write port; `source_done` follows the accepted final write. `m2_frame_packet_source` reads a fenced frame in display order, buffers one line, and sends one CRC16/sequence packet per credited line.
