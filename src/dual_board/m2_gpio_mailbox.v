@@ -17,13 +17,30 @@ module m2_gpio_mailbox_tx(
         end else begin
             ack1<=ack; ack2<=ack1;
             case(state)
-                0: if(in_valid) begin word_q<=in_data; data<=in_data[6:0]; beat<=0; state<=1; end
+                0: if(in_valid) begin
+                    // Keep the complete word stable for all five transfers.
+                    // Shifting word_q here used to lose bits [31:28] before
+                    // beat 4, corrupting every remote-frame header.
+                    word_q<=in_data;
+                    data<=in_data[6:0];
+                    beat<=0;
+                    state<=1;
+                end
                 1: begin req<=~req; state<=2; end
                 2: if(ack2==req) begin
                     if(beat==4) state<=0;
                     else begin
-                        word_q<={7'd0,word_q[31:7]};
-                        data<=word_q[13:7]; beat<=beat+1'b1; state<=1;
+                        beat<=beat+1'b1;
+                        // Five 7-bit beats transfer bits [6:0], [13:7],
+                        // [20:14], [27:21], then [31:28] zero-extended.
+                        case(beat)
+                            0: data<=word_q[13:7];
+                            1: data<=word_q[20:14];
+                            2: data<=word_q[27:21];
+                            3: data<={3'd0,word_q[31:28]};
+                            default: data<=7'd0;
+                        endcase
+                        state<=1;
                     end
                 end
                 default: state<=0;
