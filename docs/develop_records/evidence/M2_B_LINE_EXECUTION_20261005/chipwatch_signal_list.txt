@@ -1,0 +1,97 @@
+M2 B-line ChipWatcher target list (hierarchy relative to m2_master_tf_hdmi_top unless noted)
+
+B-1 publish/mux contradiction:
+  display_published
+  u_display.use_framebuffer
+  u_display.media_succeeded
+  u_display.remote_begin
+  u_display.media_done
+  u_display.frame_fenced_media
+  u_display.frame_ready_pix
+  u_display.fb_warm_ready
+  u_display.fb_frame_boundary
+  u_display.publish_wait_frame
+  u_display.axis_data[23:0]
+  u_display.loading_rgb[23:0]
+  u_display.framebuffer_axis_data[23:0]
+
+B-3/B-5/B-6 mailbox/header:
+  link_data[6:0]
+  link_req
+  link_ack
+  packet_valid
+  packet_ready
+  packet_data[31:0]
+  u_link_rx.req1
+  u_link_rx.req2
+  u_link_rx.ack
+  u_link_rx.beat[2:0]
+  u_link_rx.out_valid
+  u_link_rx.out_data[31:0]
+
+B-8/B-9 remote-frame RX:
+  u_display.g_remote.u_frame_rx.state[1:0]
+  u_display.g_remote.u_frame_rx.count[20:0]
+  u_display.g_remote.u_frame_rx.crc[31:0]
+  u_display.remote_begin
+  u_display.media_done
+  u_display.media_error
+  u_display.remote_image[7:0]
+  u_display.media_wr_valid
+  u_display.media_wr_ready
+  u_display.media_wr_addr[20:0]
+  u_display.media_wr_data[31:0]
+
+B-10 SDRAM fence:
+  u_display.sdr_fenced
+  u_display.fenced_toggle_sdr
+  u_display.fenced_sync1
+  u_display.fenced_sync2
+  u_display.fenced_seen
+  u_display.frame_fenced_media
+  u_display.sdr_media_wr_valid
+  u_display.sdr_media_wr_ready
+  u_display.mem_wr_valid
+  u_display.mem_wr_ready
+  u_display.u_sdram_adapter.state[2:0]
+  u_display.sdram_busy
+  u_display.sdram_init_done
+
+B-11 framebuffer warm/publish:
+  u_display.frame_ready_sdr
+  u_display.frame_ready_pix
+  u_display.fb_warm_ready
+  u_display.fb_frame_boundary
+  u_display.pipeline_protocol_error
+  u_display.fb_underflow_sticky
+  u_display.publish_wait_frame
+  u_display.use_framebuffer
+  display_published
+
+B-12 begin/done/error ratio:
+  u_display.remote_begin
+  u_display.media_done
+  u_display.media_error
+  (active RTL has no persistent begin/done/error counters; count pulses in capture tool)
+
+Slave-side targets (relative to m2_slave_media_tx_top):
+  link_data[6:0]
+  link_req
+  link_ack
+  display_published
+  u_link_tx.beat[2:0]
+  u_link_tx.req
+  u_link_tx.ack1
+  u_link_tx.ack2
+  packet_valid
+  packet_ready
+  packet_data[31:0]
+  u_frame_tx.state[2:0]
+  u_frame_tx.crc[31:0]
+  media_done
+  media_error
+  media_succeeded
+  published1
+  published2
+  observed_loading
+  use_framebuffer

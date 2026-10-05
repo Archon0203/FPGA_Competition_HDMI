@@ -1,0 +1,4 @@
+ M FPGA_Competition_HDMI_MASTER.al
+?? docs/develop_records/M2_B_LINE_EXECUTION_20261005.md
+?? docs/develop_records/evidence/M2_B_LINE_EXECUTION_20261005/
+?? tools/check_m2_b_line.py

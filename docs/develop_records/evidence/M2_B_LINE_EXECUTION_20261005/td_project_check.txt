@@ -1,0 +1,3 @@
+FPGA_Competition_HDMI_MASTER.al: file_entries=75 CRLF=OK
+FPGA_Competition_HDMI_SLAVE.al: file_entries=76 CRLF=OK
+PASS: TD source paths exist, are unique, have no AutoExcluded flags; CRLF OK.

@@ -1,0 +1,18 @@
+PASS B-1: current RTL makes LED3/display_published imply use_framebuffer=1, and APUG092 consumes the same axis_data mux
+PASS B-2: Master LED1=control ack_toggle and LED2=UART link_ok; neither proves media-mailbox health
+PASS B-3: 9 required patterns + 10,000 deterministic random words reconstruct bit-exactly in the documented five-beat mapping
+WARN B-4: KNOWN FAIL: RX reset after beat0..3 loses word phase; only a word-boundary reset (after beat4) stays aligned. Protocol needs explicit framing/index/epoch for single-board reset recovery
+PASS B-5: Master/Slave ADC files agree on all 10 media/feedback FPGA pin locations; physical Dupont-wire order still requires board measurement
+PASS B-6: TX emits B17E00xx first and RX recognizes the same header
+PASS B-7: normal 640x480 frame is exactly 614403 32-bit words
+PASS B-8: RX has the expected begin/count/done/error state transitions
+PASS B-9: TX/RX use the same CRC32 polynomial and RX commits only on exact received-CRC match
+PASS B-10: media_done is tokenized across CDC and fence waits for FIFO empty + adapter-idle input
+WARN B-10: Top uses mem_wr_ready as the adapter-idle proxy. It is conservative with the current adapter (ST_IDLE + provider available + no read request), but it is not a separately named/explicit idle signal
+PASS B-11: publish path gates on fence + frame_ready_pix + warm_ready + safe frame boundary and intentionally waits one extra frame
+PASS B-12: a newly parsed header can generate remote_begin/dispatch_fire and clear use_framebuffer, so repeated false headers can look like perpetual Loading
+WARN B-12: requested begin/done/error counters are not present in active RTL; use ChipWatcher pulses/counters externally or add dedicated debug instrumentation before board capture
+PASS B-13: Slave requires a post-dispatch observed published=0 before accepting the later published=1 as completion
+
+RESULT:
+  Static checks passed. B-4 remains a documented protocol weakness; board-only observations are still required for B-1/B-5/B-6..B-13 live signals.
