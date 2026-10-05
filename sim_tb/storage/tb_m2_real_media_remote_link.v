@@ -22,7 +22,7 @@ module tb_m2_real_media_remote_link;
       .descriptor_height(descriptor_height),.source_ready(),.source_busy(),.source_done(source_done),
       .source_error(source_error),.error_code(error_code));
     reg [31:0] slave_ram[0:3], master_ram[0:3];
-    wire frame_valid,frame_ready,frame_busy; wire [31:0] frame_word;
+    wire frame_valid,frame_ready,frame_busy,mailbox_tx_ready; wire [31:0] frame_word;
     wire [6:0] gpio_data; wire gpio_req,gpio_ack,mailbox_valid,mailbox_ready; wire [31:0] mailbox_word;
     wire frame_done_master,frame_error_master,frame_wr_valid; wire [20:0] frame_wr_addr; wire [31:0] frame_wr_data;
     assign service_wr_ready=frame_ready;
@@ -34,8 +34,8 @@ module tb_m2_real_media_remote_link;
       else if(sector_consume_ready) begin if(sector_index==511) streaming<=0; else sector_index<=sector_index+1'b1; end
     end
     always @(posedge clk) if(rst_n && service_wr_valid && service_wr_ready) slave_ram[service_wr_addr]<=service_wr_data;
-    m2_remote_frame_tx u_tx(.clk(clk),.rst_n(rst_n),.frame_begin(cmd_valid&&cmd_ready),.image_id(cmd_image_id),.wr_valid(service_wr_valid),.wr_addr(service_wr_addr),.wr_data(service_wr_data),.wr_ready(frame_ready),.frame_done(source_done),.frame_error(source_error),.out_valid(frame_valid),.out_data(frame_word),.out_ready(frame_ready),.busy(frame_busy));
-    m2_gpio_mailbox_tx u_gpio_tx(.clk(clk),.rst_n(rst_n),.in_valid(frame_valid),.in_data(frame_word),.in_ready(frame_ready),.data(gpio_data),.req(gpio_req),.ack(gpio_ack));
+    m2_remote_frame_tx u_tx(.clk(clk),.rst_n(rst_n),.frame_begin(cmd_valid&&cmd_ready),.image_id(cmd_image_id),.wr_valid(service_wr_valid),.wr_addr(service_wr_addr),.wr_data(service_wr_data),.wr_ready(frame_ready),.frame_done(source_done),.frame_error(source_error),.out_valid(frame_valid),.out_data(frame_word),.out_ready(mailbox_tx_ready),.busy(frame_busy));
+    m2_gpio_mailbox_tx u_gpio_tx(.clk(clk),.rst_n(rst_n),.in_valid(frame_valid),.in_data(frame_word),.in_ready(mailbox_tx_ready),.data(gpio_data),.req(gpio_req),.ack(gpio_ack));
     m2_gpio_mailbox_rx u_gpio_rx(.clk(clk),.rst_n(rst_n),.data(gpio_data),.req(gpio_req),.ack(gpio_ack),.out_valid(mailbox_valid),.out_data(mailbox_word),.out_ready(mailbox_ready));
     m2_remote_frame_rx #(.PIXELS(4)) u_rx(.clk(clk),.rst_n(rst_n),.in_valid(mailbox_valid),.in_data(mailbox_word),.in_ready(mailbox_ready),.frame_begin(),.frame_done(frame_done_master),.frame_error(frame_error_master),.image_id(),.wr_valid(frame_wr_valid),.wr_addr(frame_wr_addr),.wr_data(frame_wr_data),.wr_ready(1'b1),.busy());
     integer i,j,writes=0,master_writes=0,checks=0,errors=0,wait_count=0;
@@ -52,6 +52,9 @@ module tb_m2_real_media_remote_link;
       wait_count=0;while(!source_done&&!source_error&&wait_count<10000)begin@(negedge clk);wait_count=wait_count+1;end
       check(source_done&&!source_error&&writes==4,"Slave BMP frame");wait_count=0;while(!frame_done_master&&!frame_error_master&&wait_count<10000)begin@(negedge clk);wait_count=wait_count+1;end
       check(frame_done_master&&!frame_error_master&&master_writes==4,"Master receives frame");
+      check(master_ram[0]===32'h0000ff00 && master_ram[1]===32'h00ffffff &&
+            master_ram[2]===32'h00ff0000 && master_ram[3]===32'h000000ff,"received BMP pixels and orientation");
       if(errors==0)$display("PASS: A-line TF -> Dupont -> Master checks=%0d",checks);else $fatal(1,"FAIL errors=%0d",errors);$finish;
     end
+    initial begin #2000000; $fatal(1,"watchdog: remote media integration"); end
 endmodule

@@ -11,11 +11,13 @@ TESTS = [
     "m1abc/tb_m2_open_dispatcher",
     "m1abc/tb_m2_real_media_uart_bridge",
     "m1abc/tb_m2_master_real_control_link",
+    "m1abc/tb_m2_master_media_control",
     "storage/tb_m2_real_media_service",
     "storage/tb_m2_media_write_cdc",
     "m1abc/tb_m2_remote_frame_link",
     "m1abc/tb_m2_loading_card",
     "storage/tb_m2_real_media_remote_link",
+    "storage/tb_m2_real_media_remote_multiframe",
     "framebuf/tb_line_buffer_pingpong",
     "integration/tb_p1_sdram_hdmi_pipeline",
 ]

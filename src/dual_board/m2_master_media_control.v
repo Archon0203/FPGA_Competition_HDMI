@@ -1,12 +1,13 @@
 // Real M2 Master control plane.
 //
-// This is the missing bridge between the physical keys and the Slave's
-// catalog/status service.  Unlike the old M1 demo wrapper, catalog_valid and
-// catalog_count are produced by the live UART coordinator, so OPEN requests
+// Dedicated control wrapper without the legacy local diagnostic instance.
+// catalog_valid and catalog_count come from the live UART coordinator, as
+// in the previous M1 wrapper. OPEN requests
 // are issued only after the Slave has answered PING and are held until the
 // matching image reports DONE.
 module m2_master_media_control #(
     parameter integer UART_CLKS_PER_BIT = 434,
+    parameter integer POR_CYCLES = 1_000_000,
     parameter integer SLIDE_PERIOD_CLKS = 250_000_000,
     parameter integer KEY_FILTER_CYCLES = 500000,
     parameter integer DISCOVERY_INTERVAL_CYCLES = 5_000_000,
@@ -28,7 +29,7 @@ module m2_master_media_control #(
     output wire       fault
 );
     wire core_rst_n;
-    db_startup_reset #(.POR_CYCLES(1_000_000)) u_por (
+    db_startup_reset #(.POR_CYCLES(POR_CYCLES)) u_por (
         .clk(clk), .ext_rst_n(rst_n), .rst_n(core_rst_n));
 
     wire [3:0] key_event;

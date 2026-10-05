@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TD = Path("D:/Anlogic/TD_6.2.1_Engineer_6.2.168.116")
@@ -22,6 +23,8 @@ def main():
     for role in roles:
         name = "FPGA_Competition_HDMI_" + role.upper()
         project = ROOT / (name + ".al")
+        subprocess.run([sys.executable, str(ROOT / "tools/check_td_project.py"),
+                        str(project)], check=True)
         original = project.read_text(encoding="utf-8")
         top = re.search(r"<MODULE>([^<]+)</MODULE>", original)[1]
         adc = ROOT / "constraints" / role / (role + ".adc")
