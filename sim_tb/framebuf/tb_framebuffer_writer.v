@@ -95,6 +95,12 @@ module tb_framebuffer_writer;
     reg done_seen = 1'b0;
     reg last_ok = 1'b0;
 
+    // A-5 protocol guard: under downstream backpressure the valid payload
+    // must remain stable until the write handshake completes.
+    reg bp_hold = 1'b0;
+    reg [20:0] bp_addr = 21'd0;
+    reg [31:0] bp_data = 32'd0;
+
     function [7:0] pat_r;
         input integer x;
         begin pat_r = (8'h20 + (x & 8'h7F)); end
@@ -319,6 +325,25 @@ module tb_framebuffer_writer;
     end
 
     always @(posedge clk) begin
+        if (!rst_n) begin
+            bp_hold <= 1'b0;
+            bp_addr <= 21'd0;
+            bp_data <= 32'd0;
+        end else begin
+            if (bp_hold) begin
+                if (!mem_wr_valid || mem_wr_addr !== bp_addr || mem_wr_data !== bp_data) begin
+                    $display("ERROR: mem_wr payload changed while ready=0 addr=%0d/%0d data=%08x/%08x",
+                             mem_wr_addr, bp_addr, mem_wr_data, bp_data);
+                    errors = errors + 1;
+                end
+            end
+            bp_hold <= mem_wr_valid && !mem_wr_ready;
+            if (mem_wr_valid && !mem_wr_ready) begin
+                bp_addr <= mem_wr_addr;
+                bp_data <= mem_wr_data;
+            end
+        end
+
         if (rst_n && mem_wr_valid && mem_wr_ready) begin
             if (got_count >= MAX_WRITES) begin
                 $display("ERROR: captured-write array overflow");
