@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-module tb_m2_real_media_service;
+module tb_m2_real_media_remote_link;
     reg clk=0, rst_n=0, cmd_valid=0, scan_start=0, sector_error=0;
     reg [7:0] cmd_image_id=0;
     wire cmd_ready, sector_req, sector_ready, sector_consume_ready, din_valid;
@@ -35,9 +35,25 @@ module tb_m2_real_media_service;
 
     always #5 clk=~clk;
     assign sector_ready = streaming;
-    assign din_valid = streaming;
+    assign din_valid = streaming && sector_consume_ready;
     assign din = disk[sector_q][index_q];
 
+    wire service_wr_valid, service_wr_ready, service_done;
+    wire [20:0] service_wr_addr;
+    wire [31:0] service_wr_data, link_tx_word, link_rx_word;
+    wire link_tx_valid, link_tx_ready, link_rx_valid, link_rx_ready;
+    wire [6:0] link_pins;
+    wire link_req, link_ack, link_error;
+    reg rx_clk=0;
+    always #7 rx_clk=~rx_clk;
+    m2_remote_frame_tx tx(clk,rst_n,cmd_valid && cmd_ready,cmd_image_id,
+        service_wr_valid,service_wr_addr,service_wr_data,service_wr_ready,
+        service_done,source_error,link_tx_valid,link_tx_word,link_tx_ready,);
+    m2_gpio_mailbox_tx ptx(clk,rst_n,link_tx_valid,link_tx_word,link_tx_ready,link_pins,link_req,link_ack);
+    // Use one test clock for the memory scoreboard; independent clocks are covered in the PHY test.
+    m2_gpio_mailbox_rx prx(clk,rst_n,link_pins,link_req,link_ack,link_rx_valid,link_rx_word,link_rx_ready);
+    m2_remote_frame_rx #(.PIXELS(4)) rx(clk,rst_n,link_rx_valid,link_rx_word,link_rx_ready,
+        ,source_done,link_error,,mem_wr_valid,mem_wr_addr,mem_wr_data,1'b1,);
     m2_real_media_service #(.WIDTH(2), .HEIGHT(2)) dut (
         .clk(clk), .rst_n(rst_n), .scan_start(scan_start),
         .cmd_valid(cmd_valid), .cmd_ready(cmd_ready),
@@ -47,8 +63,8 @@ module tb_m2_real_media_service;
         .sector_ready(sector_ready), .sector_idle(!streaming),
         .sector_din_valid(din_valid),
         .sector_din(din), .sector_error(sector_error),
-        .mem_wr_valid(mem_wr_valid), .mem_wr_addr(mem_wr_addr),
-        .mem_wr_data(mem_wr_data), .mem_wr_ready(1'b1),
+        .mem_wr_valid(service_wr_valid), .mem_wr_addr(service_wr_addr),
+        .mem_wr_data(service_wr_data), .mem_wr_ready(service_wr_ready),
         .catalog_valid(catalog_valid), .catalog_count(catalog_count),
         .catalog_epoch(catalog_epoch),
         .descriptor_valid(descriptor_valid),
@@ -56,7 +72,7 @@ module tb_m2_real_media_service;
         .descriptor_width(descriptor_width),
         .descriptor_height(descriptor_height),
         .source_ready(source_ready), .source_busy(source_busy),
-        .source_done(source_done), .source_error(source_error),
+        .source_done(service_done), .source_error(source_error),
         .error_code(error_code));
 
     m2_frame_packet_source #(.WIDTH(2), .HEIGHT(2)) u_frame_source (
@@ -92,9 +108,9 @@ module tb_m2_real_media_service;
             streaming <= 1;
             sector_q <= sector_lba[2:0];
             index_q <= 0;
-        end else if (index_q == 511) begin
+        end else if (sector_consume_ready && index_q == 511) begin
             streaming <= 0;
-        end else index_q <= index_q + 1'b1;
+        end else if (sector_consume_ready) index_q <= index_q + 1'b1;
     end
 
     always @(posedge clk) if (rst_n) begin
@@ -210,7 +226,7 @@ module tb_m2_real_media_service;
         i=0; while(error_count==0 && i<4000) begin @(negedge clk); i=i+1; end
         check(error_count==1 && done_count==5,"bad BMP rejected");
         check(front_base==4 && front_frame_id==1,"bad media leaves Master front unchanged");
-        if(errors==0) $display("PASS: m2_real_media_service checks=%0d",checks);
+        if(errors==0) $display("PASS: m2_real_media_remote_link checks=%0d",checks);
         else $fatal(1,"FAIL: m2_real_media_service errors=%0d checks=%0d",errors,checks);
         $finish;
     end

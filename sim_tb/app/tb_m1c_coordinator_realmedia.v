@@ -81,6 +81,7 @@ module tb_m1c_coordinator_realmedia;
         end
     endtask
 
+    initial begin #100000; $fatal(1,"watchdog"); end
     initial begin
         repeat (3) @(posedge clk);
         rst_n = 1;
@@ -109,6 +110,10 @@ module tb_m1c_coordinator_realmedia;
         repeat (2) @(posedge clk);
         check(!media_cmd_ready, "busy STATUS keeps command blocked");
 
+        // Drop one STATUS response: timeout must not release the next OPEN.
+        wait(frame_tx_request && frame_tx_opcode == 8'h09);
+        repeat(22) @(negedge clk);
+        check(!media_cmd_ready, "missing reply retains media transaction");
         // Next STATUS reports requested image DONE.
         wait(frame_tx_request && frame_tx_opcode == 8'h09);
         reply(8'h89, 8'h04, 8'd1, 8'd3, 8'd0);
@@ -120,7 +125,7 @@ module tb_m1c_coordinator_realmedia;
         if (errors == 0)
             $display("PASS: m1c coordinator real-media completion gate checks=%0d", checks);
         else
-            $display("FAIL: m1c coordinator real-media completion gate errors=%0d checks=%0d", errors, checks);
+            $fatal(1,"FAIL: m1c coordinator real-media completion gate errors=%0d checks=%0d", errors, checks);
         $finish;
     end
 endmodule

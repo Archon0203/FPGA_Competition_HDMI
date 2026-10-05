@@ -43,7 +43,7 @@ module line_buffer_pingpong #(
     input  wire [15:0] read_width,
 
     output reg         pixel_valid,
-    output reg  [23:0] pixel_data,
+    output wire [23:0] pixel_data,
     output reg         line_done,
     output reg         underflow_pulse,
     output reg         underflow_sticky,
@@ -106,6 +106,23 @@ module line_buffer_pingpong #(
     wire hit0 = ready0 && (line0 == read_line_index) && (width0 == read_width);
     wire hit1 = ready1 && (line1 == read_line_index) && (width1 == read_width);
 
+    // Reset-free synchronous RAM ports allow TD to use embedded RAM.
+    // Separate bank outputs preserve the existing one-cycle read contract.
+    localparam integer RAM_AW = $clog2(MAX_LINE_PIXELS);
+    reg [23:0] bank0_q, bank1_q;
+    always @(posedge clk) begin
+        if (rst_n && fill_can_write && !fill_bank)
+            bank0[fill_count[RAM_AW-1:0]] <= fill_data;
+        if (rst_n && fill_can_write && fill_bank)
+            bank1[fill_count[RAM_AW-1:0]] <= fill_data;
+        if (read_active) begin
+            bank0_q <= bank0[read_count[RAM_AW-1:0]];
+            bank1_q <= bank1[read_count[RAM_AW-1:0]];
+        end
+    end
+    assign pixel_data = (!pixel_valid || read_underflow) ? 24'd0 :
+                        (read_bank ? bank1_q : bank0_q);
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             ready0               <= 1'b0;
@@ -127,7 +144,6 @@ module line_buffer_pingpong #(
             fill_commit_pulse    <= 1'b0;
             fill_fail_pulse      <= 1'b0;
             pixel_valid          <= 1'b0;
-            pixel_data           <= 24'd0;
             line_done            <= 1'b0;
             underflow_pulse      <= 1'b0;
             underflow_sticky     <= 1'b0;
@@ -167,10 +183,6 @@ module line_buffer_pingpong #(
 
             // Fill data. The bank was guaranteed free when allocated.
             if (fill_can_write) begin
-                if (fill_bank == 1'b0)
-                    bank0[fill_count] <= fill_data;
-                else
-                    bank1[fill_count] <= fill_data;
                 fill_count <= fill_count + 16'd1;
             end
 
@@ -254,12 +266,6 @@ module line_buffer_pingpong #(
             // pixel_valid remains asserted on every cycle until line_done.
             if (read_active) begin
                 pixel_valid <= 1'b1;
-                if (read_underflow)
-                    pixel_data <= 24'h000000;
-                else if (read_bank == 1'b0)
-                    pixel_data <= bank0[read_count];
-                else
-                    pixel_data <= bank1[read_count];
 
                 if (read_count + 16'd1 >= read_width_latched) begin
                     read_active <= 1'b0;

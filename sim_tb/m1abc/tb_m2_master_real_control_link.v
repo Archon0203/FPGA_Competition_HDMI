@@ -19,7 +19,8 @@ module tb_m2_master_real_control_link;
         .POR_CYCLES(8),
         .SLIDE_PERIOD_CLKS(3000),
         .DISCOVERY_INTERVAL_CYCLES(100),
-        .ACK_TIMEOUT_CYCLES(5000)
+        .ACK_TIMEOUT_CYCLES(5000),
+        .STATUS_POLL_INTERVAL_CYCLES(100), .KEY_FILTER_CYCLES(4)
     ) u_master (
         .clk(clk_m), .rst_n(rst_m_n), .uart_rx(s_tx), .uart_tx(m_tx),
         .key_next_n(key_next_n), .key_prev_n(key_prev_n),
@@ -119,14 +120,15 @@ module tb_m2_master_real_control_link;
                     2'd2: expected_id = 8'd3;
                     default: expected_id = 8'd0;
                 endcase
-                if (open_image_id !== expected_id) begin
+                if (open_count < 3 && open_image_id !== expected_id) begin
                     errors = errors + 1;
                     $display("ERROR: OPEN sequence count=%0d got=%0d expected=%0d",
                              open_count, open_image_id, expected_id);
                 end
                 open_count <= open_count + 1;
                 load_target <= open_image_id;
-                load_countdown <= 20;
+                if (source_busy) $fatal(1,"OPEN overlaps outstanding media load");
+                load_countdown <= 12000; // far longer than slide period and ACK timeout
                 source_busy <= 1'b1;
                 source_valid <= 1'b0;
             end else if (load_countdown != 0) begin
@@ -140,6 +142,28 @@ module tb_m2_master_real_control_link;
             end
         end
     end
+
+    task press;
+        input integer key;
+        begin
+            @(negedge clk_m);
+            case(key) 0: key_play_n=0; 1: key_next_n=0; 2: key_prev_n=0; endcase
+            repeat(12) @(negedge clk_m);
+            key_play_n=1; key_next_n=1; key_prev_n=1;
+            repeat(12) @(negedge clk_m);
+        end
+    endtask
+    task wait_visible;
+        input [7:0] id;
+        begin
+            guard=0;
+            while ((selected_image_id!=id || !u_master.media_cmd_ready) && guard<60000) begin
+                @(negedge clk_m); guard=guard+1;
+            end
+            check(guard<60000,"requested image reaches visible DONE");
+        end
+    endtask
+    initial begin #20000000; $fatal(1,"watchdog"); end
 
     initial begin
         repeat (8) @(posedge clk_m);
@@ -157,16 +181,27 @@ module tb_m2_master_real_control_link;
         while (open_count < 3 && guard < 200000) begin
             @(posedge clk_m); guard = guard + 1;
         end
+        press(0); // pause while the third image is still loading
+        check(!u_master.play_en,"physical pause key disables carousel");
         check(open_count >= 3, "preloaded image 0 deduped; slideshow emitted OPEN 1,2,3");
 
         guard = 0;
-        while (selected_image_id != 8'd3 && guard < 5000) begin
+        while (selected_image_id != 8'd3 && guard < 16000) begin
             @(posedge clk_s); guard = guard + 1;
         end
         check(selected_image_id == 8'd3, "mock real-media load reached image 3");
         check(!bridge_fault, "Slave bridge fault remains clear");
         check(!m_led[3], "Master fault LED remains clear");
 
+        wait_visible(3);
+        repeat(10000) @(negedge clk_m);
+        check(open_count==3,"paused carousel sends no extra OPEN");
+        press(2);
+        wait_visible(2);
+        check(open_count==4,"PREV performs exactly one real load");
+        press(1);
+        wait_visible(3);
+        check(open_count==5,"NEXT performs exactly one real load");
         if (errors == 0)
             $display("PASS: M2 Master real-control link checks=%0d opens=%0d selected=%0d",
                      checks, open_count, selected_image_id);

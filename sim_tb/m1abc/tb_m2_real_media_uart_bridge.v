@@ -49,7 +49,13 @@ module tb_m2_real_media_uart_bridge;
       expect_reply(8'h81,8'h02,0);
       // source_done may be a one-cycle pulse.  The bridge must still report
       // DONE later from the persistent source_valid/media_succeeded state.
-      selected_image_id=3; source_valid=1; source_done=0;
+      // A queued OPEN is not DONE even if the previous image is still valid.
+      source_valid=1;
+      send_frame(8'h09,0,0); expect_reply(8'h89,8'h02,0);
+      source_busy=1; source_valid=0;
+      repeat(3) @(negedge clk);
+      source_busy=0; selected_image_id=3; source_valid=1; source_done=0;
+      repeat(3) @(negedge clk);
       send_frame(8'h09,0,0); expect_reply(8'h89,8'h04,0);
       source_valid=0; source_error=1; source_error_code=8'h3c;
       send_frame(8'h00,0,0); expect_reply(8'h80,8'he0,8'h3c);

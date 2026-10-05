@@ -57,6 +57,7 @@ module tb_m2_open_dispatcher;
         end
     endtask
 
+    initial begin #20000; $fatal(1,"watchdog"); end
     initial begin
         repeat (3) @(posedge clk);
         rst_n = 1'b1;
@@ -88,6 +89,10 @@ module tb_m2_open_dispatcher;
         repeat (3) @(posedge clk);
         if (!remote_queued) $fatal;
         cmd_ready = 1'b1;
+        // ID 2 was already presented while ready was low: it must remain
+        // stable until accepted, followed by the coalesced queued ID 3.
+        expect_pulse(8'd2, 1'b1);
+        @(negedge clk);
         expect_pulse(8'd3, 1'b1);
 
         // Explicit catalog restart re-arms exactly one standalone bootstrap.

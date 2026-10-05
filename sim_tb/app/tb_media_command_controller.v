@@ -133,6 +133,22 @@ module tb_media_command_controller;
         check(selected_image_id, 3, "manual next restores image three");
         accept_command(3);
 
+        // Returning to the blocked target cancels an obsolete deferred ID.
+        key_pulse(4'b0100); // pending 2
+        key_pulse(4'b0010); // deferred 3
+        key_pulse(4'b0100); // return to pending 2
+        accept_command(2);
+        check(media_cmd_valid, 0, "returning to pending ID cancels obsolete deferred request");
+        key_pulse(4'b0010);
+        accept_command(3);
+        // No autonomous advance while a real-media transaction is outstanding.
+        key_pulse(4'b0001);
+        repeat (PERIOD*3) @(negedge clk);
+        check(media_cmd_valid, 0, "busy load cannot queue carousel command");
+        check(selected_image_id, 3, "busy load keeps selected image");
+        key_pulse(4'b0001);
+        // Resume after completion; coordinator now advertises idle.
+        media_cmd_ready = 1'b1;
         // Resume, then verify a fixed-period automatic command and tick.
         key_pulse(4'b0001);
         check(play_en, 1, "play resumed");
@@ -141,6 +157,7 @@ module tb_media_command_controller;
         check(slide_tick, 1, "automatic rotation tick");
         check(media_cmd_valid, 1, "automatic command valid");
         check(media_cmd_image_id, 0, "automatic command wraps");
+        media_cmd_ready = 1'b0;
         accept_command(0);
 
         // Emergency is master-local: it mutes rotation and raises the alert,
@@ -183,7 +200,7 @@ module tb_media_command_controller;
         if (errors == 0)
             $display("PASS: media_command_controller (checks=%0d)", checks);
         else
-            $display("FAIL: media_command_controller (%0d errors, checks=%0d)", errors, checks);
+            $fatal(1,"FAIL: media_command_controller (%0d errors, checks=%0d)", errors, checks);
         $finish;
     end
 endmodule
