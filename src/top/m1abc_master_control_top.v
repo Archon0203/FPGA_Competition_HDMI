@@ -17,7 +17,9 @@ module m1abc_master_control_top #(
     parameter integer POR_CYCLES = 1_000_000,
     parameter integer SLIDE_PERIOD_CLKS = 250_000_000,
     parameter integer DISCOVERY_INTERVAL_CYCLES = 5_000_000,
-    parameter integer ACK_TIMEOUT_CYCLES = 2_500_000
+    parameter integer ACK_TIMEOUT_CYCLES = 2_500_000,
+    parameter integer STATUS_POLL_INTERVAL_CYCLES = 1_000_000,
+    parameter integer KEY_FILTER_CYCLES = 500000
 )(
     input  wire       clk,
     input  wire       rst_n,
@@ -39,7 +41,7 @@ module m1abc_master_control_top #(
     wire [3:0] key_event;
     wire [3:0] key_raw_n = {1'b1, key_prev_n, key_next_n, key_play_n};
 
-    key_filter #(.CNT_MAX(500000), .ACTIVE_LOW(1'b1)) u_key_filter (
+    key_filter #(.CNT_MAX(KEY_FILTER_CYCLES), .ACTIVE_LOW(1'b1)) u_key_filter (
         .clk(clk), .rst_n(core_rst_n), .key_in(key_raw_n),
         .key_out(key_level), .key_event(key_event));
 
@@ -123,7 +125,8 @@ module m1abc_master_control_top #(
 
     m1c_coordinator_uart #(
         .DISCOVERY_INTERVAL_CYCLES(DISCOVERY_INTERVAL_CYCLES),
-        .ACK_TIMEOUT_CYCLES(ACK_TIMEOUT_CYCLES)
+        .ACK_TIMEOUT_CYCLES(ACK_TIMEOUT_CYCLES),
+        .STATUS_POLL_INTERVAL_CYCLES(STATUS_POLL_INTERVAL_CYCLES)
     ) u_coordinator (
         .clk(clk), .rst_n(core_rst_n),
         .media_cmd_valid(media_cmd_valid),

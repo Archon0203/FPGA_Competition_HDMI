@@ -22,8 +22,3 @@ set_false_path \
 set_false_path \
     -from [get_clocks {u_display/u_sdram_pll/pll_inst.clkc[1]}] \
     -to [get_clocks {u_display/u_sdram_pll/pll_inst.clkc[2]}]
-
-# Toggle CDC: req is synchronized before capturing held bundled data.
-set_false_path -from [get_ports {link_req}]
-# Bound data input routing well below the 3+ destination-cycle capture guard.
-set_max_delay 40.000 -from [get_ports {link_data[*]}]

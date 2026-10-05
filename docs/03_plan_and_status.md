@@ -118,7 +118,7 @@ Slave TF/FAT32/BMP
   -> Master HDMI
 ```
 
-M2 **尚未关闭**。当前只完成了其中的“Slave 本地真实媒体子门禁”。
+M2 **尚未关闭**。用户已确认上一候选的 Slave 本地真实图片、Master 控制 NEXT/PREV 与轮播正常。当前转入 14 线跨板主板 HDMI 候选，已完成 12 项子链回归、双角色 final STA/BitGen，等待新拓扑板测。
 
 ### 5.1 已通过：Slave 本地真实 TF/BMP 第一图
 
@@ -159,11 +159,20 @@ BRAM9K      10 / 64
 BRAM32K       0 / 16
 ```
 
-这组报告只证明当时对应 netlist 的实现状态，**不能作为 DIAG5、DUALCTRL、DUALCTRL2 或 FIX1 的 `[S]` 证据**。当前 FIX1 仍需重新 synthesis → P&R → final STA → BitGen 后才能记 `[S]`。
+这组报告只证明当时对应 netlist 的实现状态，**不能作为 DIAG5、DUALCTRL、DUALCTRL2 或 FIX1 的 `[S]` 证据**。FIX1 未单独取得这些证据；本轮新候选的结果见下表。
 
-资源分析记录显示 `line_buffer_pingpong` 是显著 LUT 消耗项；但资源优化属于后续任务，不能与当前控制正确性证据混写。本轮文档整理不改变任何 RTL。
+资源分析记录显示 `line_buffer_pingpong` 是显著 LUT 消耗项；但资源优化属于后续任务，不能与当前控制正确性证据混写。本轮控制修复没有开展 LUT/BRAM 资源重构。
 
-### 5.3 未通过：真实媒体双板切换/轮播
+2026-10-04 新候选 `M2_CONTROL_RELOAD_FIX_20261004` 已完成两角色 synthesis → P&R → final STA → BitGen：
+
+| Top | SWNS | HWNS | STNS / HTNS | STA coverage |
+|---|---|---|---|---|
+| `m1abc_master_control_top` | +8.695 ns | +0.223 ns | 0 / 0 ns | 97.96% |
+| `m2_slave_tf_hdmi_top` | +0.570 ns | +0.014 ns | 0 / 0 ns | 99.52% |
+
+此 `[S]` 仅对应当前 UART 控制 + Slave 本地 HDMI 候选及现有约束，不代表尚未完成的双板媒体数据面或 1080p。报告、源码/bitstream SHA256 见 [本轮记录](develop_records/M2_CONTROL_RELOAD_FIX_20261004.md)。
+
+### 5.3 已通过的旧拓扑：Master 控制 Slave 图片切换/轮播
 
 第一次把 M1 控制接到真实 TF 媒体后，板上出现：
 
@@ -171,30 +180,46 @@ BRAM32K       0 / 16
 - NEXT/PREV 多数只能造成画面扰动，不能稳定切换；
 - 取出 TF、等待、重新插卡后，按键曾能成功切换一次。
 
-因此：
-
-```text
-M2 real-media NEXT/PREV                 未通过
-M2 real-media PLAY/PAUSE + carousel     未通过
-M2 dual-control board gate              未通过
-```
+以上为首次候选的历史失败。2026-10-04 用户随后明确确认：`M2_CONTROL_RELOAD_FIX_20261004` 轮播和切换完全正常，因此该候选的 real-media NEXT/PREV、PLAY/PAUSE + carousel、Dual-control 记 `[B] PASS`；尚无长稳或完整断链恢复验收。
 
 后续代码审查提出 `OPEN -> ACCEPTED` 被 Master 过早视为“整图完成”的问题，并形成 `OPEN -> ACCEPTED -> STATUS polling -> DONE` 的 DUALCTRL2 候选；但该候选首次综合又暴露 `source_valid` 未声明的接口错误。
 
-当前 FIX1 已在源码层补齐 `source_valid` 端口并连接到 `media_succeeded`，但**用户尚未提供 FIX1 重新综合、Questa 或真板结果**。因此当前 FIX1 只能记为“待验证候选”，不能写 PASS：
+FIX1 是历史接口修补候选，未单独取得板级证据。上一已板测候选为 `M2_CONTROL_RELOAD_FIX_20261004`：
 
-```text
-DUALCTRL2 FIX1 compile/synthesis         —
-DUALCTRL2 FIX1 Questa                    —
-DUALCTRL2 FIX1 final STA                 —
-DUALCTRL2 FIX1 board switching           —
-```
+- 修复连续加载时误消费上一事务的 sticky done/parser 状态；旧 loader 在新多图回归中复现 9 项失败，修复后通过。
+- 修复 TD 将前向引用的 dispatcher ready 当成未驱动隐式线的问题。
+- 完成语义改为：当前图加载成功、SDRAM fence 完成并在帧边界实际发布后，Slave 才报告匹配图片的 DONE；Master 据此开始完整轮播停留计时。
+- 修复排队 OPEN 误报旧 DONE、超时提前解锁、延迟切换意图未取消的问题。
+
+| 当前候选证据 | 状态 |
+|---|---|
+| 7 项 Questa 单元/子链回归 | `[U/C-sub] PASS` |
+| 两角色 final STA + BitGen | `[S] PASS`，现有约束内 setup/hold 0 violation |
+| 此候选真板 NEXT/PREV/轮播 | `[B] PASS`，用户确认完全正常，HDMI 位于 Slave |
+| 完整双板 TF → Master HDMI | 未完成 |
+
+单缓冲替换期间仍显示加载/诊断页，本轮不宣称无闪屏切换。该候选 HDMI 位于 Slave，已被用户确认通过。原步骤见 [修复与复测记录](develop_records/M2_CONTROL_RELOAD_FIX_20261004.md)。
 
 ### 5.4 Slave TD 工程文件问题
 
 协作者从仓库主分支打开 `FPGA_Competition_HDMI_SLAVE.al` 时曾出现 TD6.2.1 “Unable to write the project file / Save As”。对上传仓库快照的比较发现，记录的 `origin/main` Slave 工程文件含 5 个重复 `<File Path=...>` 条目，而用户本机可打开版本无重复。
 
 这属于工程文件维护问题，不属于 M2 媒体功能 PASS。当前候选包使用去重 `.al`，并提供 `tools/check_td_project.py` 做重复路径/CRLF 检查；是否已合并回团队主分支仍由团队 Git 流程确认。
+
+### 5.5 当前候选：14 线 TF → Master HDMI
+
+`M2_MASTER_OUTPUT_20261004`：Top 为 `m2_master_tf_hdmi_top` 与 `m2_slave_media_tx_top`；两份长期 `.al` 已同步。TF 留 Slave；HDMI、按键、UI、SDRAM 和行缓存位于 Master。14 根线包含 2 UART、7 数据、REQ、ACK、显示发布反馈、2 GND；具体接法只按 [逐针表](develop_records/M2_MASTER_OUTPUT_20261004.md)。
+
+| 项目 | 当前证据 |
+|---|---|
+| 上一拓扑：Master 控制 Slave 显示 | 用户确认 `[B] PASS` |
+| 新拓扑：真实媒体 + 新传输、CRC/背压、加载 UI、RAM/scanout | 12 项 `[U/C-sub] PASS` |
+| Master final routed | 4514 LUT；SWNS +0.236 ns，HWNS +0.003 ns；STNS/HTNS=0；BitGen 完成 |
+| Slave final routed | 6114 LUT；SWNS +10.085 ns，HWNS +0.075 ns；STNS/HTNS=0；BitGen 完成 |
+| TF → 14 线 → Master HDMI 真板 | `—`，待接线、同时更新两 bitstream 后验收 |
+| 1080p / 高速持续视频 / 双缓冲无闪屏 | 未完成 |
+
+LUT 降低来自 RAM 推断修正与职责拆分。新链路是有确认的低速图片搬运，不是高速视频吞吐证据。当前卡 SPI 速率保持已验证值，加载耗时未宣称缩短。故障/断线可能需双板复位，M2 安全恢复门槛尚未关闭。
 
 ## 6. M2 关闭门槛
 
@@ -212,7 +237,7 @@ M2 只有同时满足以下条件才可关闭：
 
 | 节点 | 目标 | 当前状态 |
 |---|---|---|
-| M2 | 640×480 真实媒体双板第一闭环 | **进行中；local TF/BMP 子门禁 `[B] PASS`，双板切换未通过** |
+| M2 | 640×480 真实媒体双板第一闭环 | **进行中；旧 Slave 显示拓扑切换/轮播 `[B] PASS`，新 Master HDMI 候选待板测** |
 | M3 | source-synchronous 数据面达到 1080p packed-YUV422 等效持续吞吐；720p 仅作排错 | 未开始完整验收 |
 | M4 | Master 真实 1920×1080 静态图 + UI/OSD | 未完成 |
 | M5 | 视频、切换、转场、音频 | 未完成 |
@@ -222,15 +247,13 @@ M2 只有同时满足以下条件才可关闭：
 
 ## 8. 当前验证顺序
 
-在继续 M2 前按以下顺序收口，不并行引入新的资源优化：
+1. 按 [14 线表](develop_records/M2_MASTER_OUTPUT_20261004.md) 断电接线，HDMI 移到 Master，TF 留 Slave。
+2. 同时更新 `sim_work/m2_master_output/delivery/master.bit` 与 `slave.bit`，双板一起复位；先验证加载卡和第一张图。
+3. 暂停轮播检查至少 4 张图的 NEXT/PREV，再恢复轮播；观察“图片可见后停留约 5 秒”。
+4. 新拓扑正常后：A 单独推进 SD 提速；B 推进主板双缓冲/安全 commit 和故障超时恢复；C 维护 UI 和控制完成语义。
+5. 准备适合高速传输的线束/转接板，完成 source-synchronous PRBS/CRC/sequence 门禁；14 根杜邦线本次 PASS 不能替代 1080p60 视频带宽门禁。
 
-1. FIX1 重新跑 Slave/Master 源码分析与综合；
-2. 跑 real-media UART bridge / coordinator / dispatcher / media-write CDC 相关 Questa 回归；
-3. 两角色重新 P&R + final STA + BitGen；
-4. Slave-alone：确认单图加载后长期稳定，不周期性重载；
-5. Dual-control：暂停自动轮播，单步验证 `0 -> 1 -> 2 -> ...` 与 PREV；
-6. 再恢复自动轮播，确认“图片完成后计时”而不是“ACK 后计时”；
-7. 只有低速真实媒体控制稳定后，才继续 M2-B0 高速 source-synchronous PRBS/CRC/sequence 门禁。
+原 12 项针对性回归均通过；旧 `run_m1abc.do` 的 SPI byte-loop 失败仍是独立历史待核实项，不能宣称全仓 aggregate 通过。
 
 ## 9. 更新纪律
 

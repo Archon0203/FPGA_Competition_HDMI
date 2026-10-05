@@ -34,6 +34,58 @@ module m2_slave_tf_hdmi_top (
     output wire HDMI_DDC_SCL,
     inout  wire HDMI_DDC_SDA
 );
+    m2_frame_display_core u_display (
+        .clk(clk),
+        .rst_n(rst_n),
+        .uart_rx(uart_rx),
+        .uart_tx(uart_tx),
+        .led(led),
+        .diag_led_n(diag_led_n),
+        .diag_sel_n(diag_sel_n),
+        .sd_ncs(sd_ncs),
+        .sd_sclk(sd_sclk),
+        .sd_mosi(sd_mosi),
+        .sd_miso(sd_miso),
+        .HDMI_D0_P(HDMI_D0_P),
+        .HDMI_D1_P(HDMI_D1_P),
+        .HDMI_D2_P(HDMI_D2_P),
+        .HDMI_CLK_P(HDMI_CLK_P),
+        .HDMI_DDC_SCL(HDMI_DDC_SCL),
+        .HDMI_DDC_SDA(HDMI_DDC_SDA),
+        .remote_valid(1'b0), .remote_data(32'd0), .remote_ready(),
+        .remote_published(), .media_clock(), .media_reset_n());
+endmodule
+
+module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
+    input  wire clk,
+    input  wire rst_n,
+    input  wire uart_rx,
+    output wire uart_tx,
+    output wire [3:0] led,
+
+    // Eight dual-color LED group / nixie shared nets.  The board schematic
+    // powers the LED group from LEDVCC through 470-ohm resistors, so DIG/SEL
+    // are active-low LED cathodes.  Keep SEL high (off) and use DIG0..7 as
+    // a full-byte diagnostic display.
+    output wire [7:0] diag_led_n,
+    output wire [7:0] diag_sel_n,
+
+    output wire sd_ncs,
+    output wire sd_sclk,
+    output wire sd_mosi,
+    input  wire sd_miso,
+
+    output wire HDMI_D0_P,
+    output wire HDMI_D1_P,
+    output wire HDMI_D2_P,
+    output wire HDMI_CLK_P,
+
+    output wire HDMI_DDC_SCL,
+    input wire remote_valid,
+    input wire [31:0] remote_data,
+    output wire remote_ready, remote_published, media_clock, media_reset_n,
+    inout  wire HDMI_DDC_SDA
+);
 
     // M2 keeps the board-proven framed UART as the control/status plane.
     // Raw pixels never use this 115200-baud link.
@@ -171,6 +223,12 @@ module m2_slave_tf_hdmi_top (
     reg  frame_ready_media_ff2;
     wire ctrl_link_seen, ctrl_fault, ctrl_command_toggle, ctrl_reply_toggle;
     reg  [7:0] selected_image_id;
+    reg [7:0] active_image_id;
+    reg use_framebuffer;
+    reg fenced_toggle_sdr;
+    reg fenced_sync1, fenced_sync2, fenced_seen;
+    reg frame_fenced_media;
+    reg publish_wait_frame;
 
     // Synchronize the SDRAM-domain publish state back into the media domain.
     // After a successful media transaction, the next OPEN is held until the
@@ -207,6 +265,7 @@ module m2_slave_tf_hdmi_top (
     wire       dispatch_cmd_is_remote;
     wire       dispatch_bootstrap_issued;
     wire       dispatch_remote_queued;
+    wire       media_cmd_accept_ready;
 
     m2_real_media_uart_bridge u_m2_real_ctrl (
         .clk(pixel_clk), .rst_n(media_rst_n),
@@ -216,10 +275,12 @@ module m2_slave_tf_hdmi_top (
         .frame_tx_busy(ctrl_tx_busy), .frame_tx_request(ctrl_tx_request),
         .frame_tx_opcode(ctrl_tx_opcode), .frame_tx_length(ctrl_tx_length),
         .frame_tx_payload(ctrl_tx_payload), .catalog_valid(media_catalog_valid),
-        .catalog_count(media_catalog_count), .source_busy(media_busy),
-        .source_done(media_done), .source_valid(media_succeeded),
-        .source_error(media_error),
-        .source_error_code(media_error_code), .selected_image_id(selected_image_id),
+        .catalog_count(media_catalog_count),
+        .source_busy(media_busy || dispatch_cmd_valid || dispatch_remote_queued ||
+                     (media_succeeded && !use_framebuffer)),
+        .source_done(1'b0), .source_valid(media_succeeded && use_framebuffer),
+        .source_error(media_failed),
+        .source_error_code(media_failure_code), .selected_image_id(selected_image_id),
         .open_request(remote_open_request), .open_image_id(remote_open_image_id),
         .link_seen(ctrl_link_seen), .fault(ctrl_fault),
         .command_toggle(ctrl_command_toggle), .reply_toggle(ctrl_reply_toggle));
@@ -244,12 +305,31 @@ module m2_slave_tf_hdmi_top (
         .remote_queued        (dispatch_remote_queued)
     );
 
-    wire media_cmd_accept_ready = media_cmd_ready &&
-                                  (!media_succeeded || frame_ready_media_ff2);
+    assign media_cmd_accept_ready = media_cmd_ready &&
+                                  (!media_succeeded || use_framebuffer);
     assign media_cmd_valid    = dispatch_cmd_valid && media_cmd_accept_ready;
     assign media_cmd_image_id = dispatch_cmd_image_id;
-    wire dispatch_fire = dispatch_cmd_valid && media_cmd_accept_ready;
+    wire remote_begin;
+    wire [7:0] remote_image;
+    wire dispatch_fire = REMOTE_INPUT ? remote_begin : (dispatch_cmd_valid && media_cmd_accept_ready);
+    assign remote_published = use_framebuffer && media_succeeded;
+    assign media_clock = pixel_clk;
+    assign media_reset_n = media_rst_n;
 
+    generate if (REMOTE_INPUT) begin : g_remote
+        m2_remote_frame_rx u_frame_rx(.clk(pixel_clk), .rst_n(media_rst_n),
+            .in_valid(remote_valid), .in_data(remote_data), .in_ready(remote_ready),
+            .frame_begin(remote_begin), .frame_done(media_done), .frame_error(media_error),
+            .image_id(remote_image), .wr_valid(media_wr_valid), .wr_addr(media_wr_addr),
+            .wr_data(media_wr_data), .wr_ready(media_wr_ready), .busy(media_busy));
+        assign media_cmd_ready=0;
+        assign media_catalog_valid=1;
+        assign media_catalog_count=1;
+        assign media_error_code=8'h31;
+        assign media_sector_error_detail=0;
+        assign sd_ncs=1; assign sd_sclk=0; assign sd_mosi=1;
+    end else begin : g_local
+        assign remote_begin=0; assign remote_image=0; assign remote_ready=0;
     m2_slave_tf_media_core #(.SPI_CLK_DIV(4), .SPI_INIT_CLK_DIV(32),
                              .SPI_MODE3(1),
                              .WIDTH(HACTIVE), .HEIGHT(VACTIVE)) u_media (
@@ -278,6 +358,8 @@ module m2_slave_tf_hdmi_top (
         .sector_error_detail(media_sector_error_detail)
     );
 
+    end endgenerate
+
     m2_media_write_cdc u_media_write_cdc (
         .media_clk      (pixel_clk),
         .media_rst_n    (media_rst_n),
@@ -299,6 +381,7 @@ module m2_slave_tf_hdmi_top (
         if (!media_rst_n) begin
             media_load_toggle <= 0;
             selected_image_id <= 0;
+            active_image_id <= 0;
             media_started <= 0;
             media_failed <= 0;
             media_failure_code <= 0;
@@ -332,6 +415,7 @@ module m2_slave_tf_hdmi_top (
             // Before a Master is attached it emits one bootstrap OPEN(0); after
             // that, only queued remote OPEN requests can generate new loads.
             if (dispatch_fire) begin
+                active_image_id <= REMOTE_INPUT ? remote_image : media_cmd_image_id;
                 media_load_toggle <= ~media_load_toggle;
                 media_succeeded <= 1'b0;
                 media_failed <= 1'b0;
@@ -356,7 +440,7 @@ module m2_slave_tf_hdmi_top (
             end
 
             if (media_done) begin
-                selected_image_id <= media_cmd_image_id;
+                selected_image_id <= active_image_id;
                 media_succeeded <= 1'b1;
                 media_failed <= 1'b0;
                 media_retrying <= 1'b0;
@@ -623,13 +707,17 @@ module m2_slave_tf_hdmi_top (
             frame_ready_sdr   <= 1'b0;
             frame_write_error <= 1'b0;
             media_load_sdr_seen <= 1'b0;
+            fenced_toggle_sdr <= 1'b0;
         end else begin
             if (media_load_begin_sdr) begin
                 media_load_sdr_seen <= media_load_sdr_ff2;
-                frame_ready_sdr <= 1'b0;
+                // This P1 pipeline expects a monotonic frame_ready. Keep
+                // scanout draining while the single buffer is hidden/reloaded;
+                // dropping ready stalls prefetch but not its armed scanout.
                 frame_write_error <= 1'b0;
             end else if (sdr_fenced) begin
                 frame_ready_sdr <= 1'b1;
+                fenced_toggle_sdr <= ~fenced_toggle_sdr;
             end
 
             if (arb_protocol_error ||
@@ -720,22 +808,43 @@ module m2_slave_tf_hdmi_top (
         end
     end
 
-    reg use_framebuffer;
+    always @(posedge pixel_clk or negedge pix_rst_n) begin
+        if (!pix_rst_n) begin
+            fenced_sync1 <= 0;
+            fenced_sync2 <= 0;
+            fenced_seen <= 0;
+            frame_fenced_media <= 0;
+        end else begin
+            fenced_sync1 <= fenced_toggle_sdr;
+            fenced_sync2 <= fenced_sync1;
+            if (dispatch_fire)
+                frame_fenced_media <= 0;
+            else if (fenced_sync2 != fenced_seen) begin
+                fenced_seen <= fenced_sync2;
+                frame_fenced_media <= 1;
+            end
+        end
+    end
 
     always @(posedge pixel_clk or negedge pix_rst_n) begin
         if (!pix_rst_n) begin
             use_framebuffer <= 1'b0;
-        end else if (media_cmd_valid && media_cmd_ready) begin
+            publish_wait_frame <= 1'b0;
+        end else if (dispatch_fire) begin
             // Hide the single buffer while it is being replaced. The display
             // remains on the deterministic diagnostic page until a complete
             // write has fenced and scanout has warmed again.
             use_framebuffer <= 1'b0;
-        end else if (fb_frame_boundary &&
+            publish_wait_frame <= 1'b0;
+        end else if (fb_frame_boundary && media_succeeded && frame_fenced_media &&
                      frame_ready_pix &&
                      fb_warm_ready &&
                      !pipeline_protocol_error &&
                      !frame_write_error_pix_ff2) begin
-            use_framebuffer <= 1'b1;
+            // Discard one full scan after the write fence so prefetched lines
+            // cannot publish data from the previous image.
+            publish_wait_frame <= 1'b1;
+            if (publish_wait_frame) use_framebuffer <= 1'b1;
         end
     end
 
@@ -776,9 +885,15 @@ module m2_slave_tf_hdmi_top (
             startup_diag_data = 24'h00FF00; // green: waiting safe frame boundary
     end
 
+    wire [23:0] loading_rgb;
+    m2_loading_card u_loading_card(.clk(pixel_clk), .rst_n(pix_rst_n),
+        .axis_valid(baseline_axis_valid), .axis_user(baseline_axis_user),
+        .axis_last(baseline_axis_last), .rgb(loading_rgb));
+    wire loading_healthy = sdr_pll_lock_pix_ff2 && !frame_write_error_pix_ff2 &&
+                           !media_failed && !pipeline_protocol_error;
     wire [23:0] axis_data = use_framebuffer
                           ? framebuffer_axis_data
-                          : startup_diag_data;
+                          : (loading_healthy ? loading_rgb : startup_diag_data);
 
     // ============================================================
     // P1-04C EDID trigger: unchanged

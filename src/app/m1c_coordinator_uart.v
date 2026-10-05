@@ -70,6 +70,7 @@ module m1c_coordinator_uart #(
     reg [31:0] poll_count;
     reg [7:0]  expected_ack;
     reg [7:0]  requested_image;
+    reg        remote_visible;
 
     wire response_has_status = rx_frame_length >= 3'd1;
     wire response_has_image  = rx_frame_length >= 3'd2;
@@ -82,8 +83,9 @@ module m1c_coordinator_uart #(
     wire response_is_error = response_has_status && (response_status == STATUS_ERROR);
     wire response_completes_open = response_has_status && response_has_image &&
                                    (response_image == requested_image) &&
-                                   ((response_status == STATUS_DONE) ||
-                                    (response_status == STATUS_READY));
+                                   (response_status == STATUS_DONE);
+    wire matching_response = rx_frame_valid && (rx_frame_opcode == expected_ack) &&
+                             (rx_frame_length == 3'd4);
 
     // OPEN remains back-pressured for the whole real-media transaction, not
     // merely until the Slave returns ACCEPTED.
@@ -109,6 +111,7 @@ module m1c_coordinator_uart #(
             poll_count            <= 32'd0;
             expected_ack          <= ACK_PING;
             requested_image       <= 8'd0;
+            remote_visible        <= 1'b0;
             frame_tx_request      <= 1'b0;
             frame_tx_opcode       <= OP_PING;
             frame_tx_length       <= 3'd0;
@@ -130,16 +133,17 @@ module m1c_coordinator_uart #(
 
             // Consume only the response belonging to the outstanding frame.
             if (state == ST_WAIT && rx_frame_valid) begin
-                if (rx_frame_opcode == expected_ack) begin
+                if (matching_response) begin
+                    remote_visible <= (response_status == STATUS_DONE);
                     if (response_has_status)
                         remote_status <= response_status;
                     if (response_has_error)
                         remote_error <= response_error;
                     else
                         remote_error <= 8'd0;
-                    if (response_has_count && response_count != 0) begin
+                    if (response_has_count) begin
                         catalog_count <= response_count;
-                        catalog_valid <= 1'b1;
+                        catalog_valid <= (response_count != 0);
                     end
                     if (response_has_image) begin
                         if (response_image != remote_selected_image)
@@ -205,7 +209,11 @@ module m1c_coordinator_uart #(
                             discovery_count <= discovery_count + 1'b1;
                         end
                     end else if (media_cmd_valid && media_cmd_ready) begin
+                        // Consume the bootstrap OPEN without reloading a frame
+                        // that discovery already confirmed as visible.
+                        if (!(remote_visible && media_cmd_image_id == remote_selected_image)) begin
                         requested_image  <= media_cmd_image_id;
+                        remote_visible   <= 1'b0;
                         frame_tx_opcode  <= OP_OPEN;
                         frame_tx_length  <= 3'd1;
                         frame_tx_payload <= {24'd0, media_cmd_image_id};
@@ -213,13 +221,20 @@ module m1c_coordinator_uart #(
                         expected_ack     <= ACK_OPEN;
                         state            <= ST_WAIT;
                         discovery_count  <= 32'd0;
+                        end
                     end
                 end
 
                 ST_WAIT: begin
-                    if (timeout_count >= ACK_TIMEOUT_CYCLES-1) begin
+                    if (matching_response) begin
+                        // A valid response on the deadline wins over timeout.
                         timeout_count <= 32'd0;
-                        state         <= ST_IDLE;
+                    end else if (timeout_count >= ACK_TIMEOUT_CYCLES-1) begin
+                        timeout_count <= 32'd0;
+                        // A lost ACCEPTED/STATUS reply is not media completion.
+                        // Keep the OPEN serialized and reconcile via STATUS.
+                        state         <= (expected_ack == ACK_PING) ? ST_IDLE : ST_POLL_GAP;
+                        poll_count    <= 32'd0;
                         link_ok       <= 1'b0;
                         fault         <= 1'b1;
                         if (!catalog_valid)

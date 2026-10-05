@@ -49,9 +49,11 @@ module m2_real_media_uart_bridge (
     reg [7:0] pending_opcode;
     reg [7:0] pending_status;
     reg [7:0] pending_error;
+    reg open_pending;
+    reg open_started;
 
     wire [7:0] live_status = source_error ? `M1A_STATUS_ERROR :
-                              source_busy  ? `M1A_STATUS_ACCEPTED :
+                              (source_busy || open_pending) ? `M1A_STATUS_ACCEPTED :
                               (source_done || source_valid) ? `M1A_STATUS_DONE :
                                              `M1A_STATUS_READY;
     wire [7:0] live_error = source_error ? source_error_code : 8'h00;
@@ -84,9 +86,18 @@ module m2_real_media_uart_bridge (
             fault            <= 1'b0;
             command_toggle   <= 1'b0;
             reply_toggle     <= 1'b0;
+            open_pending     <= 1'b0;
+            open_started     <= 1'b0;
         end else begin
             frame_tx_request <= 1'b0;
             open_request     <= 1'b0;
+            if (open_pending && source_busy)
+                open_started <= 1'b1;
+            if (source_error || (open_pending && open_started &&
+                source_valid && !source_busy && selected_image_id == open_image_id)) begin
+                open_pending <= 1'b0;
+                open_started <= 1'b0;
+            end
 
             if (rx_frame_error || rx_framing_error)
                 fault <= 1'b1;
@@ -120,6 +131,8 @@ module m2_real_media_uart_bridge (
                                 // the Slave is legitimately busy with TF I/O.
                                 open_image_id <= rx_frame_payload[7:0];
                                 open_request  <= 1'b1;
+                                open_pending  <= 1'b1;
+                                open_started  <= 1'b0;
                                 fault         <= 1'b0;
                                 queue_response(8'h81, `M1A_STATUS_ACCEPTED, 8'h00);
                             end
