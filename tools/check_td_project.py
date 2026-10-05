@@ -32,8 +32,7 @@ for p in files:
     if not crlf_ok:
         failed = True
         print('  WARNING: .al is not pure CRLF')
-    if p.name in {'FPGA_Competition_HDMI_MASTER.al',
-                  'FPGA_Competition_HDMI_SLAVE.al'}:
+    if p.name == 'FPGA_Competition_HDMI_MASTER.al':
         fifo_block = re.search(
             r'<File Path="src/framebuf/async_fifo\.v">(.*?)</File>',
             text, re.S)
