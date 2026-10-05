@@ -2,9 +2,9 @@
 
 > 本文件只描述 B 线任务。全项目使用统一节点 `M0～M6`，每个节点同时列出 A/B/C 任务并在节点末尾汇合。双板 + 1080P 是从 `M1` 开始的主线；**720p 只保留为可选故障隔离 profile，不再是必经验收节点**。当前进度和 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。
 
-## M2 近期执行顺序（2026-10-04）
+## M2 近期执行顺序（2026-10-05）
 
-杨文轩维护两端传输和主板缓存。先验收现有 14 线 profile：7-bit 数据 + REQ/ACK + 主板发布反馈，另有双向 UART 和两根地；从板媒体 ready/valid → 地址/像素/CRC → 主板 SDRAM fence/帧边界 → HDMI。此链是低速图片搬运，已生成候选但需板测。之后先补双缓冲、安全提交、超时/重传/单板重置恢复，再取得适合高速的线束，推进最终 source-synchronous PHY。
+杨文轩维护两端传输和主板缓存。FIX6 已完成 14 线静态图片链真板闭环，原理图 pin-map 根因已关闭。当前先清理 `tb_p1_sdram_cached_adapter` 的 active regression，再补异常/复位/长稳和更严格的安全提交验证。14 线链保留为静态图片 rollback baseline；持续视频另行推进高速 source-synchronous PHY，不在当前链路上继续堆带宽目标。
 
 原 32-bit@74.25MHz 只是高速候选；16-bit DDR@100MHz 也是预算候选，都未取得真板吞吐。14 根杜邦线不能承诺 1080p60 原始视频。控制面实际使用 UART，后文 SPI 描述不作为本轮接线要求。容量预算需区分 32-bit/pixel 与打包 16-bit/pixel；后者双 1080p 帧约 7.91 MiB，剩余空间和实际 SDRAM 读写吞吐必须重新验算。具体 [硬件/带宽记录](develop_records/M2_MASTER_OUTPUT_20261004.md)。
 
@@ -27,7 +27,7 @@ B-S 不拥有主板 front/back，也不读取 TF；B-M 不解析 FAT，也不建
 已完成并冻结的基线：P1-05A cached provider chain `[C-sub] PASS(260)`、官方 APUG011 子链 `[C-sub] PASS(24)`、TD6.2.1 routed `[S]` 和真板 `[B]`。该基线的 640×480 raster、HDMI PHY/PLL、CDC、prefetch 和 cadence 必须可随时回退。
 
 
-当前 M2 已证明 Slave 本地真实 TF/BMP 可以写入并显示，但这只验证了本地写入/读出子链，**没有证明 B-S→B-M 的高速媒体数据面、Master buffer commit 或多帧双板切换**。这些仍是 M2-B 的未完成门禁。
+当前 M2 FIX6 已证明真实 TF/BMP 可经 B-S→B-M 的 14 线图片链写入 Master 并完成多帧切换/轮播。该证据只覆盖低速静态图片 profile；高速持续媒体数据面、长稳/异常恢复和后续双缓冲仍是 B 线未完成门禁。
 
 ## 2. 文件所有权
 

@@ -14,6 +14,9 @@
 
 ## 14 根线：逐针连接
 
+> **FIX6 electrical correction (2026-10-05):** the earlier ball column for `data[3:5]` was wrong even though the literal J1 wire numbers were correct.  Schematic cross-reference `2_FPGA.pdf` + `4_GPIO.pdf` gives J1-5=`GPIOA_4`→GPIOA0/H13, J1-6=`GPIOA_5`→GPIOA16/H14, J1-7=`GPIOA_6`→GPIOA15/J14.  The old constraint put `data[3]` on L12/GPIOA20, which is routed through RN36 to connector net GPIOB_29 (J2-34), so a J1-only cable silently lost logical payload bit 3 while REQ/ACK still completed.  The table below and role ADC files are corrected in FIX6.
+
+
 方向 M=主板、S=从板。除 UART 两根交叉，其余都同编号连接。**表中的 J1 是连接器物理针号，不是 GPIOA 数字。** 方焊盘/丝印 pin 1 定位后按原理图奇偶排数，不按照片上下猜。导线尽量短（本候选建议不超过约 20 cm），两个 GND 都接；不连接两板 5V/3V3。
 
 | 根数 | 用途 / 方向 | 从板 J1 | 主板 J1 | FPGA 球位 / 片内网名 |
@@ -25,9 +28,9 @@
 | 5 | data[0] S → M | 1 | 1 | D14 / GPIOA9 |
 | 6 | data[1] S → M | 2 | 2 | G11 / GPIOA6 |
 | 7 | data[2] S → M | 3 | 3 | G12 / GPIOA8 |
-| 8 | data[3] S → M | 5 | 5 | L12 / GPIOA20 |
-| 9 | data[4] S → M | 6 | 6 | J14 / GPIOA15 |
-| 10 | data[5] S → M | 7 | 7 | H13 / GPIOA0 |
+| 8 | data[3] S → M | 5 | 5 | H13 / GPIOA0 |
+| 9 | data[4] S → M | 6 | 6 | H14 / GPIOA16 |
+| 10 | data[5] S → M | 7 | 7 | J14 / GPIOA15 |
 | 11 | data[6] S → M | 9 | 9 | K12 / GPIOA12 |
 | 12 | REQ S → M | 10 | 10 | L14 / GPIOA24 |
 | 13 | ACK M → S | 13 | 13 | M14 / GPIOA25 |

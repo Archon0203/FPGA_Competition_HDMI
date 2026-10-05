@@ -38,15 +38,20 @@ cdc = read("src/framebuf/m2_media_write_cdc.v")
 adapter = read("src/framebuf/p1_sdram_cached_adapter.v")
 master_al = read("FPGA_Competition_HDMI_MASTER.al")
 
-# B-1: published/mux/top/LED contradiction.
+# B-1: published/mux/top/LED contradiction.  Publication now additionally
+# requires proof that the post-fence scanout emitted a real framebuffer pixel.
+# This makes LED3/DISPLAY_PUBLISHED an end-to-end display datapath milestone,
+# not merely a control-state milestone.
 if ("<MODULE>m2_master_tf_hdmi_top</MODULE>" in master_al and
-        "assign remote_published = use_framebuffer && media_succeeded;" in core and
+        "assign remote_published = use_framebuffer && fb_data_seen && media_succeeded &&" in core and
+        "hdmi_video_ready && !p1_05a_error && !media_failed" in core and
+        "else if (frame_fenced_media && fb_pixel_valid)" in core and
         re.search(r"wire \[23:0\] axis_data = use_framebuffer\s*\? framebuffer_axis_data", core) and
         "assign led={display_led[3] || ctrl_led[3],display_published,ctrl_led[1:0]};" in master_top and
         ".axis_data       (axis_data)" in core):
-    ok("B-1", "current RTL makes LED3/display_published imply use_framebuffer=1, and APUG092 consumes the same axis_data mux")
+    ok("B-1", "display_published implies framebuffer selected + post-fence framebuffer pixel observed + media/HDMI clean")
 else:
-    fail("B-1", "publish/LED/mux/top relationship does not match the checklist")
+    fail("B-1", "publish/LED/mux/framebuffer-live/HDMI relationship does not match the checklist")
 
 # B-2: LED1/LED2 are control-UART status only.
 control = read("src/dual_board/m2_master_media_control.v")
@@ -55,45 +60,50 @@ if "assign led[0] = ack_toggle;" in control and "assign led[1] = link_ok;" in co
 else:
     fail("B-2", "Master control LED mapping changed")
 
-# B-3: exact five-beat packing/reconstruction.
-def beats(w):
-    return [(w >> 0) & 0x7f, (w >> 7) & 0x7f, (w >> 14) & 0x7f,
-            (w >> 21) & 0x7f, (w >> 28) & 0x0f]
+# B-3/B-4: self-framing six-symbol mailbox + four-phase handshake.
+def symbols(w):
+    return [
+        0x40 | ((w >> 0) & 0x3f),
+        (w >> 6) & 0x3f,
+        (w >> 12) & 0x3f,
+        (w >> 18) & 0x3f,
+        (w >> 24) & 0x3f,
+        (w >> 30) & 0x03,
+    ]
 
 
-def unpack(b):
-    return (b[0] | (b[1] << 7) | (b[2] << 14) | (b[3] << 21) |
-            ((b[4] & 0x0f) << 28)) & 0xffffffff
+def unpack_symbols(b):
+    return (
+        (b[0] & 0x3f) | ((b[1] & 0x3f) << 6) |
+        ((b[2] & 0x3f) << 12) | ((b[3] & 0x3f) << 18) |
+        ((b[4] & 0x3f) << 24) | ((b[5] & 0x03) << 30)
+    ) & 0xffffffff
 
 patterns = [0x00000000, 0xffffffff, 0x12345678, 0x89abcdef,
             0xb17e0000, 0xf17e0000, 0x40000000, 0x7fffffff, 0x80000000]
 rng = random.Random(0xB17E)
 patterns += [rng.getrandbits(32) for _ in range(10000)]
-errors = sum(unpack(beats(w)) != w for w in patterns)
+errors = sum(unpack_symbols(symbols(w)) != w for w in patterns)
 rtl_shape = all(x in mailbox for x in [
-    "data<=in_data[6:0]", "data<=word_q[13:7]", "data<=word_q[20:14]",
-    "data<=word_q[27:21]", "data<={3'd0,word_q[31:28]}",
-    "out_data<={data[3:0],lower}"
+    "{1'b1, in_data[5:0]}", "word_value[11:6]", "word_value[17:12]",
+    "word_value[23:18]", "word_value[29:24]", "word_value[31:30]",
+    "out_data   <= {data[1:0], lower}", "ST_WAIT_ACK1", "ST_WAIT_ACK0"
 ])
 if errors == 0 and rtl_shape:
-    ok("B-3", "9 required patterns + 10,000 deterministic random words reconstruct bit-exactly in the documented five-beat mapping")
+    ok("B-3", "9 required patterns + 10,000 deterministic random words reconstruct bit-exactly in the self-framing six-symbol mapping")
 else:
     fail("B-3", f"packing audit errors={errors}, rtl_shape={rtl_shape}")
 
-# B-4: structural independent-reset recovery check.
-# A five-beat stream with no beat index/framing cannot restore phase after a
-# mid-word reset; grouping remains offset until both endpoints are reset.
-probe_words = [0xB17E0000, 0x40000000, 0x00112233, 0x40000001,
-               0x44556677, 0xF17E0000, 0xDEADBEEF]
-stream = sum((beats(w) for w in probe_words), [])
-recovery = []
-for k in range(5):
-    outs = [unpack(stream[i:i+5]) for i in range(k+1, len(stream)-4, 5)]
-    recovery.append(outs[:3] == probe_words[1:4])
-if recovery == [False, False, False, False, True] and "Reset both endpoints together" in mailbox:
-    warn("B-4", "KNOWN FAIL: RX reset after beat0..3 loses word phase; only a word-boundary reset (after beat4) stays aligned. Protocol needs explicit framing/index/epoch for single-board reset recovery")
+# The explicit start bit permits the receiver to discard any interrupted word
+# and lock again on the following word.  The four-phase req/ack handshake also
+# forces both controls back low after either endpoint reset.
+if all(x in mailbox for x in [
+        "explicit start-of-word marker", "state <= ST_ALIGN",
+        "if (ack2 == 1'b0)", "if (data[6])",
+        "Non-start symbols received while not assembling"]):
+    ok("B-4", "mailbox now has explicit word framing and four-phase req/ack recovery for independent endpoint resets")
 else:
-    fail("B-4", f"unexpected reset-structure result {recovery}")
+    fail("B-4", "independent-reset recovery structure is incomplete")
 
 # B-5: role constraints must use identical physical locations for the media pins.
 def pins(rel):
@@ -106,10 +116,22 @@ def pins(rel):
 mp, sp = pins("constraints/master/master.adc"), pins("constraints/slave/slave.adc")
 media_nets = [f"link_data[{i}]" for i in range(7)] + ["link_req", "link_ack", "display_published"]
 mismatch = [(n, mp.get(n), sp.get(n)) for n in media_nets if mp.get(n) != sp.get(n)]
-if not mismatch:
-    ok("B-5", "Master/Slave ADC files agree on all 10 media/feedback FPGA pin locations; physical Dupont-wire order still requires board measurement")
+# Board-schematic cross-reference for the documented literal J1 wiring.  Merely
+# making Master and Slave ADC files equal is NOT sufficient: FIX5 did exactly
+# that while logical data[3] was placed on L12/GPIOA20, which reaches J2-34,
+# not the wired J1-5.  That left data[3] missing while REQ/ACK still drained.
+expected_ball = {
+    "link_data[0]":"D14", "link_data[1]":"G11", "link_data[2]":"G12",
+    "link_data[3]":"H13", "link_data[4]":"H14", "link_data[5]":"J14",
+    "link_data[6]":"K12", "link_req":"L14", "link_ack":"M14",
+    "display_published":"L16",
+}
+physical_mismatch = [(n, expected_ball[n], mp.get(n), sp.get(n))
+                     for n in media_nets if mp.get(n) != expected_ball[n] or sp.get(n) != expected_ball[n]]
+if not mismatch and not physical_mismatch:
+    ok("B-5", "Master/Slave ADC agree AND match the board-schematic J1 electrical cross-reference for all media pins")
 else:
-    fail("B-5", f"constraint mismatch: {mismatch}")
+    fail("B-5", f"constraint/electrical mismatch role={mismatch} physical={physical_mismatch}")
 
 # B-6..B-9 remote-frame protocol.
 if "1: out_data={24'hb17e00,id};" in remote and "in_data[31:8]==24'hb17e00" in remote:
@@ -136,11 +158,12 @@ if all(x in cdc for x in ["else if (media_done)", "done_toggle <= ~done_toggle",
     ok("B-10", "media_done is tokenized across CDC and fence waits for FIFO empty + adapter-idle input")
 else:
     fail("B-10", "CDC fence structure changed")
-if ".sdr_adapter_idle(mem_wr_ready)" in core:
-    if all(x in adapter for x in ["assign mem_wr_ready = can_accept_write;", "state == ST_IDLE", "provider_available"]):
-        warn("B-10", "Top uses mem_wr_ready as the adapter-idle proxy. It is conservative with the current adapter (ST_IDLE + provider available + no read request), but it is not a separately named/explicit idle signal")
-    else:
-        fail("B-10", "mem_wr_ready is used as idle but adapter semantics could not be confirmed")
+if (".sdr_adapter_idle(sdram_adapter_idle)" in core and
+        ".adapter_idle            (sdram_adapter_idle)" in core and
+        "assign adapter_idle      = (state == ST_IDLE) && provider_available;" in adapter):
+    ok("B-10", "write fence now uses an explicit adapter_idle signal rather than mem_wr_ready as an idle proxy")
+else:
+    fail("B-10", "explicit adapter-idle fence wiring is missing")
 
 # B-11 publish warm-up gate.
 need = ["frame_fenced_media", "frame_ready_pix", "fb_warm_ready", "fb_frame_boundary",
@@ -160,16 +183,17 @@ if not all(x in core for x in ["remote_begin_counter", "remote_done_counter", "r
 if all(x in slave_top for x in [
         "wire use_framebuffer=published2 && observed_loading && !tx_busy;",
         "published1<=display_published; published2<=published1;",
+        "transport_retry_request", "publish_wait_count",
         "if(dispatch_fire) begin",
         "observed_loading<=0;",
         "else if(!published2) observed_loading<=1;"]):
-    ok("B-13", "Slave requires a post-dispatch observed published=0 before accepting the later published=1 as completion")
+    ok("B-13", "Slave keeps the published=0/1 completion guard and now re-reads/resends a frame after a publish timeout")
 else:
-    fail("B-13", "display_published feedback semantics changed")
+    fail("B-13", "display_published feedback/retry semantics changed unexpectedly")
 
 print("\nRESULT:")
 if issues:
     for tag, msg in issues:
         print(f"  {tag}: {msg}")
     sys.exit(1)
-print("  Static checks passed. B-4 remains a documented protocol weakness; board-only observations are still required for B-1/B-5/B-6..B-13 live signals.")
+print("  Static checks passed. Independent-reset framing, explicit adapter-idle fencing, and publish-timeout resend are present; board-only observations are still required for B-1/B-5/B-6..B-13 live signals.")

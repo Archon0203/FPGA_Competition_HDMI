@@ -64,6 +64,7 @@ module p1_sdram_cached_adapter #(
 
     // ---------------- Status / debug ----------------
     output wire         ready_for_traffic,
+    output wire         adapter_idle,
     output reg          protocol_error,
     output reg          provider_fault,
     output reg          contention_seen,
@@ -94,6 +95,11 @@ module p1_sdram_cached_adapter #(
                               !Sdr_busy;
 
     assign ready_for_traffic = Sdr_init_done && !provider_fault;
+    // True only when no abstract operation remains inside this adapter and
+    // the APUG011 provider has completed its current busy/refresh phase.
+    // Unlike mem_wr_ready, this does not go high merely because a new write
+    // could be accepted into the adapter request slice.
+    assign adapter_idle      = (state == ST_IDLE) && provider_available;
     assign App_ref_req       = 1'b0;
 
     // ------------------------------------------------------------

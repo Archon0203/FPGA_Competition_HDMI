@@ -2,11 +2,9 @@
 
 > 本文件只描述 C 线任务。全项目使用统一节点 `M0～M6`；A/B/C 在同一节点并行，节点汇合后再前进。C 线从 `M1` 就按主板 M + 双板 + 1920×1080 的接口设计，640×480/720p 只用于验证和回退。当前 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。
 
-## M2 近期执行顺序（2026-10-04）
+## M2 近期执行顺序（2026-10-05）
 
-张宗负责 C + 集成：主板 `m2_master_tf_hdmi_top` 按键/轮播、加载卡、UART coordinator 与显示发布语义。先按 14 线接法验证主板出图、单步、轮播；加载卡已接 canonical AXIS，故障仍走诊断页。C 必须等待 B 的 SDRAM fence/帧边界发布，经反馈到 A 状态后再消费 DONE；不能把传输完成或 UART ACK 当成显示完成。
-
-下一步测加载秒数与故障提示，配合 B 双缓冲后再加转场；转轮交互、缩放、字幕与音频仍按后续节点执行。当前 coordinator 走已验证 UART，旧 SPI 表述不是新增开发任务。详见 [本轮分工与板测](develop_records/M2_MASTER_OUTPUT_20261004.md)。
+张宗负责 C + 集成：主板 `m2_master_tf_hdmi_top` 的按键/轮播、Loading UI、UART coordinator 与显示发布语义。FIX6 已真板确认主板出图、NEXT/PREV 和自动轮播。当前 C 线优先把“整屏 Loading”改为**保留上一帧 + 小型 Loading overlay**，并测量一次切图的各阶段耗时；显示发布仍必须等待 B 的 SDRAM fence/真实 framebuffer 数据/安全帧边界，不能把 UART ACK 或传输结束当成显示完成。
 
 
 ## 1. 责任边界与当前状态
@@ -37,7 +35,7 @@ C 线分成“可用 mock 独立开发”和“必须真实合并验收”两部
 
 初步交互方案按“按键进入选择 → 暂停当前源 → 旋钮浏览 → 按压确认 → OPEN 新源 → 首帧安全提交 → 恢复播放”实现。旋钮不是板载资源，默认采用外接增量式正交编码器 A/B + 按压开关，接入 40-pin GPIO；必须先完成 pin ownership、输入电平、消抖和 CDC 约束，不能把未确认的管脚写进正式约束。若旋钮硬件尚未到位，M1/M2 使用按键仿真接口，不能因此改变 A/B 契约。
 
-已有稳定基线：`media_command_controller` `[U] PASS(52)`；M1 deterministic 页面上的 NEXT/PREV/PLAY/PAUSE 真板可视控制已通过。**真实 TF 媒体的 NEXT/PREV/自动轮播当前未通过**，不能把 M1 mock/deterministic 控制 PASS 继承为 M2 real-media PASS。
+已有稳定基线：`media_command_controller` `[U] PASS(52)`；M1 deterministic 控制已通过；FIX6 中真实 TF 媒体的 NEXT/PREV 与自动轮播也已取得 Master HDMI 真板 `[B] PASS`。后续 C 线改 UI/转场时必须保持该行为不回退。
 
 ## 2. 公共视频接口
 

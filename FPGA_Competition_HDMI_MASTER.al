@@ -264,6 +264,14 @@
                     <Attr Name="CompileOrder" Val="30"/>
                 </FileInfo>
             </File>
+            <File Path="src/display/m2_hdmi_lock_supervisor.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="75"/>
+                </FileInfo>
+            </File>
             <File Path="src/dual_board/m1b_line_packet_checker.v">
                 <FileInfo>
                     <Attr Name="AutoExcluded" Val="true"/>
