@@ -138,7 +138,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="16"/>
+                    <Attr Name="CompileOrder" Val="19"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_frame_commit.v">
