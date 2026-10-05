@@ -135,6 +135,7 @@
             </File>
             <File Path="src/dual_board/m2_line_packet_rx.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -151,10 +152,11 @@
             </File>
             <File Path="src/dual_board/m2_frame_commit.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="17"/>
+                    <Attr Name="CompileOrder" Val="16"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m1b_link_word_cdc.v">
@@ -162,7 +164,7 @@
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="20"/>
+                    <Attr Name="CompileOrder" Val="19"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/m2_master_frame_store.v">
@@ -170,7 +172,7 @@
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="21"/>
+                    <Attr Name="CompileOrder" Val="20"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/m2_master_line_core.v">
@@ -178,7 +180,7 @@
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="22"/>
+                    <Attr Name="CompileOrder" Val="21"/>
                 </FileInfo>
             </File>
             <File Path="src/interact/key_filter.v">
@@ -186,7 +188,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="23"/>
+                    <Attr Name="CompileOrder" Val="22"/>
                 </FileInfo>
             </File>
             <File Path="src/app/media_command_controller.v">
@@ -194,7 +196,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="24"/>
+                    <Attr Name="CompileOrder" Val="23"/>
                 </FileInfo>
             </File>
             <File Path="src/app/m1c_coordinator_uart.v">
@@ -202,7 +204,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="25"/>
+                    <Attr Name="CompileOrder" Val="24"/>
                 </FileInfo>
             </File>
             <File Path="src/top/m1abc_master_control_top.v">
@@ -210,7 +212,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="26"/>
+                    <Attr Name="CompileOrder" Val="25"/>
                 </FileInfo>
             </File>
             <File Path="src/app/m1c_frame_config_cdc.v">
@@ -218,7 +220,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="27"/>
+                    <Attr Name="CompileOrder" Val="26"/>
                 </FileInfo>
             </File>
             <File Path="src/display/hdmi_framebuffer_scanout.v">
@@ -226,7 +228,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="28"/>
+                    <Attr Name="CompileOrder" Val="27"/>
                 </FileInfo>
             </File>
             <File Path="src/display/hdmi_official_baseline_source.v">
@@ -234,7 +236,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="29"/>
+                    <Attr Name="CompileOrder" Val="28"/>
                 </FileInfo>
             </File>
             <File Path="src/display/m1c_axis_pattern_mux.v">
@@ -242,7 +244,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="30"/>
+                    <Attr Name="CompileOrder" Val="29"/>
                 </FileInfo>
             </File>
             <File Path="src/display/m2_loading_card.v">
@@ -250,7 +252,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="31"/>
+                    <Attr Name="CompileOrder" Val="30"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m1b_line_packet_checker.v">
@@ -258,7 +260,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="32"/>
+                    <Attr Name="CompileOrder" Val="31"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m1b_packet_selftest.v">
@@ -266,7 +268,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="33"/>
+                    <Attr Name="CompileOrder" Val="32"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m1b_prbs31.v">
@@ -274,7 +276,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="34"/>
+                    <Attr Name="CompileOrder" Val="33"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_frame_packet_source.v">
@@ -282,7 +284,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="35"/>
+                    <Attr Name="CompileOrder" Val="34"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_gpio7_word_rx.v">
@@ -290,7 +292,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="36"/>
+                    <Attr Name="CompileOrder" Val="35"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_gpio7_word_tx.v">
@@ -298,7 +300,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="37"/>
+                    <Attr Name="CompileOrder" Val="36"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_gpio_mailbox.v">
@@ -306,7 +308,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="38"/>
+                    <Attr Name="CompileOrder" Val="37"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_open_dispatcher.v">
@@ -314,7 +316,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="39"/>
+                    <Attr Name="CompileOrder" Val="38"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_real_media_uart_bridge.v">
@@ -322,7 +324,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="40"/>
+                    <Attr Name="CompileOrder" Val="39"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_remote_frame.v">
@@ -330,7 +332,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="41"/>
+                    <Attr Name="CompileOrder" Val="40"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m2_master_media_control.v">
@@ -338,7 +340,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="74"/>
+                    <Attr Name="CompileOrder" Val="73"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/framebuffer_writer.v">
@@ -346,7 +348,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="42"/>
+                    <Attr Name="CompileOrder" Val="41"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/line_buffer_pingpong.v">
@@ -354,7 +356,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="43"/>
+                    <Attr Name="CompileOrder" Val="42"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/line_prefetcher.v">
@@ -362,7 +364,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="44"/>
+                    <Attr Name="CompileOrder" Val="43"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/m2_media_write_cdc.v">
@@ -370,7 +372,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="45"/>
+                    <Attr Name="CompileOrder" Val="44"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/p1_media_framebuffer_loader.v">
@@ -378,7 +380,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="46"/>
+                    <Attr Name="CompileOrder" Val="45"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/p1_sdram_cached_adapter.v">
@@ -386,7 +388,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="47"/>
+                    <Attr Name="CompileOrder" Val="46"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/p1_sdram_hdmi_pipeline.v">
@@ -394,7 +396,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="48"/>
+                    <Attr Name="CompileOrder" Val="47"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/p1_sdram_read_cdc_bridge.v">
@@ -402,7 +404,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="49"/>
+                    <Attr Name="CompileOrder" Val="48"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/sdram_arbiter.v">
@@ -410,7 +412,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="50"/>
+                    <Attr Name="CompileOrder" Val="49"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/bmp_parser.v">
@@ -418,7 +420,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="51"/>
+                    <Attr Name="CompileOrder" Val="50"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/bmp_pixel_stream.v">
@@ -426,7 +428,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="52"/>
+                    <Attr Name="CompileOrder" Val="51"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/fat32_file_reader.v">
@@ -434,7 +436,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="53"/>
+                    <Attr Name="CompileOrder" Val="52"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/fat32_scan.v">
@@ -442,7 +444,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="54"/>
+                    <Attr Name="CompileOrder" Val="53"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m1a_catalog_table.v">
@@ -450,7 +452,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="55"/>
+                    <Attr Name="CompileOrder" Val="54"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m1a_fat32_catalog.v">
@@ -458,7 +460,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="56"/>
+                    <Attr Name="CompileOrder" Val="55"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m1a_media_service_mock.v">
@@ -466,7 +468,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="57"/>
+                    <Attr Name="CompileOrder" Val="56"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m1a_uart_service_bridge.v">
@@ -474,7 +476,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="58"/>
+                    <Attr Name="CompileOrder" Val="57"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m2_official_spi_master.v">
@@ -482,7 +484,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="59"/>
+                    <Attr Name="CompileOrder" Val="58"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m2_real_media_service.v">
@@ -490,7 +492,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="60"/>
+                    <Attr Name="CompileOrder" Val="59"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m2_slave_tf_media_core.v">
@@ -498,7 +500,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="61"/>
+                    <Attr Name="CompileOrder" Val="60"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/m2_tf_sector_provider.v">
@@ -506,7 +508,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="62"/>
+                    <Attr Name="CompileOrder" Val="61"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/sd_reader.v">
@@ -514,7 +516,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="63"/>
+                    <Attr Name="CompileOrder" Val="62"/>
                 </FileInfo>
             </File>
             <File Path="src/storage/sd_spi.v">
@@ -522,7 +524,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="64"/>
+                    <Attr Name="CompileOrder" Val="63"/>
                 </FileInfo>
             </File>
             <File Path="src/top/m1abc_slave_hdmi_top.v">
@@ -530,7 +532,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="65"/>
+                    <Attr Name="CompileOrder" Val="64"/>
                 </FileInfo>
             </File>
             <File Path="src/top/m2_slave_media_tx_top.v">
@@ -538,7 +540,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="66"/>
+                    <Attr Name="CompileOrder" Val="65"/>
                 </FileInfo>
             </File>
             <File Path="src/top/m2_slave_tf_hdmi_top.v">
@@ -546,7 +548,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="67"/>
+                    <Attr Name="CompileOrder" Val="66"/>
                 </FileInfo>
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_as_ram.enc.v">
@@ -554,7 +556,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="68"/>
+                    <Attr Name="CompileOrder" Val="67"/>
                 </FileInfo>
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_init_ref.enc.v">
@@ -562,7 +564,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="69"/>
+                    <Attr Name="CompileOrder" Val="68"/>
                 </FileInfo>
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v">
@@ -570,7 +572,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="70"/>
+                    <Attr Name="CompileOrder" Val="69"/>
                 </FileInfo>
             </File>
             <File Path="src/vendor/anlogic/apug011/clk_pll.v">
@@ -578,7 +580,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="71"/>
+                    <Attr Name="CompileOrder" Val="70"/>
                 </FileInfo>
             </File>
             <File Path="src/top/apug011_core_wrapper.v">
@@ -586,7 +588,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="72"/>
+                    <Attr Name="CompileOrder" Val="71"/>
                 </FileInfo>
             </File>
             <File Path="src/top/m2_master_tf_hdmi_top.v">
@@ -594,7 +596,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="73"/>
+                    <Attr Name="CompileOrder" Val="72"/>
                 </FileInfo>
             </File>
         </Verilog>
