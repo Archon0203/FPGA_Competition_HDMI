@@ -2,6 +2,7 @@ module m2_slave_media_tx_top(
     input wire clk, rst_n, uart_rx, sd_miso,
     output wire uart_tx, sd_ncs, sd_sclk, sd_mosi,
     output wire [3:0] led,
+    output wire [7:0] diag_led_n, output wire [7:0] diag_sel_n,
     output wire [6:0] link_data, output wire link_req,
     input wire link_ack, input wire display_published);
     localparam HACTIVE=640, VACTIVE=480;
@@ -77,6 +78,13 @@ module m2_slave_media_tx_top(
     wire ctrl_link_seen, ctrl_fault, ctrl_command_toggle, ctrl_reply_toggle;
     wire tx_busy;
     reg published1, published2, observed_loading;
+    // Transport-level recovery: if a complete frame was sent but the Master
+    // never publishes it (for example because the Master reset mid-frame),
+    // re-open the same image from TF and transmit a fresh framed copy.
+    // 25,000,000 pixel clocks is ~1 s at the board-proven 25 MHz media clock.
+    reg [24:0] publish_wait_count;
+    reg transport_retry_request;
+    reg transport_retry_active;
     wire use_framebuffer=published2 && observed_loading && !tx_busy;
     db_uart_rx #(.CLKS_PER_BIT(217)) u_m2_uart_rx (
         .clk(pixel_clk), .rst_n(media_rst_n), .rx(uart_rx),
@@ -124,14 +132,19 @@ module m2_slave_media_tx_top(
     // This prevents the old behavior where every completed image immediately
     // triggered another automatic OPEN(0), which masked Master NEXT/PREV and
     // could produce a later 0x3B fault after an otherwise successful display.
+    wire dispatcher_open_request = remote_open_request || transport_retry_request;
+    wire [7:0] dispatcher_open_image_id = remote_open_request
+                                                ? remote_open_image_id
+                                                : selected_image_id;
+
     m2_open_dispatcher u_m2_open_dispatcher (
         .clk                  (pixel_clk),
         .rst_n                (media_rst_n),
         .catalog_valid        (media_catalog_valid),
         .catalog_count        (media_catalog_count),
         .cmd_ready            (media_cmd_accept_ready),
-        .remote_open_request  (remote_open_request),
-        .remote_open_image_id (remote_open_image_id),
+        .remote_open_request  (dispatcher_open_request),
+        .remote_open_image_id (dispatcher_open_image_id),
         .catalog_restart      (media_scan_start),
         .cmd_valid            (dispatch_cmd_valid),
         .cmd_image_id         (dispatch_cmd_image_id),
@@ -141,7 +154,9 @@ module m2_slave_media_tx_top(
     );
 
     assign media_cmd_accept_ready = media_cmd_ready &&
-                                  (!media_succeeded || use_framebuffer) && !tx_busy;
+                                  (!media_succeeded || use_framebuffer ||
+                                   dispatch_cmd_is_remote || transport_retry_active) &&
+                                  !tx_busy;
     assign media_cmd_valid    = dispatch_cmd_valid && media_cmd_accept_ready;
     assign media_cmd_image_id = dispatch_cmd_image_id;
     wire dispatch_fire=dispatch_cmd_valid && media_cmd_accept_ready;
@@ -190,15 +205,37 @@ module m2_slave_media_tx_top(
             media_succeeded<=0; media_failed<=0; media_failure_code<=0;
             selected_image_id<=0; active_image_id<=0;
             media_scan_start<=0; retry_count<=0;
+            publish_wait_count<=0; transport_retry_request<=0; transport_retry_active<=0;
         end else begin
             published1<=display_published; published2<=published1;
             media_scan_start<=0;
+            transport_retry_request<=0;
+
+            // A one-sided Master reset can invalidate an in-flight remote
+            // frame after the Slave has already consumed it from TF.  There is
+            // no frame buffer on this Slave transport top, so recovery must
+            // re-read and resend the selected image.  A genuine Master OPEN
+            // always wins over this automatic retry.
+            if (published2 || use_framebuffer || media_failed || media_busy || tx_busy ||
+                remote_open_request || dispatch_cmd_valid || dispatch_remote_queued) begin
+                publish_wait_count <= 0;
+            end else if (media_succeeded && !transport_retry_active) begin
+                if (publish_wait_count == 25'd24999999) begin
+                    publish_wait_count <= 0;
+                    transport_retry_request <= 1'b1;
+                    transport_retry_active <= 1'b1;
+                end else begin
+                    publish_wait_count <= publish_wait_count + 1'b1;
+                end
+            end
             if(media_failed && !media_busy && !tx_busy) begin
                 if(retry_count==25'd24999999) begin retry_count<=0; media_scan_start<=1; end
                 else retry_count<=retry_count+1'b1;
             end else retry_count<=0;
             if(dispatch_fire) begin
                 media_succeeded<=0; media_failed<=0; observed_loading<=0;
+                transport_retry_active<=0;
+                publish_wait_count<=0;
                 active_image_id<=media_cmd_image_id;
             end else if(!published2) observed_loading<=1;
             if(media_done) begin media_succeeded<=1; selected_image_id<=active_image_id; end
@@ -206,4 +243,16 @@ module m2_slave_media_tx_top(
         end
     end
     assign led={media_failed,media_succeeded && use_framebuffer,media_busy || tx_busy,media_catalog_valid};
+
+    // Eight-LED transport diagnostics, active-low board cathodes.  With SW6 in
+    // LED mode, physical LED1..8 mean:
+    //   1 catalog valid, 2 media reader busy, 3 remote TX busy,
+    //   4 local media frame completed, 5 Master publish observed,
+    //   6 end-to-end publish accepted, 7 automatic transport retry active,
+    //   8 media/control fault.
+    wire [7:0] slave_diag_byte = {media_failed || ctrl_fault, transport_retry_active,
+                                  use_framebuffer, published2, media_succeeded,
+                                  tx_busy, media_busy, media_catalog_valid};
+    assign diag_led_n = ~slave_diag_byte;
+    assign diag_sel_n = 8'hFF;
 endmodule

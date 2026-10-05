@@ -2,9 +2,9 @@
 
 > 本文件只描述 A 线任务。全项目使用统一节点 `M0～M6`；节点中的 A/B/C 任务并行完成，汇合后才进入下一节点。双板 + 1080P 从 `M1` 就是架构前提，640×480 只是第一种受控媒体规格，不再单独开一条“单板开发线”。实际证据等级以 `docs/03_plan_and_status.md` 为准。
 
-## M2 近期执行顺序（2026-10-04）
+## M2 近期执行顺序（2026-10-05）
 
-曾雨婷负责从板 `m2_slave_media_tx_top` 的 TF/catalog/BMP 与状态。第一步协助 14 线图片链上板；该 profile 直接将解码地址/像素交给 B 的 ready/valid 发送端，不再重复部署本地 HDMI/scanout。B 背压时保持数据，不能绕过握手。第二步在新拓扑稳定后单独验证 SPI run divider 4→2，保持初始化 divider=32，再做双扇区缓冲/连续读。第三步为视频恢复从板 SDRAM 预取与 packed 格式输出。当前实测状态见 03；[接线/候选细节](develop_records/M2_MASTER_OUTPUT_20261004.md)。控制面沿用已验证 UART，旧文中的 SPI control 为历史接口选项，不要求重写控制链。
+曾雨婷负责从板 `m2_slave_media_tx_top` 的 TF/catalog/BMP 与状态。FIX6 的 14 线真实图片链已经真板通过，当前 A 线优先任务改为**量化并缩短加载耗时**：分别测 TF/SPI、FAT32/BMP 解码、板间 backpressure 等阶段，再决定 SPI divider、双扇区缓冲或连续读优化。优化期间必须保持现有 307200-pixel/backpressure/address-bitmap 回归和 FIX6 真板基线可回退。后续视频阶段再恢复从板 SDRAM 预取与 packed 格式输出。
 
 
 ## 1. 责任边界与当前状态
@@ -38,9 +38,9 @@ media_ready / source_busy / source_done / source_error
 - `p1_media_framebuffer_loader`：`[U] PASS(225)`，覆盖 fragmented FAT、BGR/bottom-up/padding 和 mock APUG011；
 - P1-05A 真板显示已完成；
 - M2 已取得 **真实 TF/FAT32/BMP -> Slave SDRAM -> Slave HDMI 本地 `[B] PASS`**；
-- A 线仍未完成真实媒体经双板 packet 到 Master 的闭环，也未完成 1080p 持续供给。
+- FIX6 已完成真实媒体经双板图片链到 Master HDMI 的真板闭环；1080p 持续供给仍未完成。
 
-当前节点为 `M2`。M1 的控制/descriptor 契约已作为基线保留；M2-A 的本地真实 TF/BMP 读取已经通过，但多图事务、双板 packet 和 Master 侧最终消费仍需按统一服务契约完成。
+当前节点为 `M2`。FIX6 已验证多图切换、自动轮播和 Master 最终消费；A 线当前重点是加载性能与后续连续媒体供给，不再重复证明基础 640×480 图片链。
 
 ## 2. 文件所有权
 

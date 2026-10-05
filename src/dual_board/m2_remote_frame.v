@@ -84,14 +84,31 @@ module m2_remote_frame_rx #(parameter integer PIXELS=307200)(
             frame_begin<=0; frame_done<=0; frame_error<=0;
             if(in_valid && in_ready) begin
                 case(state)
-                    0,1: begin
+                    0: begin
                         if(in_data[31:8]==24'hb17e00) begin
                             image_id<=in_data[7:0]; count<=0;
                             crc<=crc_word(32'hffffffff,in_data); frame_begin<=1; state<=1;
-                        end else if(state==1 && in_data[31:21]==11'h400 && in_data[20:0]<PIXELS && count<PIXELS) begin
+                        end
+                        // While idle, discard complete but non-header words.
+                        // The self-framing mailbox may legitimately produce a
+                        // stale word after a one-sided reset before the next
+                        // transport retry header arrives.  Treating that word
+                        // as a media failure made reset recovery look like a
+                        // permanent B-line fault even though re-lock succeeded.
+                    end
+                    1: begin
+                        if(in_data[31:8]==24'hb17e00) begin
+                            // A fresh header is an explicit transport resync.
+                            // Discard any incomplete prior frame and restart.
+                            image_id<=in_data[7:0]; count<=0;
+                            crc<=crc_word(32'hffffffff,in_data); frame_begin<=1; state<=1;
+                        end else if(in_data[31:21]==11'h400 && in_data[20:0]<PIXELS && count<PIXELS) begin
                             addr<=in_data[20:0]; crc<=crc_word(crc,in_data); state<=2;
-                        end else if(state==1 && in_data=={24'hf17e00,image_id} && count==PIXELS) state<=3;
-                        else begin frame_error<=1; state<=0; end
+                        end else if(in_data=={24'hf17e00,image_id} && count==PIXELS) begin
+                            state<=3;
+                        end else begin
+                            frame_error<=1; state<=0;
+                        end
                     end
                     2: begin crc<=crc_word(crc,in_data); count<=count+1'b1; state<=1; end
                     3: begin

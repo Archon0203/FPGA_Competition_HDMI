@@ -1,57 +1,37 @@
-# 项目目录结构
+# 项目结构
 
-当前仓库固定为 **两个长期 TD6.2.1 工程 + 一套共享 RTL + 两套角色约束**。当前节点为 M2；具体 PASS/未通过状态只以 `docs/03_plan_and_status.md` 为准。最终职责仍是 Slave 负责媒体生产，Master 负责最终 1080P 合成与 HDMI。
+当前仓库固定为 **两个长期 TD6.2.1 工程 + 一套共享 RTL + 两套角色约束**。当前冻结基线为 `M2_FIX6_BOARD_PASS_20261005`，状态以 `docs/03_plan_and_status.md` 为准。
 
-## 1. 唯一 TD 构建入口
+## 1. 构建入口
 
-```text
-FPGA_Competition_HDMI_MASTER.al   # Master 主板
-FPGA_Competition_HDMI_SLAVE.al    # Slave 从板
-```
-
-| 工程 | 当前 Top | 约束 | 当前作用 |
+| 角色 | 工程 | Top | 约束 |
 |---|---|---|---|
-| `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/*` | 按键、控制、双向 UART 控制面 |
-| `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/*` | 当前 M2 Slave TF/BMP/SDRAM/诊断 HDMI 候选 |
+| Master | `FPGA_Competition_HDMI_MASTER.al` | `m2_master_tf_hdmi_top` | `constraints/master/master.adc` + `master.sdc` |
+| Slave | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_media_tx_top` | `constraints/slave/slave.adc` + `slave.sdc` |
 
-两个 `.al` 都直接引用仓库根 `src/`。**工程目录中不再保存 RTL 副本。** 后续 M2~M6 若 Top 演进，只修改这两个工程；不得再增加第三个 active `.al`。
+两份 `.al` 直接引用同一个 `src/`。不要复制 RTL，也不要创建第三个 active TD 工程。
 
-当前 TD Project Path 固定为 `D:/AnlogicProject/FPGA_Competition_HDMI`，与已验证的 TD6.2.1 使用方式一致。
-
-## 2. 目录树
+## 2. 目录
 
 ```text
 FPGA_Competition_HDMI/
 ├─ FPGA_Competition_HDMI_MASTER.al
 ├─ FPGA_Competition_HDMI_SLAVE.al
-├─ README.md
-├─ STRUCTURE.md
-├─ CONTRIBUTING.md
 ├─ constraints/
-│  ├─ README.md
 │  ├─ master/
-│  │  ├─ master.adc
-│  │  └─ master.sdc
 │  └─ slave/
-│     ├─ slave.adc
-│     └─ slave.sdc
-├─ src/                         # 唯一 RTL/source tree
-│  ├─ top/
-│  ├─ app/
-│  ├─ storage/
-│  ├─ dual_board/
-│  ├─ framebuf/
-│  ├─ display/
+├─ src/
+│  ├─ top/              # active / rollback top
+│  ├─ app/              # 控制与应用状态机
+│  ├─ storage/          # SD/TF、FAT32、BMP、媒体服务
+│  ├─ dual_board/       # UART、mailbox、remote frame
+│  ├─ framebuf/         # SDRAM、CDC、framebuffer、line buffer
+│  ├─ display/          # HDMI、Loading、OSD/图像处理
 │  ├─ audio/
 │  ├─ interact/
-│  └─ vendor/anlogic/           # vendor/protected source，只读
-├─ sim_tb/
-│  ├─ m1abc/                    # 当前双板 aggregate regression
-│  ├─ storage/
-│  ├─ framebuf/
-│  ├─ display/
-│  ├─ audio/
-│  └─ app/
+│  └─ vendor/anlogic/   # 厂商 IP / wrapper，谨慎修改
+├─ sim_tb/              # 单元、子链、集成、full_audit TB
+├─ tools/               # 静态审计与 Questa 回归工具
 ├─ docs/
 │  ├─ 01_architecture.md
 │  ├─ 02_implementation_goals.md
@@ -61,75 +41,49 @@ FPGA_Competition_HDMI/
 │  ├─ 06_line_B_framebuffer_plan.md
 │  ├─ 07_line_C_presentation_plan.md
 │  ├─ 08_three_line_integration_flow.md
-│  ├─ develop_records/          # 所有开发/验证记录
-│  │  └─ evidence/              # 日志、截图等原始证据
-│  └─ olds/                     # 历史文档，只读
-├─ ip/
-└─ tools/
+│  ├─ develop_records/
+│  └─ olds/
+├─ README.md
+└─ STRUCTURE.md
 ```
 
-## 3. 当前双工程构建
-
-Master：
+## 3. 当前职责
 
 ```text
-FPGA_Competition_HDMI_MASTER.al
-  -> shared src/**
-  -> constraints/master/master.adc + master.sdc
-  -> m1abc_master_control_top
-  -> master bitstream
+Slave:
+  TF/FAT32/BMP -> media service -> remote-frame TX
+
+Master:
+  control -> remote-frame RX -> SDRAM/framebuffer
+          -> Loading/display pipeline -> HDMI
 ```
 
-Slave：
+当前 M2 已在真板完成静态图片双板闭环、手动切换和自动轮播。加载时延、Loading UI 形态以及后续视频高速链路仍是后续任务。
+
+## 4. 共享源码与约束纪律
+
+- `src/` 是唯一可综合源码树；
+- Master 只加载 `constraints/master/`，Slave 只加载 `constraints/slave/`；
+- `src/vendor/anlogic/**` 不做无意义格式化或编码转换；
+- 修改共享模块后，受影响的两块板必须分别重新构建；
+- 修改 `.adc` 后必须重新完整 P&R/BitGen，不能复用旧 bitstream。
+
+FIX6 的 14 线 J1 映射由 static audit 固化，具体表见 `constraints/README.md`。
+
+## 5. 验证入口
+
+```powershell
+.\run_full_project_audit_questa.bat
+```
+
+结果输出到：
 
 ```text
-FPGA_Competition_HDMI_SLAVE.al
-  -> shared src/**
-  -> constraints/slave/slave.adc + slave.sdc
-  -> m2_slave_tf_hdmi_top
-  -> slave bitstream
+sim_work/full_project_audit/
 ```
 
-M1 真板接线继续使用已验证映射：
+当前板级功能已 PASS，但全仓回归仍存在已知仿真债务；不要把“板上能工作”写成“所有 TB 已通过”。
 
-```text
-Master J1-8  / FPGA J13 / TX -> Slave  J1-4 / FPGA F13 / RX
-Slave  J1-8  / FPGA J13 / TX -> Master J1-4 / FPGA F13 / RX
-Master J1-12 / GND            <-> Slave J1-12 / GND
-```
+## 6. 文档纪律
 
-当前 M2 仍允许 Slave HDMI_B 作为真实媒体本地诊断出口；M2 的完整验收目标仍要求最终媒体显示职责回到 Master。P1-05A rollback 的 RTL、时序记录与真板证据保留，但不再作为第三个 TD 工程。
-
-## 4. 共享 RTL 纪律
-
-- `src/` 是唯一可综合 RTL/source tree；不得在 `projects/`、`td_*` 或角色目录复制源码。
-- Master/Slave 可以引用 `src/` 中不同子集，但公共模块只能存在一份。
-- 当前 `src/dual_board/db_uart_tx.v` 已同步为 M1 真板通过工程使用的版本。
-- `src/vendor/anlogic/**` 为厂商/加密源，不格式化、不改编码。
-- 每次修改共享模块，都必须分别重新构建受影响的 Master/Slave 工程。
-
-## 5. 约束纪律
-
-- Master 只使用 `constraints/master/`。
-- Slave 只使用 `constraints/slave/`。
-- 板间 pin map、Top port 或时钟变更时，必须更新对应角色约束并重新 synthesis → P&R → STA → BitGen。
-- 禁止在一个工程里同时加载 Master 与 Slave 约束。
-
-## 6. 文档和 Git 纪律
-
-`docs/` 根目录只保留 `01~08` 规范文档。开发过程、验证记录、阶段说明统一进入 `docs/develop_records/`，日志/截图等证据进入 `docs/develop_records/evidence/`。
-
-发布 ZIP 不携带 `.git/`、`*_Runs/`、Questa `work/`、bitstream、minidump、TD 日志等本地生成物；`.gitignore` 与 `.gitattributes` 必须保留。
-
-
-### M2 2026-10-03 dual-control additions
-
-- `src/dual_board/m2_open_dispatcher.v`: one-shot Slave standalone OPEN(0) + queued Master OPEN dispatcher.
-- `sim_tb/m1abc/tb_m2_open_dispatcher.v`: dispatcher regression.
-- `docs/develop_records/M2_TF_LOCAL_PASS_AND_DUAL_CONTROL_20261003.md`: TF local board PASS and dual-control handoff.
-
-## 2026-10-04 M2 control/project additions
-
-- `sim_tb/app/tb_m1c_coordinator_realmedia.v` / `run_m1c_coordinator_realmedia.do`: verifies OPEN/ACCEPTED is followed by STATUS polling until DONE before another media command is accepted.
-- `tools/check_td_project.py`: checks TD `.al` files for duplicate source paths and CRLF formatting; added after a Git main merge duplicated five M2 entries in the Slave project file.
-- `docs/develop_records/M2_DUAL_CONTROL_COMPLETION_GATE_AND_TD_PROJECT_FIX_20261004.md`: board symptom, control root cause, TD project-file root cause and verification plan.
+`docs/03_plan_and_status.md` 是唯一状态权威。开发过程与板测记录放 `docs/develop_records/`，历史方案放 `docs/olds/`。

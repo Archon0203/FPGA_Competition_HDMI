@@ -1,165 +1,106 @@
-# 基于 EG4S20 的双板 1080P HDMI 多媒体播放系统
+# FPGA 双板 HDMI 多媒体播放系统
 
-这是一个面向校园、园区信息发布和应急广播场景的 FPGA 多媒体终端。项目使用两块安路 HX4S20C / EG4S20BG256，目标是在不依赖外部 CPU/MCU 的前提下完成 TF/FAT32/BMP/视频帧序列读取、双板媒体传输、1920×1080 HDMI 视频/音频、OSD/字幕、缩放、转场、实时参数调节和音频可视化。
+基于两块安路 HX4S20C / EG4S20BG256 的 FPGA 多媒体播放项目。当前架构由 **Slave 负责 TF/FAT32/BMP 媒体读取与发送，Master 负责控制、帧缓存和 HDMI 输出**。
 
-## 当前状态（以 `docs/03_plan_and_status.md` 为唯一权威）
+## 当前冻结版本
 
-当前节点为 **M2**。已确认的关键边界：
+**基线：`M2_FIX6_BOARD_PASS_20261005`**
 
-- M1 115200 framed UART + deterministic 双板可视控制门禁已通过；
-- M2 已取得 **真实 TF/FAT32/BMP 640×480 -> Slave SDRAM -> Slave HDMI 的本地真板 PASS**；
-- 用户已确认旧 Slave HDMI 拓扑的真实图片 NEXT/PREV、PLAY/PAUSE、自动轮播正常；
-- 当前 `M2_TEAM_INTEGRATION_20261005` 已集成两位同事提交，14 项回归、两板 final STA/BitGen 通过，主板 HDMI 新拓扑待板测；
-- 14 线握手图片链不是 1080p60 高速视频链；1080p、双缓冲和完整故障恢复仍未完成。
+已在真板确认：
 
-详细状态、证据等级和下一门禁只维护在 [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md)。开发过程和历史推断不覆盖该文件。
+- TF 卡 640×480 / 24-bit BMP 可由 Slave 读取；
+- 图片通过 14 线双板数据链传到 Master；
+- Master HDMI 可正常显示真实图片；
+- NEXT / PREV 可切图；
+- 自动轮播可工作；
+- FIX6 修正的 J1 / FPGA 球位映射已在板上验证有效。
 
-最终职责仍保持：
+当前仍有三项未收口：
 
-```text
-Slave：TF/FAT32/BMP/vseq、媒体目录、预取、源缓存、line/tile packet 生产
-                      ↓ 高速数据面
-Master：控制/状态、接收/CDC、line/tile buffer、缩放、OSD、转场、音频、1080P HDMI
-```
+1. 图片加载时间较长，切换体验明显慢于官方样例；
+2. 加载期间当前 UI 会整屏覆盖图片，后续应改为保留上一帧并叠加小型“加载中”提示；
+3. 当前 14 线握手链适合静态图片验证，不作为后续持续视频传输方案。
 
-当前 active Top 已将 HDMI 部署到 Master，TF 留 Slave。两板新 bitstream 位于 `sim_work/m2_team_integration_20261005/delivery/`；[接线与集成板测](docs/develop_records/M2_TEAM_INTEGRATION_20261005.md)。
+完整回归并非全绿：完整 640×480 mailbox 与物理 pin fault 仿真已 PASS，但 `framebuf/tb_p1_sdram_cached_adapter` 仍是当前 active regression 的已知失败项；若干历史/可选 TB 也仍需整理。真板功能 PASS 不等价于这些仿真债务已经关闭。
+
+详细冻结记录见：[`docs/develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md`](docs/develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md)。项目进度与证据等级以 [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md) 为唯一权威。
 
 ## 当前工程入口
 
-仓库从现在起只保留 **两个长期 TD6.2.1 主工程**，两者共享根目录 `src/` 的同一套 RTL，只使用各自角色约束：
-
-| 板卡角色 | TD 工程 | 当前 Top | 角色约束 |
+| 角色 | TD 工程 | Top | 主要职责 |
 |---|---|---|---|
-| Master 主板 | `FPGA_Competition_HDMI_MASTER.al` | `m2_master_tf_hdmi_top` | `constraints/master/master.adc` + `master.sdc` |
-| Slave 从板 | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_media_tx_top` | `constraints/slave/slave.adc` + `slave.sdc` |
+| Master | `FPGA_Competition_HDMI_MASTER.al` | `m2_master_tf_hdmi_top` | 控制、双板接收、SDRAM/framebuffer、Loading UI、HDMI |
+| Slave | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_media_tx_top` | TF/FAT32/BMP、媒体调度、双板发送 |
 
-构建主板 bitstream 时只打开 `FPGA_Competition_HDMI_MASTER.al`；构建从板 bitstream 时只打开 `FPGA_Competition_HDMI_SLAVE.al`。**不得复制另一角色的 bitstream，也不得新建第三个 active `.al`。** 后续 M2~M6 只演进这两个工程的 Source_Files/Top/约束；RTL 始终以 `src/` 为唯一源码副本。
+工具链：**Anlogic TD 6.2.1**；仿真：**QuestaSim 10.7c**。
 
-P1-05A 640×480 SDRAM→HDMI 仍作为已验证的源码/证据 rollback 基线保留在 `src/` 与 `docs/develop_records/`，但不再保留第三个 rollback `.al`，避免构建入口歧义。
-
-其他入口：
-
-| 用途 | 入口 |
-|---|---|
-| M1ABC Questa 回归 | `sim_tb/m1abc/run_all.bat` |
-| M1ABC 验证/关闭记录 | `docs/develop_records/M1ABC_V5_VALIDATION.md` |
-| 双工程重构记录 | `docs/develop_records/M1_TWO_PROJECT_REORGANIZATION_20261001.md` |
-| M2 入口计划 | `docs/develop_records/M2_REAL_MEDIA_ENTRY.md` |
-| M2 真实 Master 控制回归 | `sim_tb/m1abc/run_m2_master_real_control_link.bat` |
-| M2 TF 真板出图 + Master 控制记录 | `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md` |
-
-工具链：Anlogic TD 6.2.1；仿真：QuestaSim 10.7c。
-
-## M1 真板接线
-
-两板断电后连接：
+## 项目结构
 
 ```text
-Master J1-8  / FPGA J13 / TX -> Slave  J1-4  / FPGA F13 / RX
-Slave  J1-8  / FPGA J13 / TX -> Master J1-4  / FPGA F13 / RX
-Master J1-12 / GND            <-> Slave J1-12 / GND
+FPGA_Competition_HDMI/
+├─ FPGA_Competition_HDMI_MASTER.al
+├─ FPGA_Competition_HDMI_SLAVE.al
+├─ constraints/          # Master / Slave 引脚与时序约束
+├─ src/                  # 唯一 RTL 源码树
+│  ├─ top/
+│  ├─ app/
+│  ├─ storage/           # TF / FAT32 / BMP
+│  ├─ dual_board/        # 双板控制与媒体链
+│  ├─ framebuf/          # SDRAM / framebuffer / line buffer
+│  ├─ display/           # HDMI / Loading / OSD 等
+│  ├─ audio/
+│  ├─ interact/
+│  └─ vendor/anlogic/
+├─ sim_tb/               # QuestaSim testbench
+├─ tools/                # 静态检查与回归脚本
+├─ docs/                 # 架构、计划、三线任务、开发记录
+├─ README.md
+└─ STRUCTURE.md
 ```
 
-不要把两块板的 5 V 互连。当前已由真板确认：FPGA `J13` 对应 J1-8，FPGA `F13` 对应 J1-4。
+更详细的目录说明见 [`STRUCTURE.md`](STRUCTURE.md)。
 
-## M1ABC 上板现象
+## 验证入口
 
-Slave HDMI_B 接显示器后，双板正常时：
-
-- 约每 2 s 在 4 个 deterministic 页面间轮播；
-- Master KEY2=NEXT、KEY3=PREV、KEY4=PLAY/PAUSE；
-- Slave 画面左上绿色块表示 link established；顶部红条表示 fault；
-- Master/Slave `LED2` 应亮、`LED4` 应灭；activity LED 使用 toggle，肉眼可能表现为闪烁或较暗常亮。
-
-详细步骤见 `docs/develop_records/M1ABC_V5_VALIDATION.md`。
-
-## M2 真实 TF + Master 控制上板
-
-当前阶段仍由 **Slave HDMI** 显示真实 TF 图片；Master 只承担已经真板验证过的低速控制面。媒体像素仍不走 UART，高速数据面与最终 Master HDMI owner 留在后续 M2-B。
-
-两板断电后连接：
-
-```text
-Master J1-8  / FPGA J13 / TX -> Slave  J1-4  / FPGA F13 / RX
-Slave  J1-8  / FPGA J13 / TX -> Master J1-4  / FPGA F13 / RX
-Master J1-12 / GND            <-> Slave J1-12 / GND
-```
-
-不要互连两块板的 5 V。TF 卡插在 Slave。建议卡根目录准备至少 2 张、最好 4 张当前支持的 640×480 / 24-bit BI_RGB / 8.3 短文件名 BMP；如果 catalog 只有 1 张图，NEXT/PREV/轮播都会回绕到 image 0，因此画面看起来不会变化。
-
-Master 控制：
-
-- KEY2：NEXT；
-- KEY3：PREV；
-- KEY4：PLAY/PAUSE；
-- 默认自动轮播周期：5 s。
-
-本版 Slave 的 standalone fallback 只在上电/无 Master 时自动加载 image 0 **一次**。检测到 Master UART 控制链后，后续图片选择完全由 Master `OPEN(image_id)` 驱动，不再自动重载 image 0；如果 Master 请求的就是当前已完整显示的 image，则直接返回 DONE，不重复读取 TF。
-
-正常静止显示时，Slave 四灯预期为：LED1(catalog) 亮、LED2(busy) 灭、LED3(frame ready) 亮、LED4(fault) 灭；8 灯无 fault 时应回到 `0x81` build marker（LED6 + LED13）。
-
-详细记录见 `docs/develop_records/M2_TF_BOARD_PASS_AND_MASTER_CONTROL_20261003.md`。
-
-## 1080P 双板设计原则
-
-EG4S20 的逻辑和片内 SDRAM 都有限。1920×1080 一帧有 2,073,600 像素；按历史 32-bit/像素表示，单帧已经接近 2M×32 SDRAM 的全部容量，因此最终架构不采用“Master 内部两张完整 1080P RGB888 framebuffer”的简单复制方案。
-
-主线采用：
-
-```text
-Slave 大块媒体缓存/预取
-  -> packed YUV422 line/tile
-  -> source-synchronous GPIO 数据面
-  -> Master FIFO/line/tile buffer
-  -> scaler/effects/OSD/audio-visual
-  -> 1920×1080 APUG092/HDMI
-```
-
-控制面保留低带宽命令/状态通道；媒体数据面单独做高吞吐链路。UART 只用于 M1 bring-up 和控制面验证，不承担 1080P 像素传输。
-
-## 文档权威顺序
-
-> 文档规范：`docs/` 根目录只保留 `01~08` 规范文档。开发过程、验证步骤、日志、截图和阶段性说明一律放入 `docs/develop_records/`，原始证据放 `docs/develop_records/evidence/`。
-
-
-- `docs/01_architecture.md`：系统架构与最终职责边界；
-- `docs/02_implementation_goals.md`：目标与证据门槛；
-- `docs/03_plan_and_status.md`：**唯一进度/证据状态权威**；
-- `docs/04_use_cases.md`：场景与演示口径；
-- `docs/05~07`：A/B/C 三线计划；
-- `docs/08_three_line_integration_flow.md`：M0~M6 统一路线；
-- `docs/develop_records/M1ABC_V5_VALIDATION.md`：M1ABC 真板验证与关闭记录；
-- `docs/develop_records/M2_REAL_MEDIA_ENTRY.md`：M2 真实媒体第一闭环入口。
-
-历史方案放在 `docs/olds/` 和 `docs/develop_records/`，不覆盖当前权威状态。
-
-## Git / GitHub 注意
-
-本发布包是 **repository working-tree snapshot**：保留 `.gitignore` 和 `.gitattributes`，但**故意不包含 `.git/`**，也不包含 TD/Questa 生成目录、bitstream、work library、minidump 等本地生成物。这样可以安全复制到现有 clone 中而不会覆盖分支、remote、index 或本地 Git 历史。
-
-推荐做法：
+上板前建议至少执行：
 
 ```powershell
-git switch -c feat/m2-real-media-entry
-# 将本包内容覆盖/合并到现有 clone 的工作树，绝不要覆盖 .git/
-git status
-git diff --stat
-git add -p
-git commit -m "feat(m1): close dual-board ABC bring-up and enter M2"
+.\run_full_project_audit_questa.bat
 ```
 
-不要对工程目录直接执行 `git add .`；先检查 `git status`，确认没有 TD run、Questa work、`.bit`、日志或大媒体文件。详细规则见 `CONTRIBUTING.md`。
+重点关注：
 
+- J1 电气映射 static audit；
+- `tb_m2_physical_pin_fault_signature`；
+- `tb_m2_full_frame_mailbox_640x480`；
+- 当前 active regression 的失败项。
 
-## 2026-10-03 M2 TF DIAG3
+修改 `.adc`、Top、共享 RTL 或 vendor wrapper 后，Master / Slave 都必须重新 **Synthesis → P&R → STA → BitGen**，不要复用旧 `_Runs` 中的 bitstream。
 
-Current board-debug candidate restores the proven P1-05A SDRAM SDC exceptions, removes the DIAG2 wide debug counter, and exposes the raw media failure family by HDMI color plus the low nibble on LEDs. See `docs/develop_records/M2_TF_DIAG3_20261003.md`.
+## 当前双板职责
 
+```text
+Slave
+TF -> FAT32 -> BMP -> media service
+                 |
+                 v
+        14-line image transport
+                 |
+                 v
+Master
+RX -> SDRAM/framebuffer -> display pipeline -> HDMI
+        ^
+        |
+  key / carousel control
+```
 
-## 2026-10-03 M2 TF local PASS / dual-control candidate
+当前 14 线连接和 FIX6 正确球位见 [`constraints/README.md`](constraints/README.md) 与冻结记录。后续视频链路将另行设计，不在本基线中扩展。
 
-真实 TF/FAT32/BMP 640×480 本地 HDMI 已取得真板 PASS。当前双板候选新增 `m2_open_dispatcher`，修复成功加载后无限重复 `OPEN(0)` 导致 Master 换图被覆盖的问题。Master 继续使用 KEY2=NEXT、KEY3=PREV、KEY4=PLAY/PAUSE 和约 2 s 自动轮播。详见 `docs/develop_records/M2_TF_LOCAL_PASS_AND_DUAL_CONTROL_20261003.md`。
+## 文档约定
 
-### 2026-10-04 M2 dual-control candidate
+- `docs/03_plan_and_status.md`：唯一当前状态权威；
+- `docs/01~08`：架构、目标、三线计划与集成路线；
+- `docs/develop_records/`：阶段开发与板测记录；
+- `docs/olds/`：历史方案。
 
-真实 TF 首图路径保持真板 PASS。双板控制现改为“OPEN 只确认排队，Master STATUS 轮询直到 requested image 真正 DONE 后才允许下一条命令”，避免 2 s 轮播和按键在 TF 加载中覆盖请求。另已修复/规避 Git main 中 Slave `.al` 的 5 个重复 source-file entries，并提供 `tools/check_td_project.py` 检查 TD 工程文件。见 `docs/develop_records/M2_DUAL_CONTROL_COMPLETION_GATE_AND_TD_PROJECT_FIX_20261004.md`。
+本次冻结只更新文档与状态记录，不修改 `.git/` 内容。

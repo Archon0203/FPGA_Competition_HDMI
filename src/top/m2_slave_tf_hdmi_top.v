@@ -105,6 +105,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire pixel_clk;
     wire serial_clk;
     wire hdmi_pll_lock;
+    wire video_locked_unused;
 
     p1_hdmi_pll_50m_25_125 u_hdmi_pll (
         .refclk_50m (clk),
@@ -115,32 +116,31 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     );
 
     // ============================================================
-    // P1-04C golden HDMI reset sequencing (~20 ms after PLL lock).
-    // Release on the rising edge of the 50 MHz source clock.  This is the
-    // board-proven phase used by the HDMI reference design and leaves the
-    // required 4 ns recovery window before the 125 MHz serial clock.  Releasing
-    // on the falling edge creates a 2 ns recovery window and fails the serial
-    // PHY reset check in TD6.2.1.
+    // HDMI reset + APUG092 lock recovery.
+    //
+    // The board-proven 20 ms reset hold remains unchanged, but the Master now
+    // verifies APUG092 O_video_locked before it can report a frame as published.
+    // If power-on sequencing leaves the transmitter unlocked, or lock is lost
+    // later, the supervisor re-runs the reset sequence automatically instead of
+    // leaving the monitor at its blue/no-signal screen until KEY1 is pressed.
     // ============================================================
-    reg [19:0] hdmi_rst_cnt;
-    reg        hdmi_rst;
+    wire hdmi_video_locked_sync;
+    wire hdmi_video_ready;
+    wire hdmi_recovery_pulse;
+    wire hdmi_rst;
 
-    initial begin
-        hdmi_rst_cnt = 20'd0;
-        hdmi_rst     = 1'b1;
-    end
-
-    always @(posedge clk) begin
-        if (!hdmi_pll_lock || !rst_n) begin
-            hdmi_rst_cnt <= 20'd0;
-            hdmi_rst     <= 1'b1;
-        end else if (hdmi_rst_cnt < 20'd1000000) begin
-            hdmi_rst_cnt <= hdmi_rst_cnt + 20'd1;
-            hdmi_rst     <= 1'b1;
-        end else begin
-            hdmi_rst <= 1'b0;
-        end
-    end
+    m2_hdmi_lock_supervisor #(.RESET_HOLD_CYCLES(1_000_000),
+                              .LOCK_WAIT_CYCLES(10_000_000),
+                              .UNLOCK_FILTER_CYCLES(1_000_000)) u_hdmi_supervisor (
+        .clk                (clk),
+        .ext_rst_n          (rst_n),
+        .pll_lock           (hdmi_pll_lock),
+        .video_locked_async (video_locked_unused),
+        .hdmi_rst           (hdmi_rst),
+        .video_locked_sync  (hdmi_video_locked_sync),
+        .video_ready        (hdmi_video_ready),
+        .recovery_pulse     (hdmi_recovery_pulse)
+    );
 
     wire pix_rst_n = !hdmi_rst;
 
@@ -162,7 +162,12 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .clk2_out(sdr_clk_150m_shift)
     );
 
-    wire sdr_rst_n = sdr_pll_lock && hdmi_pll_lock && rst_n;
+    // HDMI automatic recovery resets both sides of every display/media CDC.
+    // Keeping the SDRAM side alive while pix/media reset would one-side-reset
+    // the async FIFOs and can leave stale pointer state.  Reinitialize the
+    // whole display data plane together; the Slave retry path then resends the
+    // current image after DISPLAY_PUBLISHED drops.
+    wire sdr_rst_n = sdr_pll_lock && hdmi_pll_lock && rst_n && pix_rst_n;
 
     // ============================================================
     // TF media service and framebuffer writer (25 MHz media domain)
@@ -191,6 +196,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire [31:0] sdr_media_wr_data;
     wire        sdr_media_wr_ready;
     wire        mem_wr_ready;
+    wire        sdram_adapter_idle;
     wire        media_rst_n = pix_rst_n && rst_n;
     reg         media_started;
     reg         media_failed;
@@ -312,7 +318,28 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire remote_begin;
     wire [7:0] remote_image;
     wire dispatch_fire = REMOTE_INPUT ? remote_begin : (dispatch_cmd_valid && media_cmd_accept_ready);
-    assign remote_published = use_framebuffer && media_succeeded;
+
+    // Remote-path sticky milestones.  These are intentionally kept in the
+    // pixel/media clock domain so the board's 8-LED group can expose exactly
+    // how far a received frame progressed without ChipWatcher.
+    reg remote_begin_seen;
+    reg remote_done_seen;
+    reg remote_error_seen;
+
+    always @(posedge pixel_clk or negedge media_rst_n) begin
+        if (!media_rst_n) begin
+            remote_begin_seen <= 1'b0;
+            remote_done_seen  <= 1'b0;
+            remote_error_seen <= 1'b0;
+        end else begin
+            if (remote_begin) remote_begin_seen <= 1'b1;
+            if (media_done)   remote_done_seen  <= 1'b1;
+            if (media_error)  remote_error_seen <= 1'b1;
+        end
+    end
+    // DISPLAY_PUBLISHED is assigned after the HDMI/display health signals are
+    // available.  It must mean "actually displayable", not merely "framebuffer
+    // state machine reached use_framebuffer".
     assign media_clock = pixel_clk;
     assign media_reset_n = media_rst_n;
 
@@ -375,7 +402,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .sdr_wr_addr    (sdr_media_wr_addr),
         .sdr_wr_data    (sdr_media_wr_data),
         .sdr_wr_ready   (sdr_media_wr_ready),
-        .sdr_adapter_idle(mem_wr_ready));
+        .sdr_adapter_idle(sdram_adapter_idle));
 
     always @(posedge pixel_clk or negedge media_rst_n) begin
         if (!media_rst_n) begin
@@ -461,23 +488,10 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     assign led[0] = media_catalog_valid;
     assign led[1] = media_busy;
     assign led[2] = media_succeeded && frame_ready_sdr;
-    assign led[3] = media_failed || frame_write_error;
+    // led[3] is assigned with the complete display/HDMI fault set below.
 
-    // Full-byte diagnostic on the board's 8-bit LED group.
-    //   no fault          : 0x81 build marker (two end LEDs on)
-    //   media fault       : exact media_failure_code
-    //   SDRAM/write fault : 0xF0
-    // DIG0..7 are active-low on the schematic, hence the inversion.
-    wire [7:0] board_diag_byte = frame_write_error ? 8'hF0 :
-                                 media_failed      ?
-                                   (((media_failure_code == 8'h11) ||
-                                     (media_failure_code == 8'h14)) &&
-                                    (media_sector_failure_detail != 8'h00)
-                                      ? media_sector_failure_detail
-                                      : media_failure_code) :
-                                                     8'h81;
-    assign diag_led_n = ~board_diag_byte;
-    assign diag_sel_n = 8'hFF; // disable the alternate-color/nixie select path
+    // The full-byte diagnostic assignment is made near the end of this module,
+    // after the framebuffer/HDMI milestones are available.
 
     // ============================================================
     // P1-05A framebuffer read pipeline (25 MHz display domain)
@@ -625,6 +639,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .Sdr_busy                (sdram_busy),
         .App_ref_req             (app_ref_req),
         .ready_for_traffic       (sdram_ready_for_traffic),
+        .adapter_idle            (sdram_adapter_idle),
         .protocol_error          (adapter_protocol_error),
         .provider_fault          (adapter_provider_fault),
         .contention_seen         (),
@@ -826,6 +841,22 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         end
     end
 
+    // Publication proof: the line-buffer/scanout path must have produced real
+    // framebuffer pixels *after the current frame has fenced*.  Previously the
+    // Master could raise DISPLAY_PUBLISHED from state-machine milestones alone,
+    // allowing the Slave to stop retrying even when scanout had never emitted a
+    // framebuffer pixel on hardware.  Keep the Loading UI visible until this
+    // proof exists.
+    reg fb_data_seen;
+    always @(posedge pixel_clk or negedge pix_rst_n) begin
+        if (!pix_rst_n)
+            fb_data_seen <= 1'b0;
+        else if (dispatch_fire)
+            fb_data_seen <= 1'b0;
+        else if (frame_fenced_media && fb_pixel_valid)
+            fb_data_seen <= 1'b1;
+    end
+
     always @(posedge pixel_clk or negedge pix_rst_n) begin
         if (!pix_rst_n) begin
             use_framebuffer <= 1'b0;
@@ -838,7 +869,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
             publish_wait_frame <= 1'b0;
         end else if (fb_frame_boundary && media_succeeded && frame_fenced_media &&
                      frame_ready_pix &&
-                     fb_warm_ready &&
+                     fb_warm_ready && fb_data_seen &&
                      !pipeline_protocol_error &&
                      !frame_write_error_pix_ff2) begin
             // Discard one full scan after the write fence so prefetched lines
@@ -926,7 +957,6 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     // ============================================================
     wire       edid_valid_unused;
     wire [7:0] edid_data_unused;
-    wire       video_locked_unused;
 
     apug092_tx_wrapper #(
         .HACTIVE    (HACTIVE),
@@ -967,12 +997,51 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     );
 
     // Keep these diagnostics live in the design even though P1-05A does not
-    // bind extra board pins yet. TD reports/netlists can inspect them.
+    // bind extra board pins yet.  HDMI lock is part of the publication contract:
+    // the Slave must never receive DISPLAY_PUBLISHED while APUG092 is unlocked.
     wire p1_05a_error = frame_write_error ||
                         pipeline_protocol_error ||
                         (use_framebuffer && fb_underflow_sticky);
-    wire p1_05a_active = use_framebuffer && !p1_05a_error;
+    wire display_runtime_fault = p1_05a_error || media_failed ||
+                                 (pix_rst_n && !hdmi_video_ready);
+    wire p1_05a_active = use_framebuffer && !display_runtime_fault;
+
+    assign remote_published = use_framebuffer && fb_data_seen && media_succeeded &&
+                              hdmi_video_ready && !p1_05a_error && !media_failed;
+
+    // 8-bit LED diagnostic.  On the Master (REMOTE_INPUT=1), LEDs 1..8 form a
+    // left-to-right milestone chain; once a stage succeeds it stays visible:
+    //   D1 HDMI video lock, D2 remote header seen, D3 CRC/frame done,
+    //   D4 SDRAM write fenced, D5 frame_ready reached pixel domain,
+    //   D6 line buffers warm, D7 real framebuffer pixel observed after fence,
+    //   D8 framebuffer mux published.
+    // In local mode retain the compact media/error byte used by P1 bring-up.
+    wire [7:0] remote_diag_byte = {use_framebuffer, fb_data_seen, fb_warm_ready,
+                                   frame_ready_pix, frame_fenced_media,
+                                   remote_done_seen, remote_begin_seen,
+                                   hdmi_video_ready};
+    wire [7:0] local_diag_byte = frame_write_error ? 8'hF0 :
+                                 media_failed      ?
+                                   (((media_failure_code == 8'h11) ||
+                                     (media_failure_code == 8'h14)) &&
+                                    (media_sector_failure_detail != 8'h00)
+                                      ? media_sector_failure_detail
+                                      : media_failure_code) :
+                                                     8'h81;
+    wire [7:0] board_diag_byte = REMOTE_INPUT ? remote_diag_byte : local_diag_byte;
+    assign diag_led_n = ~board_diag_byte;
+    assign diag_sel_n = 8'hFF; // select the DIG/LED color only (active-low cathodes)
+
+    // LED4 on the display core now includes HDMI lock/recovery status.  In the
+    // Master wrapper this is ORed with the independent UART-control fault.
+    // Thus a blue/no-signal monitor can no longer coexist with a falsely clean
+    // display status.  The other LED meanings are unchanged.
+    assign led[3] = media_failed || (REMOTE_INPUT && remote_error_seen) || frame_write_error || pipeline_protocol_error ||
+                    (use_framebuffer && fb_underflow_sticky) ||
+                    (pix_rst_n && !hdmi_video_ready);
+
     wire _unused_ctrl = ctrl_link_seen ^ ctrl_fault ^ ctrl_command_toggle ^
-                        ctrl_reply_toggle ^ uart_rx_activity;
+                        ctrl_reply_toggle ^ uart_rx_activity ^ hdmi_recovery_pulse ^
+                        hdmi_video_locked_sync;
 
 endmodule

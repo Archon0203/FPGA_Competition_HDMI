@@ -1,6 +1,6 @@
 # 三线统一集成流程图
 
-开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。`M1` 已完成 deterministic 双板可视化控制门禁，当前节点为 `M2`。**M2 的旧拓扑（Master 控制 Slave 显示）切换/轮播已由用户确认通过；当前等待 14 线 TF → Master HDMI 候选板测；状态以 `docs/03_plan_and_status.md` 为准。**
+开发只使用一套节点 `M0～M6`。每个节点先分成 A/B/C 三条任务，再在同一个节点汇合。`M1` 已完成 deterministic 双板可视化控制门禁，当前节点为 `M2`。**FIX6 已取得 TF → Slave → 14 线 → Master HDMI 的真实图片真板 PASS，NEXT/PREV 与自动轮播也已通过；M2 继续处理加载体验、异常恢复和回归债务。状态以 `docs/03_plan_and_status.md` 为准。**
 
 图例：绿色 = 已完成；黄色 = 当前节点/当前任务；白色 = 未完成；蓝色 = 三线汇合；紫色 = 双板 + 1080P 主线；A/B/C 使用不同边框颜色；实线 = 必须完成的真实依赖；点划线 = 可先用 mock、随后必须替换为真实接口的依赖；虚线 = rollback/fallback。C 线的 A/B 依赖专门画在每个节点旁，避免把“可独立写代码”误读成“可以脱离 A/B 完成验收”。
 
@@ -22,11 +22,11 @@ flowchart TD
     M1C --> M1E
 
     M1E --> V1["M1 板级验证门禁<br/>分别构建 master.bit / slave.bit<br/>J1-8→J1-4、J1-8←J1-4、GND↔GND<br/>GPIO UART 115200/8N1 framed control<br/>Master KEY2/KEY3/KEY4 → Slave HDMI 4 patterns<br/>复位后重新握手；[B] PASS"]
-    V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑骨架已有 [U/C-sub] 仿真<br/>✓ Slave 显示拓扑切换/轮播 [B]<br/>→ 14 线握手图片链：新两 bit → 主板 HDMI [B] 待验<br/>→ 之后单独验高速 source-sync；不混为视频吞吐"]
-    V2 --> M2A["M2 · A 线 · 当前<br/>✓ CMD17 end-bit 修复后真实 TF/FAT32/BMP<br/>✓ Slave 本地 640×480 HDMI 首图 [B] PASS<br/>✓ 连续多图/轮播旧拓扑 [B]<br/>✓ 从板只读 TF/解码/发送，6114 LUT [S]<br/>→ 14 线主板显示板测；之后 SD 提速/预取"]
-    V2 --> M2B["M2 · B 线 · 当前<br/>✓ 行 RAM 改 BRAM，原功能回归通过<br/>✓ 地址/像素/CRC + 7-bit REQ/ACK 传输子链<br/>✓ 主板 SDRAM/HDMI，4386 LUT [S]<br/>→ 14 线板测 → 双缓冲/故障恢复 → 高速 PHY"]
-    V2 --> M2C["M2 · C 线 · 当前<br/>✓ 原真实图切换/轮播用户确认 [B]<br/>✓ 主板圆角加载卡 + 加载中<br/>✓ 主板发布反馈后才 DONE/轮播计时<br/>✓ 10-05 A/B 提交已集成<br/>✓ 14 项回归/双角色 STA + BitGen<br/>→ 同时更新两板，HDMI 移主板：首图→单步→轮播 [B]"]
-    M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>TF → 从板服务 → 实际板间传输 → 主板安全提交 → HDMI<br/>坏文件、短帧、CRC 错误不得污染 front；[未完成]"]
+    V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑骨架已有 [U/C-sub] 仿真<br/>✓ Slave 显示拓扑切换/轮播 [B]<br/>✓ FIX6 14 线握手图片链 → Master HDMI [B] PASS<br/>→ 后续单独验高速数据面；不混为视频吞吐"]
+    V2 --> M2A["M2 · A 线 · 当前<br/>✓ CMD17 end-bit 修复后真实 TF/FAT32/BMP<br/>✓ Slave 本地 640×480 HDMI 首图 [B] PASS<br/>✓ 连续多图/轮播旧拓扑 [B]<br/>✓ 从板 TF/解码/发送，FIX6 真板闭环 [B]<br/>→ 量化加载耗时，推进 SD 提速/预取"]
+    V2 --> M2B["M2 · B 线 · 当前<br/>✓ 行 RAM 改 BRAM，原功能回归通过<br/>✓ 地址/像素/CRC + GPIO mailbox 传输子链<br/>✓ FIX6 pin-map 真板修复，完整 640×480 mailbox 回归 PASS<br/>✓ Master HDMI 真实图片 [B]<br/>→ 清理 active adapter regression → 恢复/长稳 → 高速 PHY"]
+    V2 --> M2C["M2 · C 线 · 当前<br/>✓ 原真实图切换/轮播用户确认 [B]<br/>✓ 主板圆角加载卡 + 加载中<br/>✓ 主板发布反馈后才 DONE/轮播计时<br/>✓ 10-05 A/B 提交已集成<br/>✓ FIX6 主板出图、单步切换、自动轮播 [B] PASS<br/>→ 保留上一帧 + 小型 Loading overlay；优化切换体验"]
+    M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>✓ TF → 从板服务 → 14 线传输 → 主板 HDMI 基础闭环 [B]<br/>→ 异常/复位/长稳、加载体验仍未关闭"]
     M2B --> M2E
     M2C --> M2E
     M2A -->|真实 catalog/status| M2C
@@ -112,7 +112,7 @@ Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
 
 当前 M1 已按此方法完成控制面与可视化真板闭环：Master 的 KEY2/KEY3/KEY4 可通过 115200 framed UART 控制 Slave HDMI 的 4 个 deterministic pattern；Questa aggregate 回归也已通过。M2 从真实 TF/FAT32/BMP 与高速媒体数据面开始，最终 HDMI owner 按 `01_architecture.md` 回归 Master。
 
-2026-10-04：用户确认旧 Slave HDMI 拓扑的真实图片切换/轮播完全正常。当前候选 `M2_MASTER_OUTPUT_20261004` 已将显示与加载卡移至主板，完成 12 项针对性回归与双角色 final STA/BitGen。下一步只做 [14 线接线与主板出图板测](develop_records/M2_MASTER_OUTPUT_20261004.md)，通过后再做 SD 提速、双缓冲/恢复、高速数据面；低速图片链不替代 1080p60 持续吞吐。
+2026-10-05：`M2_FIX6_BOARD_PASS_20261005` 已完成主板 HDMI 的真实图片双板闭环，NEXT/PREV 与自动轮播真板通过。当前优先事项变为：加载耗时优化、保留上一帧的小型 Loading overlay、异常/复位长稳，以及 current active regression 清理。14 线图片链不替代后续持续视频带宽门禁。
 
 > 开发过程、验证记录、日志和截图不得直接新增到 `docs/` 根目录；统一放入 `docs/develop_records/`，其中原始证据放 `docs/develop_records/evidence/`。`docs/` 根目录只保留 01～08 的规范文档。
 ## 2026-10-03 M2-A board gate update
@@ -122,4 +122,4 @@ Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
 此为历史阶段记录，后续 Dual-control 已通过，当前下一步见图。该阶段使用 M1 已真板验证的三线 UART（TX/RX/GND），Master 消费真实 `catalog_count` 并发送 `OPEN(image_id)`；Slave HDMI 暂时保留为可视输出。此门禁通过后才进入 M2-B source-synchronous 媒体数据面，不能把“Master 控制 Slave 本地 HDMI”写成完整 M2 双板媒体闭环。
 
 
-> 2026-10-05 当前为 `M2_TEAM_INTEGRATION_20261005`：新集成两板 bitstream 位于 `sim_work/m2_team_integration_20261005/delivery/`，14 线接法不变，主板出图 `[B]` 待验。详见 [集成记录](develop_records/M2_TEAM_INTEGRATION_20261005.md)，状态以 03 为准。
+> 2026-10-05 当前冻结基线为 `M2_FIX6_BOARD_PASS_20261005`：FIX6 修正 J1/FPGA 球位映射后，主板真实图片显示、切换与轮播 `[B] PASS`。冻结记录见 [M2_FIX6_BOARD_PASS_FREEZE_20261005](develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md)，状态以 03 为准。

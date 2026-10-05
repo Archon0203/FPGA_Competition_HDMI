@@ -30,10 +30,29 @@ set_pin_assignment { HDMI_DDC_SDA } { LOCATION = R2; IOSTANDARD = LVCMOS33; }
 set_pin_assignment { link_data[0] } { LOCATION = D14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
 set_pin_assignment { link_data[1] } { LOCATION = G11; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
 set_pin_assignment { link_data[2] } { LOCATION = G12; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
-set_pin_assignment { link_data[3] } { LOCATION = L12; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
-set_pin_assignment { link_data[4] } { LOCATION = J14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
-set_pin_assignment { link_data[5] } { LOCATION = H13; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
+set_pin_assignment { link_data[3] } { LOCATION = H13; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
+set_pin_assignment { link_data[4] } { LOCATION = H14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
+set_pin_assignment { link_data[5] } { LOCATION = J14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
 set_pin_assignment { link_data[6] } { LOCATION = K12; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
 set_pin_assignment { link_req } { LOCATION = L14; IOSTANDARD = LVCMOS33; PULLTYPE = PULLDOWN; }
 set_pin_assignment { link_ack } { LOCATION = M14; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 4; PULLTYPE = PULLDOWN; }
 set_pin_assignment { display_published } { LOCATION = L16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 4; PULLTYPE = PULLDOWN; }
+
+# Eight-bit LED diagnostic group / nixie shared pins.  Active-low cathodes.
+# Put board SW6 in the LED position to view these diagnostics.
+set_pin_assignment { diag_led_n[0] } { LOCATION = C15; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[1] } { LOCATION = C16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[2] } { LOCATION = B6;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[3] } { LOCATION = A5;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[4] } { LOCATION = B5;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[5] } { LOCATION = A8;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[6] } { LOCATION = A7;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[7] } { LOCATION = A6;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[0] } { LOCATION = F16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[1] } { LOCATION = E16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[2] } { LOCATION = E12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[3] } { LOCATION = E10; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[4] } { LOCATION = C13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[5] } { LOCATION = F10; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[6] } { LOCATION = E11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[7] } { LOCATION = D11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
