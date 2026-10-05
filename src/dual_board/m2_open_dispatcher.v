@@ -67,7 +67,9 @@ module m2_open_dispatcher (
                     cmd_valid       <= 1'b1;
                     cmd_image_id    <= queued_image_id;
                     cmd_is_remote   <= 1'b1;
-                    remote_queued   <= 1'b0;
+                    // Preserve a newer request arriving as the old queue
+                    // entry moves to the immutable valid/ready output.
+                    remote_queued   <= remote_open_request;
                 end else if (catalog_valid && (catalog_count != 8'd0) &&
                              !bootstrap_issued) begin
                     cmd_valid        <= 1'b1;

@@ -3,9 +3,10 @@
 
 TD .al files are XML-like but use attribute values such as "UsedInP&R", so
 standard XML parsers reject them.  This checker intentionally uses text/regex.
-It verifies the two failure modes seen in this repository:
+It verifies the failure modes seen in this repository:
   1) duplicate <File Path="..."> entries after branch merges;
-  2) non-CRLF .al files on Windows checkout/package paths.
+  2) non-CRLF .al files on Windows checkout/package paths;
+  3) required shared RTL accidentally marked AutoExcluded from synthesis.
 """
 from pathlib import Path
 from collections import Counter
@@ -31,6 +32,15 @@ for p in files:
     if not crlf_ok:
         failed = True
         print('  WARNING: .al is not pure CRLF')
+    if p.name in {'FPGA_Competition_HDMI_MASTER.al',
+                  'FPGA_Competition_HDMI_SLAVE.al'}:
+        fifo_block = re.search(
+            r'<File Path="src/framebuf/async_fifo\.v">(.*?)</File>',
+            text, re.S)
+        if not fifo_block or not re.search(
+                r'<Attr Name="UsedInSyn" Val="true"', fifo_block.group(1)):
+            failed = True
+            print('  REQUIRED SOURCE NOT ACTIVE: src/framebuf/async_fifo.v')
 if failed:
     raise SystemExit(1)
 print('PASS: TD project files have unique source paths and CRLF line endings.')

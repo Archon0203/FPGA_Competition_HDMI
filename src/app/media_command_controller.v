@@ -60,7 +60,7 @@ module media_command_controller #(
     wire manual_next = catalog_active && catalog_usable && !emergency && key_event[1];
     wire manual_prev = catalog_active && catalog_usable && !emergency &&
                        !key_event[1] && key_event[2];
-    wire command_idle = media_cmd_ready;
+    wire command_idle = media_cmd_ready && !pending_valid && !deferred_valid;
     wire auto_advance = catalog_active && catalog_usable && play_en && !emergency &&
                         command_idle &&
                         !key_event[0] && !key_event[3] && !key_event[1] && !key_event[2] &&
@@ -145,7 +145,7 @@ module media_command_controller #(
                 deferred_valid     <= 1'b0;
             end else begin
                 if (manual_next || manual_prev || auto_advance || catalog_rebased ||
-                    !play_en || emergency || key_event[0] || key_event[3]) begin
+                    !command_idle || !play_en || emergency || key_event[0] || key_event[3]) begin
                     slide_counter <= {TIMER_WIDTH{1'b0}};
                 end else if (command_idle) begin
                     slide_counter <= slide_counter + 1'b1;
@@ -175,9 +175,8 @@ module media_command_controller #(
                         end else begin
                             pending_valid <= 1'b0;
                         end
-                    end else if (selection_request &&
-                                 (requested_image_id != pending_image_id)) begin
-                        deferred_valid    <= 1'b1;
+                    end else if (selection_request) begin
+                        deferred_valid    <= (requested_image_id != pending_image_id);
                         deferred_image_id <= requested_image_id;
                     end
                 end else if (selection_request) begin

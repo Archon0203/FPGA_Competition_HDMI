@@ -74,3 +74,11 @@ cd FPGA_Competition_HDMI
 4. 集成发布包应先在一个**没有 `.git/` 的临时目录**检查，再复制到现有 clone；不要反向把临时目录的隐藏文件覆盖回仓库。
 5. 提交前使用 `git status --short`、`git diff --stat`、`git add -p`。若看到上百个仅行尾变化的文件，应先停止并检查 `.gitattributes`/编辑器 EOL 设置。
 6. 厂商加密 IP（例如 `*.enc.v`）不得被格式化、重新编码或自动换行；`.gitattributes` 已将其标为 `-text`。
+
+## M2 主板输出候选分工（2026-10-04）
+
+- 曾雨婷 / A：Slave TF、catalog、BMP、媒体状态、后续 SD 提速/预取；消费 B 的背压，不另做显示链。
+- 杨文轩 / B：Slave 发送 + Master 接收、CRC/握手、SDRAM/BRAM、后续双缓冲/安全提交/高速 PHY。
+- 张宗 / C + 集成：Master 按键/轮播/加载 UI、DONE 与显示发布协调、双角色工程/时序/接线板测。
+
+当前两份长期工程 Top 为 `m2_master_tf_hdmi_top` / `m2_slave_media_tx_top`；主板输出 HDMI、从板放 TF。当前 profile 是 14 线低速图片传输，最终 1080p 视频 PHY 未验收。共同按 [板测表](docs/develop_records/M2_MASTER_OUTPUT_20261004.md) 验证，当前 PASS 只写入 docs03。

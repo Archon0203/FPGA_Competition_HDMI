@@ -2,6 +2,13 @@
 
 > 本文只定义系统架构、最终职责边界和长期冻结接口，不维护日常进度。**所有当前 PASS/未通过/待验证状态只以 `docs/03_plan_and_status.md` 为准。** P1-05A 与 P1-04C 继续作为已关闭的 rollback baseline。
 
+## M2 当前部署 profile（2026-10-04）
+
+主板 `m2_master_tf_hdmi_top`：按键/UART coordinator → 14 线接收/CRC → SDRAM/行缓存 → 加载 UI → 官方 HDMI_B。从板 `m2_slave_media_tx_top`：TF/FAT32/BMP → 带地址像素流/CRC → 握手发送与 UART 状态。当前低速图片 profile 允许从板直接流式发送，不要求先在从板存完整帧；正式视频 profile 再加入从板 SDRAM 预取与高速 line/tile transport。两者共用 A/B/C 职责边界，不能把低速验证链当作 1080p60 最终 PHY。
+
+主板发布状态反馈后从板才报告 DONE。无缝转场需后续双缓冲，当前掩蔽单缓冲。最终仍为双板 + 1080p + 团队要求的全部 1.4 扩展。细节及实测资源见 [当前 profile](develop_records/M2_MASTER_OUTPUT_20261004.md)。
+
+
 ## 1. 总体阶段
 
 | 阶段 | 职责 | 架构定位 |

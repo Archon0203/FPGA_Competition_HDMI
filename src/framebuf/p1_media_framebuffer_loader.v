@@ -277,7 +277,10 @@ module p1_media_framebuffer_loader #(
                 end
             end
 
-            if (busy) begin
+            // file_start is registered. On the first busy cycle the children
+            // still expose the previous file's sticky done/ok/header flags.
+            // Let them consume start before inspecting any of those flags.
+            if (busy && !file_start) begin
                 // Arm the valid-only writer before the first pixel byte.  The
                 // P0 contract guarantees data_offset >= 54 for this baseline.
                 if (!writer_issued && parser_ok &&

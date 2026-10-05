@@ -1,0 +1,53 @@
+# M1ABC slave/HDMI diagnostic - HX4S20C EG4S20BG256
+# Proven UART board-link mapping:
+#   FPGA J13 -> J1 pin 8 : local TX
+#   FPGA F13 -> J1 pin 4 : local RX
+set_pin_assignment { clk }          { LOCATION = R7;  IOSTANDARD = LVCMOS33; }
+set_pin_assignment { rst_n }        { LOCATION = A2;  IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment { uart_tx }      { LOCATION = J13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { uart_rx }      { LOCATION = F13; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+
+# M2 TF/SPI pins from the official lab_ex4_tf example.
+set_pin_assignment { sd_sclk }      { LOCATION = A14; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { sd_miso }      { LOCATION = B14; IOSTANDARD = LVCMOS33; PULLTYPE = NONE; }
+set_pin_assignment { sd_mosi }      { LOCATION = A13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { sd_ncs }       { LOCATION = A12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+
+set_pin_assignment { led[0] }       { LOCATION = A4;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[1] }       { LOCATION = A3;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[2] }       { LOCATION = E13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+set_pin_assignment { led[3] }       { LOCATION = B12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; }
+
+
+# DIAG4: board 8-bit dual-color LED group / shared nixie nets.
+# From 2_FPGA.pdf + 5_DIG_VGA.pdf:
+#   DIG0..DIG7 = C15,C16,B6,A5,B5,A8,A7,A6
+#   SEL0..SEL7 = F16,E16,E12,E10,C13,F10,E11,D11
+# The LED group is common-anode from LEDVCC, therefore DIG/SEL are active-low.
+# diag_sel_n is held high by RTL so only the DIG color is used; set board SW6
+# to the LED position when reading this diagnostic group.
+set_pin_assignment { diag_led_n[0] } { LOCATION = C15; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[1] } { LOCATION = C16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[2] } { LOCATION = B6;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[3] } { LOCATION = A5;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[4] } { LOCATION = B5;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[5] } { LOCATION = A8;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[6] } { LOCATION = A7;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_led_n[7] } { LOCATION = A6;  IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+
+set_pin_assignment { diag_sel_n[0] } { LOCATION = F16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[1] } { LOCATION = E16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[2] } { LOCATION = E12; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[3] } { LOCATION = E10; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[4] } { LOCATION = C13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[5] } { LOCATION = F10; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[6] } { LOCATION = E11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+set_pin_assignment { diag_sel_n[7] } { LOCATION = D11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
+
+# P1-04C board-proven HDMI_B pins. Keep this boundary unchanged in M1.
+set_pin_assignment { HDMI_D0_P }    { LOCATION = G5; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_D1_P }    { LOCATION = F1; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_D2_P }    { LOCATION = E1; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_CLK_P }   { LOCATION = C3; IOSTANDARD = LVDS33; }
+set_pin_assignment { HDMI_DDC_SCL } { LOCATION = P2; IOSTANDARD = LVCMOS33; }
+set_pin_assignment { HDMI_DDC_SDA } { LOCATION = R2; IOSTANDARD = LVCMOS33; }
