@@ -208,6 +208,12 @@ FIX1 是历史接口修补候选，未单独取得板级证据。上一已板测
 
 ### 5.5 当前候选：14 线 TF → Master HDMI
 
+2026-10-05 已修复主板控制断点：`m2_master_tf_hdmi_top` 不再使用未连接真实
+catalog 的 M1 演示控制 wrapper，改由 `m2_master_media_control` 将主板按键、
+真实 UART coordinator、Slave catalog/status 和 OPEN/DONE 完成语义接通。该修改
+已通过 ModelSim `vlog` 语法/依赖编译与 TD 工程源文件检查；尚未取得修改后两
+bitstream 的 `[S]`/`[B]`，因此双板 TF → Master HDMI 仍保持未验收状态。
+
 `M2_MASTER_OUTPUT_20261004`：Top 为 `m2_master_tf_hdmi_top` 与 `m2_slave_media_tx_top`；两份长期 `.al` 已同步。TF 留 Slave；HDMI、按键、UI、SDRAM 和行缓存位于 Master。14 根线包含 2 UART、7 数据、REQ、ACK、显示发布反馈、2 GND；具体接法只按 [逐针表](develop_records/M2_MASTER_OUTPUT_20261004.md)。
 
 | 项目 | 当前证据 |

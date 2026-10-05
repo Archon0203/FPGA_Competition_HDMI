@@ -12,10 +12,11 @@ module m2_master_tf_hdmi_top(
     wire [3:0] ctrl_led, display_led;
     wire media_clk, media_rst_n, packet_valid, packet_ready;
     wire [31:0] packet_data;
-    m1abc_master_control_top u_control(.clk(clk), .rst_n(rst_n),
+    m2_master_media_control u_control(.clk(clk), .rst_n(rst_n),
         .uart_rx(uart_rx), .uart_tx(uart_tx),
         .key_next_n(key_next_n), .key_prev_n(key_prev_n), .key_play_n(key_play_n),
-        .led(ctrl_led));
+        .led(ctrl_led), .catalog_valid(), .catalog_count(),
+        .selected_image_id(), .link_ok(), .fault());
     m2_gpio_mailbox_rx u_link_rx(.clk(media_clk), .rst_n(media_rst_n),
         .data(link_data), .req(link_req), .ack(link_ack),
         .out_valid(packet_valid), .out_data(packet_data), .out_ready(packet_ready));
