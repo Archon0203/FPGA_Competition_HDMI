@@ -24,8 +24,8 @@ flowchart TD
     M1E --> V1["M1 板级验证门禁<br/>分别构建 master.bit / slave.bit<br/>J1-8→J1-4、J1-8←J1-4、GND↔GND<br/>GPIO UART 115200/8N1 framed control<br/>Master KEY2/KEY3/KEY4 → Slave HDMI 4 patterns<br/>复位后重新握手；[B] PASS"]
     V1 --> V2["M1→M2 通信门禁<br/>UART 控制面 [B] PASS<br/>SPI/PRBS/CRC/sequence/CDC 逻辑骨架已有 [U/C-sub] 仿真<br/>✓ Slave 显示拓扑切换/轮播 [B]<br/>→ 14 线握手图片链：新两 bit → 主板 HDMI [B] 待验<br/>→ 之后单独验高速 source-sync；不混为视频吞吐"]
     V2 --> M2A["M2 · A 线 · 当前<br/>✓ CMD17 end-bit 修复后真实 TF/FAT32/BMP<br/>✓ Slave 本地 640×480 HDMI 首图 [B] PASS<br/>✓ 连续多图/轮播旧拓扑 [B]<br/>✓ 从板只读 TF/解码/发送，6114 LUT [S]<br/>→ 14 线主板显示板测；之后 SD 提速/预取"]
-    V2 --> M2B["M2 · B 线 · 当前<br/>✓ 行 RAM 改 BRAM，原功能回归通过<br/>✓ 地址/像素/CRC + 7-bit REQ/ACK 传输子链<br/>✓ 主板 SDRAM/HDMI，4514 LUT [S]<br/>→ 14 线板测 → 双缓冲/故障恢复 → 高速 PHY"]
-    V2 --> M2C["M2 · C 线 · 当前<br/>✓ 原真实图切换/轮播用户确认 [B]<br/>✓ 主板圆角加载卡 + 加载中<br/>✓ 主板发布反馈后才 DONE/轮播计时<br/>✓ 12 项回归/双角色 STA + BitGen<br/>→ 同时更新两板，HDMI 移主板：首图→单步→轮播 [B]"]
+    V2 --> M2B["M2 · B 线 · 当前<br/>✓ 行 RAM 改 BRAM，原功能回归通过<br/>✓ 地址/像素/CRC + 7-bit REQ/ACK 传输子链<br/>✓ 主板 SDRAM/HDMI，4386 LUT [S]<br/>→ 14 线板测 → 双缓冲/故障恢复 → 高速 PHY"]
+    V2 --> M2C["M2 · C 线 · 当前<br/>✓ 原真实图切换/轮播用户确认 [B]<br/>✓ 主板圆角加载卡 + 加载中<br/>✓ 主板发布反馈后才 DONE/轮播计时<br/>✓ 10-05 A/B 提交已集成<br/>✓ 14 项回归/双角色 STA + BitGen<br/>→ 同时更新两板，HDMI 移主板：首图→单步→轮播 [B]"]
     M2A --> M2E["M2 汇合门禁 · P1-05B 双板架构闭环<br/>TF → 从板服务 → 实际板间传输 → 主板安全提交 → HDMI<br/>坏文件、短帧、CRC 错误不得污染 front；[未完成]"]
     M2B --> M2E
     M2C --> M2E
@@ -121,3 +121,5 @@ Dual-data：再接媒体数据面，验证 CRC/sequence/credit/CDC/underflow
 
 此为历史阶段记录，后续 Dual-control 已通过，当前下一步见图。该阶段使用 M1 已真板验证的三线 UART（TX/RX/GND），Master 消费真实 `catalog_count` 并发送 `OPEN(image_id)`；Slave HDMI 暂时保留为可视输出。此门禁通过后才进入 M2-B source-synchronous 媒体数据面，不能把“Master 控制 Slave 本地 HDMI”写成完整 M2 双板媒体闭环。
 
+
+> 2026-10-05 当前为 `M2_TEAM_INTEGRATION_20261005`：新集成两板 bitstream 位于 `sim_work/m2_team_integration_20261005/delivery/`，14 线接法不变，主板出图 `[B]` 待验。详见 [集成记录](develop_records/M2_TEAM_INTEGRATION_20261005.md)，状态以 03 为准。

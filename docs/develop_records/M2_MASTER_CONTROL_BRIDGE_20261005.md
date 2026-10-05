@@ -2,10 +2,11 @@
 
 ## 修复原因
 
-`m2_master_tf_hdmi_top` 原来只例化了 M1 演示用的
-`m1abc_master_control_top`。该模块内部的 `catalog_valid` 没有连接真实从板
-UART 状态，因此主板 HDMI 接收链虽然存在，主板按键却不能稳定地产生真实
-`OPEN(image_id)`。
+`m2_master_tf_hdmi_top` 原来复用 `m1abc_master_control_top`。
+集成核对确认旧模块的 `catalog_valid/catalog_count` 同样连接真实 UART
+coordinator，因此不能将“catalog 未连接”作为已经证实的故障根因。
+本改动将 M2 控制独立包装，去除对旧本地诊断实例的依赖；功能验证见
+[三线集成记录](M2_TEAM_INTEGRATION_20261005.md)。
 
 ## 当前实现
 

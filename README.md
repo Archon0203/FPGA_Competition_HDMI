@@ -8,9 +8,9 @@
 
 - M1 115200 framed UART + deterministic 双板可视控制门禁已通过；
 - M2 已取得 **真实 TF/FAT32/BMP 640×480 -> Slave SDRAM -> Slave HDMI 的本地真板 PASS**；
-- 真实媒体双板 NEXT/PREV、PLAY/PAUSE、自动轮播 **尚未通过**。已观察到周期闪动但图片不变、按键多数不能完成切换；
-- DUALCTRL2 为修复“把 `ACCEPTED` 误当整图完成”的候选；FIX1 已补齐 `source_valid` 接口，但尚未取得用户侧重新综合/Questa/真板证据；
-- source-synchronous 高速媒体数据面、Master-owned 最终媒体显示和 1920×1080 均未完成。
+- 用户已确认旧 Slave HDMI 拓扑的真实图片 NEXT/PREV、PLAY/PAUSE、自动轮播正常；
+- 当前 `M2_TEAM_INTEGRATION_20261005` 已集成两位同事提交，14 项回归、两板 final STA/BitGen 通过，主板 HDMI 新拓扑待板测；
+- 14 线握手图片链不是 1080p60 高速视频链；1080p、双缓冲和完整故障恢复仍未完成。
 
 详细状态、证据等级和下一门禁只维护在 [`docs/03_plan_and_status.md`](docs/03_plan_and_status.md)。开发过程和历史推断不覆盖该文件。
 
@@ -22,7 +22,7 @@ Slave：TF/FAT32/BMP/vseq、媒体目录、预取、源缓存、line/tile packet
 Master：控制/状态、接收/CDC、line/tile buffer、缩放、OSD、转场、音频、1080P HDMI
 ```
 
-当前 Slave HDMI 仅作为 M2 本地真实媒体诊断出口，不代表最终显示职责发生变化。
+当前 active Top 已将 HDMI 部署到 Master，TF 留 Slave。两板新 bitstream 位于 `sim_work/m2_team_integration_20261005/delivery/`；[接线与集成板测](docs/develop_records/M2_TEAM_INTEGRATION_20261005.md)。
 
 ## 当前工程入口
 
@@ -30,8 +30,8 @@ Master：控制/状态、接收/CDC、line/tile buffer、缩放、OSD、转场�
 
 | 板卡角色 | TD 工程 | 当前 Top | 角色约束 |
 |---|---|---|---|
-| Master 主板 | `FPGA_Competition_HDMI_MASTER.al` | `m1abc_master_control_top` | `constraints/master/master.adc` + `master.sdc` |
-| Slave 从板 | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_tf_hdmi_top` | `constraints/slave/slave.adc` + `slave.sdc` |
+| Master 主板 | `FPGA_Competition_HDMI_MASTER.al` | `m2_master_tf_hdmi_top` | `constraints/master/master.adc` + `master.sdc` |
+| Slave 从板 | `FPGA_Competition_HDMI_SLAVE.al` | `m2_slave_media_tx_top` | `constraints/slave/slave.adc` + `slave.sdc` |
 
 构建主板 bitstream 时只打开 `FPGA_Competition_HDMI_MASTER.al`；构建从板 bitstream 时只打开 `FPGA_Competition_HDMI_SLAVE.al`。**不得复制另一角色的 bitstream，也不得新建第三个 active `.al`。** 后续 M2~M6 只演进这两个工程的 Source_Files/Top/约束；RTL 始终以 `src/` 为唯一源码副本。
 

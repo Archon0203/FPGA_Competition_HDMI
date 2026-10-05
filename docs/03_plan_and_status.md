@@ -227,6 +227,14 @@ bitstream 的 `[S]`/`[B]`，因此双板 TF → Master HDMI 仍保持未验收�
 
 LUT 降低来自 RAM 推断修正与职责拆分。新链路是有确认的低速图片搬运，不是高速视频吞吐证据。当前卡 SPI 速率保持已验证值，加载耗时未宣称缩短。故障/断线可能需双板复位，M2 安全恢复门槛尚未关闭。
 
+### 5.6 当前 active candidate：M2_TEAM_INTEGRATION_20261005
+
+已在 `codex/m2-team-integration-20261005` 集成 main 的 PR #39（A）与 #38（B），清除 TD AutoExcluded，修复 A 测试的 ready 多驱动，并补齐新 Master 控制和原多文件媒体回归。14 项 `[U/C-sub] PASS`。
+
+两角色 final STA/BitGen 完成：Master 4386 LUT，SWNS +0.670 ns、HWNS +0.003 ns；Slave 6114 LUT，SWNS +10.085 ns、HWNS +0.075 ns；STNS/HTNS 均为 0。`[S]` 仅对应本候选与当前约束。`[B]` 待验，旧 10-04 候选报告不能替代这次集成报告。
+
+交付：`sim_work/m2_team_integration_20261005/delivery/master.bit` 与 `slave.bit`。沿用 14 线接法，HDMI 接 Master、TF 留 Slave。[集成内容、证据和板测步骤](develop_records/M2_TEAM_INTEGRATION_20261005.md)。
+
 ## 6. M2 关闭门槛
 
 M2 只有同时满足以下条件才可关闭：
@@ -254,12 +262,12 @@ M2 只有同时满足以下条件才可关闭：
 ## 8. 当前验证顺序
 
 1. 按 [14 线表](develop_records/M2_MASTER_OUTPUT_20261004.md) 断电接线，HDMI 移到 Master，TF 留 Slave。
-2. 同时更新 `sim_work/m2_master_output/delivery/master.bit` 与 `slave.bit`，双板一起复位；先验证加载卡和第一张图。
+2. 同时更新 `sim_work/m2_team_integration_20261005/delivery/master.bit` 与 `slave.bit`，双板一起复位；先验证加载卡和第一张图。
 3. 暂停轮播检查至少 4 张图的 NEXT/PREV，再恢复轮播；观察“图片可见后停留约 5 秒”。
 4. 新拓扑正常后：A 单独推进 SD 提速；B 推进主板双缓冲/安全 commit 和故障超时恢复；C 维护 UI 和控制完成语义。
 5. 准备适合高速传输的线束/转接板，完成 source-synchronous PRBS/CRC/sequence 门禁；14 根杜邦线本次 PASS 不能替代 1080p60 视频带宽门禁。
 
-原 12 项针对性回归均通过；旧 `run_m1abc.do` 的 SPI byte-loop 失败仍是独立历史待核实项，不能宣称全仓 aggregate 通过。
+当前 14 项针对性回归均通过；旧 `run_m1abc.do` 的 SPI byte-loop 失败仍是独立历史待核实项，不能宣称全仓 aggregate 通过。
 
 ## 9. 更新纪律
 

@@ -32,6 +32,15 @@ for p in files:
     if not crlf_ok:
         failed = True
         print('  WARNING: .al is not pure CRLF')
+    # Active projects share a source set; TD determines reachability from Top.
+    # GUI AutoExcluded caches must not suppress a dependency after changing Top.
+    for path, block in re.findall(r'<File Path="([^"]+)">(.*?)</File>', text, re.S):
+        if re.search(r'<Attr Name="AutoExcluded" Val="true"', block):
+            failed = True
+            print(f'  STALE AUTOEXCLUDED: {path}')
+        if not (p.parent / path).is_file():
+            failed = True
+            print(f'  MISSING SOURCE: {path}')
     if p.name in {'FPGA_Competition_HDMI_MASTER.al',
                   'FPGA_Competition_HDMI_SLAVE.al'}:
         fifo_block = re.search(
@@ -43,4 +52,4 @@ for p in files:
             print('  REQUIRED SOURCE NOT ACTIVE: src/framebuf/async_fifo.v')
 if failed:
     raise SystemExit(1)
-print('PASS: TD project files have unique source paths and CRLF line endings.')
+print('PASS: TD source paths exist, are unique, have no AutoExcluded flags; CRLF OK.')
