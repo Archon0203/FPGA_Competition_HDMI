@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/AnlogicProject/FPGA_Competition_HDMI">
+<Project Version="3" Minor="2" Path="C:/Users/HP/Downloads/FPGA_Competition_HDMI_M2_MASTER_IPFIX_20261005/FPGA_Competition_HDMI_M2_MASTER_IPFIX_20261005">
     <Project_Created_Time></Project_Created_Time>
     <TD_Encoding>UTF-8</TD_Encoding>
     <TD_Version>6.2.168116</TD_Version>
@@ -14,6 +14,7 @@
         <Verilog>
             <File Path="src/vendor/anlogic/apug092/hdmi_1_4b_transmitter_core_wrapper.enc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -22,6 +23,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug092/lane_lvds_10_1.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -30,6 +32,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug092/hdmi_phy_warpper.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -38,6 +41,7 @@
             </File>
             <File Path="src/top/apug092_core_wrapper.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -46,6 +50,7 @@
             </File>
             <File Path="src/top/apug092_tx_wrapper.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -62,6 +67,7 @@
             </File>
             <File Path="src/display/hdmi_official_baseline_source.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -70,6 +76,7 @@
             </File>
             <File Path="src/dual_board/db_startup_reset.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -110,6 +117,7 @@
             </File>
             <File Path="src/storage/m1a_protocol.vh">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -118,6 +126,7 @@
             </File>
             <File Path="src/storage/m1a_media_service_mock.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -126,6 +135,7 @@
             </File>
             <File Path="src/storage/m1a_uart_service_bridge.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -134,6 +144,7 @@
             </File>
             <File Path="src/dual_board/m1b_prbs31.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -142,6 +153,7 @@
             </File>
             <File Path="src/dual_board/m1b_line_packetizer.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -150,6 +162,7 @@
             </File>
             <File Path="src/dual_board/m1b_line_packet_checker.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -158,6 +171,7 @@
             </File>
             <File Path="src/dual_board/m1b_packet_selftest.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -166,6 +180,7 @@
             </File>
             <File Path="src/dual_board/m2_media_line_source.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -174,6 +189,7 @@
             </File>
             <File Path="src/dual_board/m2_line_packet_tx.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -182,6 +198,7 @@
             </File>
             <File Path="src/dual_board/m2_line_packet_rx.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -190,6 +207,7 @@
             </File>
             <File Path="src/dual_board/m2_frame_commit.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -198,6 +216,7 @@
             </File>
             <File Path="src/dual_board/m2_abc_loopback_diag.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -206,6 +225,7 @@
             </File>
             <File Path="src/app/m1c_frame_config_cdc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -214,6 +234,7 @@
             </File>
             <File Path="src/display/m1c_axis_pattern_mux.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -222,6 +243,7 @@
             </File>
             <File Path="src/top/m1abc_slave_hdmi_top.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -230,6 +252,7 @@
             </File>
             <File Path="src/storage/sd_spi.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -334,6 +357,7 @@
             </File>
             <File Path="src/dual_board/m2_frame_packet_source.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="false"/>
                     <Attr Name="UsedInP&R" Val="false"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -342,6 +366,7 @@
             </File>
             <File Path="src/framebuf/sdram_arbiter.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -350,6 +375,7 @@
             </File>
             <File Path="src/framebuf/p1_sdram_hdmi_pipeline.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -358,6 +384,7 @@
             </File>
             <File Path="src/framebuf/p1_sdram_read_cdc_bridge.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -366,6 +393,7 @@
             </File>
             <File Path="src/framebuf/line_prefetcher.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -374,6 +402,7 @@
             </File>
             <File Path="src/framebuf/line_buffer_pingpong.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -382,6 +411,7 @@
             </File>
             <File Path="src/framebuf/async_fifo.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -390,6 +420,7 @@
             </File>
             <File Path="src/framebuf/m2_media_write_cdc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -398,6 +429,7 @@
             </File>
             <File Path="src/top/m2_slave_tf_hdmi_top.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -406,6 +438,7 @@
             </File>
             <File Path="src/dual_board/m2_gpio7_word_tx.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -414,6 +447,7 @@
             </File>
             <File Path="src/dual_board/m2_gpio7_word_rx.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -422,6 +456,7 @@
             </File>
             <File Path="src/framebuf/p1_sdram_cached_adapter.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -430,6 +465,7 @@
             </File>
             <File Path="src/top/apug011_core_wrapper.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -438,6 +474,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug011/clk_pll.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -455,6 +492,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_wrrd.enc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -463,6 +501,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_init_ref.enc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -471,6 +510,7 @@
             </File>
             <File Path="src/vendor/anlogic/apug011/enc_file/sdr_as_ram.enc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -479,6 +519,7 @@
             </File>
             <File Path="src/display/hdmi_framebuffer_scanout.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -511,6 +552,7 @@
             </File>
             <File Path="src/display/m2_loading_card.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -519,6 +561,7 @@
             </File>
             <File Path="src/app/m1c_coordinator_uart.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -527,6 +570,7 @@
             </File>
             <File Path="src/app/media_command_controller.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -535,6 +579,7 @@
             </File>
             <File Path="src/dual_board/m1b_link_word_cdc.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -559,6 +604,7 @@
             </File>
             <File Path="src/framebuf/m2_master_frame_store.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -567,6 +613,7 @@
             </File>
             <File Path="src/framebuf/m2_master_line_core.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -575,6 +622,7 @@
             </File>
             <File Path="src/interact/key_filter.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -583,6 +631,7 @@
             </File>
             <File Path="src/top/m1abc_master_control_top.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -591,6 +640,7 @@
             </File>
             <File Path="src/top/m2_master_tf_hdmi_top.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
