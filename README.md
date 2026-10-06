@@ -19,7 +19,7 @@
 
 1. 图片加载时间较长，切换体验明显慢于官方样例；
 2. 加载期间当前 UI 会整屏覆盖图片，后续应改为保留上一帧并叠加小型“加载中”提示；
-3. 当前 14 线握手链适合静态图片验证，不作为后续持续视频传输方案。
+3. 当前 14 线握手链适合静态图片验证；下一节点扩展为 1920×1080 静态图片一次完整传输，不做视频输出。
 
 完整回归并非全绿：完整 640×480 mailbox 与物理 pin fault 仿真已 PASS，但 `framebuf/tb_p1_sdram_cached_adapter` 仍是当前 active regression 的已知失败项；若干历史/可选 TB 也仍需整理。真板功能 PASS 不等价于这些仿真债务已经关闭。
 
@@ -94,7 +94,7 @@ RX -> SDRAM/framebuffer -> display pipeline -> HDMI
   key / carousel control
 ```
 
-当前 14 线连接和 FIX6 正确球位见 [`constraints/README.md`](constraints/README.md) 与冻结记录。后续视频链路将另行设计，不在本基线中扩展。
+当前 14 线连接和 FIX6 正确球位见 [`constraints/README.md`](constraints/README.md) 与冻结记录。后续工作是 1920×1080 图片、UI/转场、图像参数和 HDMI 音频，不扩展视频输出链路。
 
 ## 文档约定
 
@@ -104,3 +104,7 @@ RX -> SDRAM/framebuffer -> display pipeline -> HDMI
 - `docs/olds/`：历史方案。
 
 本次冻结只更新文档与状态记录，不修改 `.git/` 内容。
+
+## M2.1 UI／快切集成候选（2026-10-06）
+
+当前工作树集成首次加载页、缺卡页、字幕／图片信息 OSD、六张 640×480 图片缓存、compact 传输和后台提前预读。项目仍处于 **M2/M2.1 收口**；两角色 bit 位于 `sim_work/m2_ui_fast_20261006_release/delivery/`，须成套升级；仿真／STA 已通过，但预读板上表现尚不稳定，真板状态以 docs03 为准。详见 [集成与板测记录](docs/develop_records/M2_UI_FAST_INTEGRATION_20261006.md)。1080P 的 M3 尚未开始。

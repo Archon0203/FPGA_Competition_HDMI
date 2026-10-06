@@ -27,3 +27,8 @@ set_false_path \
 set_false_path -from [get_ports {link_req}]
 # Bound data input routing well below the 3+ destination-cycle capture guard.
 set_max_delay 40.000 -from [get_ports {link_data[*]}]
+
+# Cache request/reply FIFOs and card-error level synchronizer (50 MHz <-> pixel).
+set_clock_groups -asynchronous \
+    -group [get_clocks {hx4s20c_clk50m}] \
+    -group [get_clocks {u_display/u_hdmi_pll/u_pll.clkc[0]}]

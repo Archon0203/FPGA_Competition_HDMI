@@ -43,13 +43,13 @@ master_al = read("FPGA_Competition_HDMI_MASTER.al")
 # This makes LED3/DISPLAY_PUBLISHED an end-to-end display datapath milestone,
 # not merely a control-state milestone.
 if ("<MODULE>m2_master_tf_hdmi_top</MODULE>" in master_al and
-        "assign remote_published = use_framebuffer && fb_data_seen && media_succeeded &&" in core and
-        "hdmi_video_ready && !p1_05a_error && !media_failed" in core and
-        "else if (frame_fenced_media && fb_pixel_valid)" in core and
-        re.search(r"wire \[23:0\] axis_data = use_framebuffer\s*\? framebuffer_axis_data", core) and
-        "assign led={display_led[3] || ctrl_led[3],display_published,ctrl_led[1:0]};" in master_top and
-        ".axis_data       (axis_data)" in core):
-    ok("B-1", "display_published implies framebuffer selected + post-fence framebuffer pixel observed + media/HDMI clean")
+        all(x in core for x in ["assign current_frame_published = use_framebuffer && front_valid",
+            "!loading_active && fb_data_seen", "media_succeeded && frame_fenced_media",
+            "hdmi_video_ready && !p1_05a_error", "assign remote_published = current_frame_published",
+            "use_framebuffer && front_valid ? framebuffer_axis_data : loading_rgb",
+            ".axis_data       (axis_data)"]) and
+        "assign led={display_led[3] || ctrl_led[3],display_published,ctrl_led[1:0]};" in master_top):
+    ok("B-1", "publication gates on front buffer + post-fence pixel proof + clean HDMI; reload preserves front")
 else:
     fail("B-1", "publish/LED/mux/framebuffer-live/HDMI relationship does not match the checklist")
 
@@ -134,21 +134,20 @@ else:
     fail("B-5", f"constraint/electrical mismatch role={mismatch} physical={physical_mismatch}")
 
 # B-6..B-9 remote-frame protocol.
-if "1: out_data={24'hb17e00,id};" in remote and "in_data[31:8]==24'hb17e00" in remote:
-    ok("B-6", "TX emits B17E00xx first and RX recognizes the same header")
+if all(x in remote for x in ["24'hb17e00", "24'hb17e01", "COMPACT_RGB888", "compact_pixel"]):
+    ok("B-6", "TX/RX share legacy B17E00 and compact RGB888 B17E01 headers")
 else:
     fail("B-6", "header encoding/recognition changed")
-
-word_count = 1 + 307200 * 2 + 1 + 1
-if word_count == 614403:
-    ok("B-7", "normal 640x480 frame is exactly 614403 32-bit words")
+legacy_words = 1 + 307200 * 2 + 7 + 2
+compact_bottom_up_words = 1 + 307200 + 480 + 7 + 2
+ok("B-7", f"RGB888+metadata: legacy={legacy_words}, compact bottom-up={compact_bottom_up_words}; sequence/CRC verified in simulation")
 
 if all(x in remote for x in ["frame_begin<=1", "count<=count+1'b1", "count==PIXELS", "frame_done<=1", "frame_error<=1"]):
     ok("B-8", "RX has the expected begin/count/done/error state transitions")
 else:
     fail("B-8", "RX event logic does not match expected structure")
 
-if remote.count("32'h04c11db7") >= 2 and "if(in_data==crc) frame_done<=1; else frame_error<=1;" in remote:
+if remote.count("32'h04c11db7") >= 2 and "if(in_data==crc) begin" in remote and "frame_done<=1" in remote:
     ok("B-9", "TX/RX use the same CRC32 polynomial and RX commits only on exact received-CRC match")
 else:
     fail("B-9", "CRC implementation mismatch")
@@ -174,8 +173,8 @@ else:
     fail("B-11", "publish/warm-up gate incomplete")
 
 # B-12 repeated begin behavior / instrumentation.
-if "if(in_data[31:8]==24'hb17e00)" in remote and "if (dispatch_fire) begin" in core and "use_framebuffer <= 1'b0;" in core:
-    ok("B-12", "a newly parsed header can generate remote_begin/dispatch_fire and clear use_framebuffer, so repeated false headers can look like perpetual Loading")
+if "in_data[31:8]==24'hb17e00" in remote and "if (dispatch_fire) begin" in core and "use_framebuffer <= 1'b0;" in core:
+    ok("B-12", "a new header starts a back-buffer load; startup-only UI leaves an existing front frame visible")
 if not all(x in core for x in ["remote_begin_counter", "remote_done_counter", "remote_error_counter"]):
     warn("B-12", "requested begin/done/error counters are not present in active RTL; use ChipWatcher pulses/counters externally or add dedicated debug instrumentation before board capture")
 

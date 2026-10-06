@@ -50,6 +50,7 @@ module fat32_scan #(
     output reg  [1:0]  file_type,
     output reg  [31:0] file_cluster,
     output reg  [31:0] file_size,
+    output reg  [87:0] file_name_83, // raw FAT 8.3 bytes: NAME[8] + EXT[3]
     output reg         file_wr,
     output reg  [31:0] fat_lba_base,
     output reg  [31:0] data_lba_base,
@@ -77,6 +78,7 @@ module fat32_scan #(
     // 当前目录项
     reg  [7:0]  entry_state;   // bit0=entry0x00, bit1=deleted, bit2=dir
     reg  [7:0]  ext0, ext1, ext2;
+    reg  [87:0] entry_name_83;
     reg  [15:0] clu_hi, clu_lo;
     reg  [31:0] cur_size;
 
@@ -95,10 +97,12 @@ module fat32_scan #(
             num_fats <= 8'd0; fat_sz <= 32'd0; root_clu <= 32'd0;
             root_sector_index <= 8'd0;
             entry_state <= 8'd0; ext0<=8'd0; ext1<=8'd0; ext2<=8'd0;
+            entry_name_83 <= {11{8'h20}};
             clu_hi<=16'd0; clu_lo<=16'd0; cur_size<=32'd0;
             scan_done <= 1'b0; scan_ok <= 1'b0;
             file_count <= 5'd0; file_index <= 5'd0;
             file_type <= 2'd0; file_cluster <= 32'd0; file_size <= 32'd0;
+            file_name_83 <= {11{8'h20}};
             file_wr <= 1'b0;
             fat_lba_base <= 32'd0;
             data_lba_base <= 32'd0;
@@ -115,6 +119,7 @@ module fat32_scan #(
                     file_type <= 2'd0;
                     file_cluster <= 32'd0;
                     file_size    <= 32'd0;
+                    file_name_83 <= {11{8'h20}};
                     file_wr      <= 1'b0;
                     if (start) begin
                         state      <= S_MBR;
@@ -212,6 +217,20 @@ module fat32_scan #(
                             if (din == 8'h00) entry_state[0] <= 1'b1;   // 结束
                             else if (din == 8'hE5) entry_state[1] <= 1'b1; // 已删除
                         end
+                        case (byte_idx & 9'd31)
+                            9'd0:  entry_name_83[87:80] <= din;
+                            9'd1:  entry_name_83[79:72] <= din;
+                            9'd2:  entry_name_83[71:64] <= din;
+                            9'd3:  entry_name_83[63:56] <= din;
+                            9'd4:  entry_name_83[55:48] <= din;
+                            9'd5:  entry_name_83[47:40] <= din;
+                            9'd6:  entry_name_83[39:32] <= din;
+                            9'd7:  entry_name_83[31:24] <= din;
+                            9'd8:  entry_name_83[23:16] <= din;
+                            9'd9:  entry_name_83[15:8]  <= din;
+                            9'd10: entry_name_83[7:0]   <= din;
+                            default: ;
+                        endcase
                         if ((byte_idx & 9'd31) == 9'd8)  ext0 <= din;
                         if ((byte_idx & 9'd31) == 9'd9)  ext1 <= din;
                         if ((byte_idx & 9'd31) == 9'd10) ext2 <= din;
@@ -239,6 +258,7 @@ module fat32_scan #(
                                     file_type     <= 2'd1;
                                     file_cluster  <= {clu_hi, clu_lo};
                                     file_size     <= cur_size;
+                                    file_name_83  <= entry_name_83;
                                     file_index    <= file_count;
                                     file_count    <= file_count + 1'b1;
                                     file_wr       <= 1'b1;
@@ -246,6 +266,7 @@ module fat32_scan #(
                                     file_type     <= 2'd2;
                                     file_cluster  <= {clu_hi, clu_lo};
                                     file_size     <= cur_size;
+                                    file_name_83  <= entry_name_83;
                                     file_index    <= file_count;
                                     file_count    <= file_count + 1'b1;
                                     file_wr       <= 1'b1;

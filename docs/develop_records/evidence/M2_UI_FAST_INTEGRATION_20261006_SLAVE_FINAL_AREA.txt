@@ -1,0 +1,127 @@
+standard
+***Report Model: m2_slave_media_tx_top Device: EG4S20BG256***
+
+IO Statistics
+#IO                        38   out of    188   20.21%
+  #input                    6
+  #output                  32
+  #inout                    0
+
+Utilization Statistics
+#lut                     7058   out of  19600   36.01%
+#reg                     5837   out of  19600   29.78%
+#le                      8317
+  #lut only              2480   out of   8317   29.82%
+  #reg only              1259   out of   8317   15.14%
+  #lut&reg               4578   out of   8317   55.04%
+#bram                       0   out of     64    0.00%
+  #bram9k                   0
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        7   out of     29   24.14%
+#pad                       38   out of    188   20.21%
+  #ireg                     3
+  #oreg                    12
+  #treg                     0
+#pll                        1   out of      4   25.00%
+#gclk                       1   out of     16    6.25%
+
+
+Detailed IO Report
+
+        Name           Direction    Location    IOStandard    IOType    DriveStrength    PullType    PackReg  
+         clk             INPUT         R7        LVCMOS33      PAD           N/A          PULLUP      NONE    
+  display_published      INPUT        L16        LVCMOS33      PAD           N/A         PULLDOWN     IREG    
+      link_ack           INPUT        M14        LVCMOS33      PAD           N/A         PULLDOWN     IREG    
+        rst_n            INPUT         A2        LVCMOS33      PAD           N/A          PULLUP      NONE    
+       sd_miso           INPUT        B14        LVCMOS33      PAD           N/A           NONE       NONE    
+       uart_rx           INPUT        F13        LVCMOS33      PAD           N/A          PULLUP      IREG    
+    diag_led_n[7]       OUTPUT         A6        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[6]       OUTPUT         A7        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[5]       OUTPUT         A8        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[4]       OUTPUT         B5        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[3]       OUTPUT         A5        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[2]       OUTPUT         B6        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[1]       OUTPUT        C16        LVCMOS33      PAD            8            NONE       NONE    
+    diag_led_n[0]       OUTPUT        C15        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[7]       OUTPUT        D11        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[6]       OUTPUT        E11        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[5]       OUTPUT        F10        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[4]       OUTPUT        C13        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[3]       OUTPUT        E10        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[2]       OUTPUT        E12        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[1]       OUTPUT        E16        LVCMOS33      PAD            8            NONE       NONE    
+    diag_sel_n[0]       OUTPUT        F16        LVCMOS33      PAD            8            NONE       NONE    
+       led[3]           OUTPUT        B12        LVCMOS33      PAD            8            NONE       OREG    
+       led[2]           OUTPUT        E13        LVCMOS33      PAD            8            NONE       NONE    
+       led[1]           OUTPUT         A3        LVCMOS33      PAD            8            NONE       NONE    
+       led[0]           OUTPUT         A4        LVCMOS33      PAD            8            NONE       OREG    
+    link_data[6]        OUTPUT        K12        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[5]        OUTPUT        J14        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[4]        OUTPUT        H14        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[3]        OUTPUT        H13        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[2]        OUTPUT        G12        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[1]        OUTPUT        G11        LVCMOS33      PAD            4          PULLDOWN     OREG    
+    link_data[0]        OUTPUT        D14        LVCMOS33      PAD            4          PULLDOWN     OREG    
+      link_req          OUTPUT        L14        LVCMOS33      PAD            4          PULLDOWN     OREG    
+       sd_mosi          OUTPUT        A13        LVCMOS33      PAD            8            NONE       NONE    
+       sd_ncs           OUTPUT        A12        LVCMOS33      PAD            8            NONE       NONE    
+       sd_sclk          OUTPUT        A14        LVCMOS33      PAD            8            NONE       OREG    
+       uart_tx          OUTPUT        J13        LVCMOS33      PAD            8            NONE       OREG    
+
+Report Clock Domain Luts:
+
+-------------------------------------------------------------------------------------------------------------------------------
+  Index   |  Name                      |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
+-------------------------------------------------------------------------------------------------------------------------------
+  #1      |  clk50m                    |  50MHz       |  13             |  0                |  0             |  0      |  0
+  #2      |  u_hdmi_pll/u_pll.clkc[0]  |  25MHz       |  3324           |  0                |  256           |  0      |  7
+-------------------------------------------------------------------------------------------------------------------------------
+
+Clock Resource Statistics
+Index     ClockNet                    Type               DriverType         Driver                    Fanout
+#1        u_hdmi_pll/pixel_clk_raw    Global             pll                u_hdmi_pll/u_pll.clkc0    3803
+#2        clk_dup_1                   Global             io                 clk_syn_2.di              13
+
+Report Hierarchy Area:
++----------------------------------------------------------------------------------------------------------------+
+|Instance                     |Module                      |le      |lut     |ripple  |seq     |bram    |dsp     |
++----------------------------------------------------------------------------------------------------------------+
+|top                          |m2_slave_media_tx_top       |8317    |6547    |511     |5852    |0       |7       |
+|  u_frame_tx                 |m2_remote_frame_tx          |566     |560     |6       |261     |0       |0       |
+|  u_hdmi_pll                 |p1_hdmi_pll_50m_25_125      |0       |0       |0       |0       |0       |0       |
+|  u_link_tx                  |m2_gpio_mailbox_tx          |100     |100     |0       |38      |0       |0       |
+|  u_m2_ctrl_rx               |db_ctrl_frame_parser        |75      |68      |3       |54      |0       |0       |
+|  u_m2_ctrl_tx               |db_ctrl_frame_tx            |51      |46      |3       |41      |0       |0       |
+|  u_m2_open_dispatcher       |m2_open_dispatcher          |26      |26      |0       |15      |0       |0       |
+|  u_m2_real_ctrl             |m2_real_media_uart_bridge   |73      |68      |5       |51      |0       |0       |
+|  u_m2_uart_rx               |db_uart_rx                  |64      |53      |5       |42      |0       |0       |
+|  u_m2_uart_tx               |db_uart_tx                  |46      |40      |6       |29      |0       |0       |
+|  u_media                    |m2_slave_tf_media_core      |7148    |5453    |455     |5221    |0       |7       |
+|    u_media                  |m2_real_media_service       |6006    |4408    |359     |4870    |0       |7       |
+|      u_catalog              |m1a_fat32_catalog           |2930    |2079    |108     |2460    |0       |4       |
+|        u_catalog            |m1a_catalog_table           |1870    |1280    |3       |1799    |0       |0       |
+|        u_scan               |fat32_scan                  |1060    |799     |105     |661     |0       |4       |
+|      u_loader               |p1_media_framebuffer_loader |2695    |1975    |251     |2061    |0       |3       |
+|        u_bmp_parser         |bmp_parser                  |216     |180     |14      |186     |0       |0       |
+|        u_bmp_pixels         |bmp_pixel_stream            |230     |202     |28      |148     |0       |0       |
+|        u_file_reader        |fat32_file_reader           |571     |405     |155     |223     |0       |2       |
+|        u_framebuffer_writer |framebuffer_writer          |1599    |1123    |41      |1476    |0       |1       |
+|    u_sector                 |m2_tf_sector_provider       |1142    |1045    |96      |351     |0       |0       |
+|      u_reader               |sd_reader                   |514     |437     |76      |222     |0       |0       |
+|      u_spi                  |m2_official_spi_master      |72      |63      |9       |42      |0       |0       |
++----------------------------------------------------------------------------------------------------------------+
+
+
+DataNet Average Fanout:
+
+   Index     Fanout     Nets  
+    #1          1       8657  
+    #2          2       1456  
+    #3          3       403   
+    #4          4       190   
+    #5        5-10      554   
+    #6        11-50     567   
+    #7       51-100      51   
+    #8       101-500     4    
+  Average     2.95            
