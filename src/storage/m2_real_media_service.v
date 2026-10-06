@@ -31,6 +31,7 @@ module m2_real_media_service #(
     output reg  [7:0]  descriptor_image_id,
     output reg  [15:0] descriptor_width,
     output reg  [15:0] descriptor_height,
+    output reg  [87:0] descriptor_filename_83,
     output wire        source_ready,
     output wire        source_busy,
     output reg         source_done,
@@ -44,11 +45,13 @@ module m2_real_media_service #(
     reg [20:0] base_q;
     reg [31:0] cluster_q, size_q, fat_q, data_q;
     reg [7:0] spc_q;
+    reg [87:0] name_q;
     wire cat_sector_req, load_sector_req;
     wire [31:0] cat_sector_lba, load_sector_lba;
     wire scan_done, scan_ok, query_ready, cat_descriptor_valid;
     wire [1:0] descriptor_type;
     wire [31:0] descriptor_cluster, descriptor_size, descriptor_fat, descriptor_data;
+    wire [87:0] descriptor_name_83;
     wire [7:0] descriptor_spc;
     wire cat_error;
     wire [7:0] cat_error_code;
@@ -76,6 +79,7 @@ module m2_real_media_service #(
         .query_ready(query_ready), .descriptor_valid(cat_descriptor_valid),
         .descriptor_image_id(), .descriptor_type(descriptor_type),
         .descriptor_cluster(descriptor_cluster), .descriptor_size(descriptor_size),
+        .descriptor_name_83(descriptor_name_83),
         .descriptor_fat_lba_base(descriptor_fat),
         .descriptor_data_lba_base(descriptor_data),
         .descriptor_sectors_per_cluster(descriptor_spc), .descriptor_epoch(),
@@ -113,8 +117,10 @@ module m2_real_media_service #(
             scan_pulse <= 0; query_pulse <= 0; load_pulse <= 0;
             image_q <= 0; base_q <= 0;
             cluster_q <= 0; size_q <= 0; fat_q <= 0; data_q <= 0; spc_q <= 0;
+            name_q <= {11{8'h20}};
             descriptor_valid <= 0; descriptor_image_id <= 0;
             descriptor_width <= 0; descriptor_height <= 0;
+            descriptor_filename_83 <= {11{8'h20}};
             source_done <= 0; source_error <= 0; error_code <= 0;
         end else begin
             scan_pulse <= 0; query_pulse <= 0; load_pulse <= 0;
@@ -149,7 +155,7 @@ module m2_real_media_service #(
                         end else begin
                             cluster_q <= descriptor_cluster; size_q <= descriptor_size;
                             fat_q <= descriptor_fat; data_q <= descriptor_data;
-                            spc_q <= descriptor_spc;
+                            spc_q <= descriptor_spc; name_q <= descriptor_name_83;
                             load_pulse <= 1'b1;
                             state <= LOAD;
                         end
@@ -165,6 +171,7 @@ module m2_real_media_service #(
                             descriptor_image_id <= image_q;
                             descriptor_width <= bmp_width;
                             descriptor_height <= bmp_height;
+                            descriptor_filename_83 <= name_q;
                             source_done <= 1'b1;
                             error_code <= 0;
                         end else begin

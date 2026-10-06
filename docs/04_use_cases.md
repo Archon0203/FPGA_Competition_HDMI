@@ -2,145 +2,80 @@
 
 ## 1. 产品场景
 
-项目定位：**校园/园区信息发布与应急广播终端**。最终由 FPGA 独立完成 TF 读取、文件解析、framebuffer、显示处理、HDMI 音视频与交互，不依赖外部 CPU/MCU。
+项目定位为校园/园区信息发布与应急广播终端。两块 HX4S20C 采用主从结构：
 
-## 2. 当前已验证演示
+    Slave：TF/FAT32/BMP -> 图片目录/解码 -> 图片数据
+                                          |
+    Master：按键/旋钮 -> 轮播控制 -> 接收/缓存 -> 1920×1080 UI/图像处理 -> HDMI 视频+音频
 
-### P1-04C · HDMI link baseline
+不做视频输出。最终演示围绕 1920×1080 静态图片、切换体验、UI 和 HDMI 音频展开。
 
-HX4S20C HDMI_B `[B] PASS`，稳定八色条，证明 50 MHz board clock、HDMI PLL、APUG092、EG PHY、pin 与 monitor lock。
+## 2. 已通过的基线和当前闭环
 
-### P1-05A · SDRAM framebuffer baseline
+- P1-04C HDMI_B：八色条和 HDMI 基线真板通过；
+- P1-05A：640×480 internal SDRAM framebuffer → HDMI_B，TD 和真板通过；
+- M2/FIX6：从板 TF/FAT32/BMP → 14 线图片链 → 主板 framebuffer → HDMI，NEXT/PREV 和自动轮播真板通过；
+- M2 的 640×480 链路保留为回退基线，不代表 1920×1080 已完成。
 
-P1-05A 的功能链和 TD6.2.1 真板基线已通过；当前 TD6.2.1 active top 已取得 routed `[S]` 和真板 `[B]`。
+## 3. 最终演示流程
 
-```text
-+--------------------------------------------------+
-|                    WHITE BORDER                  |
-|      RED                 |       GREEN           |
-|---------------------- CYAN ----------------------|
-|      BLUE                |       YELLOW          |
-+--------------------------------------------------+
-                         ^
-                   MAGENTA vertical bar
-```
+1. 上电后主板显示精美启动页，随后显示从板 TF 目录中的第一张图片。
+2. 自动轮播按目录顺序切换；轮播计时以目标图片真正 image_commit 为起点。
+3. 按键进入选择页，暂停当前图片；旋钮改变选中项，按压确认后加载目标图片。
+4. 首次启动显示全屏“加载中”页面；图片切换期间保留上一张图片，禁止显示“加载中”；从板未识别 TF 卡时显示同风格“未识别到TF卡”。
+5. 目标图片完成安全提交后执行淡入、擦除或滑动转场。
+6. UI 叠加图片编号、标题、字幕、状态栏和音频可视化；亮度/对比度等参数只在帧边界更新。
+7. HDMI 输出与图片切换绑定的提示音或背景音，音频可视化使用同一份 PCM 数据。
+8. 触发应急模式时，主板立即切换到预置应急页和高优先级音频提示，不等待 TF 重新读卡。
 
-该演示真实证明：
+## 4. UI 分层
 
-- internal SDRAM 可写入完整 640×480 RGB888 framebuffer；
-- APUG011 sequential read bandwidth 足以支撑当前 640×480 raster；
-- 150↔25 MHz ordered CDC 有效；
-- line prefetch + ping-pong line buffer 可持续供数；
-- framebuffer RGB 可通过冻结的 P1-04C HDMI cadence 稳定输出；
-- 最终 bitstream 无可见抖动、抽搐、撕裂或移动黑线。
-
-这个测试图与经典四色标志在视觉上有巧合，但项目中它的定义是 **deterministic framebuffer diagnostic pattern**，用于同时验证象限、RGB 组合、frame border、水平/垂直中心线和地址顺序，不作为品牌 Logo 使用。
-
-## 3. P1-05A baseline timing status
-
-P1-05A TD6.2.1 final routed report（2026-09-21）为 STA coverage `99.17%`、SWNS `+0.599 ns`、STNS `0`、HWNS `+0.003 ns`、HTNS `0`，setup/hold 违例端点均为 0。硬件最小裕量只有 3 ps，答辩和开发记录应表述为“当前 routed STA 无违例”，不要表述为“有较大频率余量”。TD5.6.2 的 WNS `+0.068 ns` 只作为历史 closeout 记录。
-
-**板级边界：** 当前 TD6.2.1 bitstream 已重新下载并显示正常；P1-05A 已取得当前工具链 `[B]`。当前 run 仍保留两个 SDRAM location warning 和一条 local clock routing warning。
-
-## 4. 当前演示门禁：双板媒体第一闭环
-
-```text
-从板 TF -> FAT32/BMP -> media service -> SPI/GPIO packet
-                                      -> 主板 buffer/safe commit -> HDMI
-```
-
-当前已通过一个子门禁：真实 TF/FAT32/BMP 可在 Slave 本地写入 SDRAM并由 Slave 640×480 HDMI 显示。**真实多图 NEXT/PREV、自动轮播和双板 Master-owned 显示尚未通过。**
-
-M2 最终仍以至少 4 幅 640×480 BMP 完成双板第一闭环，覆盖手动切图、自动轮播、frame-boundary 提交和错误回退。只有 M2 双板真板闭环通过后，才能对外表述“TF 图片经双板输出完成”。
-
-## 5. 常规信息发布
-
-最终：TF 保存公告 BMP、海报和短视频帧序列；自动轮播/按键切换；OSD 显示序号、模式、状态；可选 HDMI 提示音。
-
-## 6. 应急广播
-
-```text
-Emergency trigger
-   ↓
-local emergency framebuffer
-   ├─ full-screen warning
-   ├─ high-priority OSD
-   ├─ HDMI alert tone
-   ├─ beep
-   └─ LED status
-```
-
-应急页优先使用已准备好的本地 framebuffer，不依赖当前 TF 请求即时完成。
-
-## 7. 技术展示顺序
-
-1. P0/P1-05A 已有 RTL、TD 和真板证据；
-2. M1 双板协议/A-B-C 可视化控制闭环（已真板 PASS，Slave-HDMI 为临时诊断 profile）；
-3. M2 双板 TF/BMP 640×480 第一闭环；
-4. M3 1080p packed-YUV422 等效数据链吞吐门禁（720p 仅可选排错）；
-5. M4 双板媒体到主板 1080p 静态图和 UI；
-6. M5/M6 视频、1.4 扩展、转场、音频及最终真板验收。
-
-## 8. UI 分层
-
-| Priority | Layer | Content |
+| 层级 | 内容 | 所属 |
 |---|---|---|
-| UI-L3 | Emergency | 全屏应急警示 |
-| UI-L2 | Text/OSD | 状态栏、时间、滚动文字、参数 |
-| UI-L1 | Audio Visual | 振幅/频带 |
-| UI-L0 | Base Media | BMP/短视频基础画面 |
+| UI-L3 | 应急页、故障页、复位提示 | C 线/集成 |
+| UI-L2 | 字幕、标题、状态栏、选择转轮、加载卡片 | C 线 |
+| UI-L1 | 音频振幅/频段可视化 | C 线 |
+| UI-L0 | 从板提供的 1920×1080 图片 | A/B 线 |
 
-P1-05A 已完成 UI-L0 的真实 SDRAM→HDMI 基础数据通路；P1-05B 将把固定测试源替换为真实 TF/BMP 内容。
+UI 优先使用字体 ROM、图标 ROM、矩形和逐像素合成，不额外复制完整 1080P overlay framebuffer。所有 UI 层都必须可旁路，以保证基础图片输出可回退。
 
-## 8.1 交互闭环与依赖
+## 5. 交互闭环与三线依赖
 
-目标交互由主板 C 线实现：
+    按键/旋钮
+      -> C 暂停轮播并显示选择转轮
+      -> C 发 OPEN(selected_id)
+      -> A 返回 descriptor/ready 并产生图片 payload
+      -> B 接收、校验、写入 back、等待 frame_boundary
+      -> B 返回 image_commit/link_health
+      -> C 执行转场、恢复轮播、更新字幕和音频场景
 
-```text
-按键进入选择
-  -> 暂停当前播放并锁定当前 frame
-  -> 显示图片/视频转轮
-  -> 旋钮 A/B 方向改变 selected_id
-  -> 旋钮按压确认
-  -> C 发 OPEN(selected_id)
-  -> A 返回 descriptor/ready
-  -> B 在 frame_boundary 安全提交首帧
-  -> C 收到 done/error 后恢复播放或回退上一帧
-```
+C 只消费 A 的目录/状态和 B 的提交/显示状态；A 不等待 UI，B 不等待 UI。旋钮未接入时先用按键仿真，正式 GPIO 管脚、电平、消抖和 CDC 由集成负责人冻结。
 
-其中转轮绘制和输入 FSM 可以先用 mock 开发；`selected_id` 的合法范围和媒体类型依赖 A 的 catalog/descriptor，首帧是否可提交及是否欠载依赖 B 的 `frame_boundary/underflow/protocol_error`。旋钮采用外接增量式编码器，优先接 40-pin GPIO；在管脚、电平和 CDC 尚未冻结前只使用按键仿真，不把临时管脚写入正式约束。
+## 6. 分辨率与节点
 
-## 9. 分辨率边界
+    640×480：M2 已通过的双板图片回退 profile
+    1920×1080：M3 起的唯一主目标
 
-```text
-640×480 : P1-05A rollback；也是 M2 双板第一媒体规格
-1280×720: 仅在 M3 排错时可选，不作为验收节点
-1920×1080 / 双板：M1 起即按此架构设计，M4～M6 完成主目标验收
-```
+| 节点 | 演示目标 | 状态 |
+|---|---|---|
+| M2 | 640×480 双板图片、NEXT/PREV、自动轮播 | 已通过 |
+| M3 | 1920×1080 静态图片完整传输和主板输出 | 下一节点，尚未开始 |
+| M4 | 1080P 图片轮播、切换、转场、字幕、精美 UI、图像参数 | 未完成 |
+| M5 | HDMI 音频、音画同步、音频可视化 | 未完成 |
+| M6 | 1.4 扩展、应急页、长稳、异常恢复、最终演示 | 未完成 |
 
-双板演示采用主从结构：主板负责最终 HDMI、UI/OSD、缩放、转场和音频；从板负责 TF/视频读取、媒体预取和帧/行/tile 生产。主板通过 SPI 下发命令和 credit，从板通过待验证的 source-synchronous GPIO 数据面返回媒体包。M1-B0 已取得三线 UART 双板真板双向通信证据，正确排针为 J1-8(TX/J13) ↔ 对端 J1-4(RX/F13) 并共地；但这只证明控制面，不等于媒体数据面。M1ABC 的 Master 控制 / Slave HDMI 可视集成已经真板 PASS；aggregate Questa 后续也已补证 PASS；两角色 final STA 数值未在 M1 记录中形成完整归档。M2 的**验收目标**是回到最终架构：Master HDMI、Slave 媒体生产；当前 Slave HDMI 仍可作为本地真实媒体诊断出口。source-synchronous 媒体链与真实 1080p 仍必须逐级取得 RTL、STA 和真板证据。
+## 7. 当前对外口径
 
-当前便携屏没有 input timing OSD，面板是否把 640×480 输入内部缩放为 1920×1080 全屏暂无法直接确认；色块边缘轻微 halo 也暂记为显示器 scaler/锐化/面板响应的非阻塞观察项。
+可以说：
 
-## 10. 当前对外口径
+- 640×480 双板真实图片链路、主板 HDMI 输出、手动切换和自动轮播已真板通过；
+- 双板主从职责和两份 bitstream 构建流程已建立；
+- P0/P1-05A/HDMI_B 基线证据有效；
+- 1920×1080 图片、转场、字幕、图像参数、HDMI 音频和音频可视化已进入开发主线。
 
-### 可以说
+还不能说：
 
-- P0 media core 已通过 RTL chain；
-- APUG011 backend 已通过 150 MHz TD；
-- P1-04C HDMI_B 已真板通过；
-- **P1-05A 已完成 internal SDRAM framebuffer → HDMI 的 Questa、TD6.2.1 routed `[S]`、BitGen 和当前工具链真板闭环；**
-- 当前 TD6.2.1 final STA 为 0 setup / 0 hold，SWNS +0.599 ns、HWNS +0.003 ns；
-- TD6.2.1 BitGen 已生成 bitstream，重新上板后显示稳定，无可见 tearing/jitter/scanline underflow；
-- M1 三线 UART 双板控制通信已经真板通过，M1ABC Master 控制 Slave HDMI 的可视化 board gate 也已 PASS；
-- **M2 Slave 本地真实 TF/FAT32/BMP → SDRAM → 640×480 HDMI 已取得一次真板 PASS；该结论不包含双板切换/轮播；**
-- 1.4 全部扩展与 1920×1080 主目标已进入路线，但尚未取得对应最终证据。
-
-### 还不能说
-
-- 真实 TF 图片已经通过双板链路并由 Master HDMI 输出；
-- 1280×720/1080p 已支持；
-- 1080p 已支持；
-- 真实媒体 NEXT/PREV、PLAY/PAUSE、自动轮播已经通过；
-- 双板高速媒体数据面已通过；
-- P1-05A 已取得 `[L]` 长稳等级。
+- 1920×1080 图片已经真板通过；
+- HDMI 音频、音画同步或音频可视化已经真板通过；
+- 所有 UI/转场已完成；
+- 长稳、断链和单板复位恢复已关闭。

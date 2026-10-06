@@ -1,12 +1,12 @@
-# 01 · 系统架构（P0 → P4）
+# 01 · 系统架构（双板 + 1920×1080 图片主线）
 
 > 本文只定义系统架构、最终职责边界和长期冻结接口，不维护日常进度。**所有当前 PASS/未通过/待验证状态只以 `docs/03_plan_and_status.md` 为准。** P1-05A 与 P1-04C 继续作为已关闭的 rollback baseline。
 
-## M2 当前部署 profile（2026-10-05）
+## 当前部署 profile（2026-10-06）
 
-主板 `m2_master_tf_hdmi_top`：按键/UART coordinator → 14 线接收/CRC → SDRAM/行缓存 → 加载 UI → 官方 HDMI_B。从板 `m2_slave_media_tx_top`：TF/FAT32/BMP → 带地址像素流/CRC → 握手发送与 UART 状态。当前低速图片 profile 允许从板直接流式发送，不要求先在从板存完整帧；正式视频 profile 再加入从板 SDRAM 预取与高速 line/tile transport。两者共用 A/B/C 职责边界，不能把低速验证链当作 1080p60 最终 PHY。
+主板 `m2_master_tf_hdmi_top`：按键/UART coordinator → 14 线接收/CRC → SDRAM/行缓存 → 图像处理/UI → 官方 HDMI_B。从板 `m2_slave_media_tx_top`：TF/FAT32/BMP → 带地址图片流/CRC → 握手发送与 UART 状态。当前 640×480 图片 profile 已真板闭环；后续直接扩展为 1920×1080 静态图片 profile。项目不再把视频输出或持续视频 PHY 作为目标。
 
-主板发布状态反馈后从板才报告 DONE。FIX6 已真板通过 640×480 真实图片显示、NEXT/PREV 与自动轮播；当前 Loading 仍为整屏替换，加载速度也尚未优化。14 线链只作为静态图片基线，后续持续视频仍需高速数据面。真板冻结记录见 [M2_FIX6_BOARD_PASS_FREEZE_20261005](develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md)。
+主板发布状态反馈后从板才报告 DONE。FIX6 已真板通过 640×480 真实图片显示、NEXT/PREV 与自动轮播；当前仍需完成 1080P 静态图片、加载体验、转场、字幕、图像参数、HDMI 音频和长稳。真板冻结记录见 [M2_FIX6_BOARD_PASS_FREEZE_20261005](develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md)。
 
 
 ## 1. 总体阶段
@@ -16,19 +16,19 @@
 | P0 · Media Core | 文件流、BMP、framebuffer、抽象 SDRAM、整行预取、连续 RGB888 | 已关闭基础媒体 RTL |
 | P1 · Vendor & Board | APUG011 / APUG092 / PLL / HX4S20C integration | 已关闭 board/vendor rollback baseline |
 | P2 · Presentation | HDMI audio、OSD、参数调节、转场、交互、应急 UI | 最终由 Master 合成 |
-| P3 · Short Video | `.vseq`、帧调度、色彩转换、缩放 | Slave 生产媒体、Master 显示 |
-| P4 · 双板 + 1080p 主线 | 从板媒体生产、双板 packet、主板 1920×1080 输出 | 最终交付架构；状态见 `03` |
+| P3 · 图片呈现与音频 | 图片切换、转场、字幕、图像参数、HDMI 音频、音频可视化 | 由 Master 合成与输出 |
+| P4 · 双板 + 1080p 图片主线 | 从板图片生产、双板 packet、主板 1920×1080 输出 | 最终交付架构；状态见 `03` |
 
 原则：已经取得的低层证据不因上层开发自动失效。P1-05B 若出现 HDMI 问题，先回退 P1-05A framebuffer baseline 或 P1-04C HDMI baseline，不重新猜 pin/PLL/vendor PHY。
 
 ## 2.1 双板主从部署边界
 
-第二块 HX4S20C 用于扩大媒体缓存和处理规模，不把两块板当作共享内存。主板（M）是唯一的最终显示时序和 HDMI 音视频输出所有者；从板（S）是媒体生产者，负责 TF/FAT32/BMP、视频帧预取和向主板提供帧/行/tile 数据。
+第二块 HX4S20C 用于扩大图片缓存和处理规模，不把两块板当作共享内存。主板（M）是唯一的最终显示时序和 HDMI 音视频输出所有者；从板（S）是图片生产者，负责 TF/FAT32/BMP、图片预取和向主板提供图片数据。
 
 ```text
-S: TF -> media catalog/decoder -> S SDRAM -> source-synchronous link
+S: TF -> media catalog/decoder -> S SDRAM -> GPIO picture link
                                                        |
-M: control/coordinator -> link RX -> line/tile buffer -> UI/OSD/effects
+M: control/coordinator -> link RX -> image buffer -> UI/OSD/effects
                                                        -> APUG092/HDMI
 ```
 
@@ -44,13 +44,13 @@ Slave = media producer / cache / packet source
 Master = coordinator / final renderer / HDMI owner
 ```
 
-原因不是简单把两块 FPGA 的 LUT 相加，而是切断两个完全不同的时序与存储压力域：TF/FAT32/BMP/vseq、目录、预取和媒体缓存主要是低速/突发/状态机密集逻辑；1080p raster、缩放、OSD、转场、音频和 APUG092 是持续高吞吐、严格时序逻辑。把前者移到 Slave，可让 Master 的高频 timing cone 保持可控。
+原因不是简单把两块 FPGA 的 LUT 相加，而是切断两个完全不同的时序与存储压力域：TF/FAT32/BMP、目录、预取和图片缓存主要是低速/突发/状态机密集逻辑；1080p raster、缩放、OSD、转场、音频和 APUG092 是严格时序逻辑。把前者移到 Slave，可让 Master 的输出 timing cone 保持可控。
 
-1920×1080 一帧为 2,073,600 像素。若继续使用 P0/P1 历史的 32-bit/像素表示，单帧几乎占满 2M×32 SDRAM，无法在一块 EG4S20 内简单维持两张完整 1080p RGB888 framebuffer 再叠加文件系统/OSD 缓冲。因此最终链路采用 **Slave 源缓存 + packed YUV422 line/tile 流 + Master 小规模 FIFO/line/tile buffer + frame-boundary commit**，而不是“先把两张完整 1080p 帧都复制到 Master”。
+1920×1080 一帧为 2,073,600 像素。若使用 32-bit/像素表示，单帧接近 2M×32 SDRAM 容量，不能默认保留两张完整 RGB888 framebuffer 再叠加文件系统/OSD 缓冲。因此 M3 由 A/B/集成共同选择 RGB888 或 RGB565 静态图片 profile，并采用 Slave 图片缓存 + Master 受保护图片区域/line buffer + frame-boundary commit；最终选择必须以资源、加载时间和真板结果为准。
 
 M1 的 Slave HDMI 工程永久保留为诊断回退：它证明控制平面和 A/B/C 组合可观察。M2 的**完整验收目标**要求真实媒体从 Slave 送到 Master，并逐步把最终 HDMI owner 切回 Master；开发期间 Slave HDMI 可继续承担本地媒体诊断。
 
-控制平面首选主板 SPI master / 从板 SPI slave；数据平面首选 40Pin GPIO 上的 source-synchronous 32-bit packed YUV422 链路，目标时钟先定为 74.25 MHz。该配置只作为候选，必须先通过 PRBS、CRC、CDC、持续带宽和 P&R 门禁；不能把千兆以太网当作原始 1080p60 像素链路。以太网可作为调试、文件搬运或压缩媒体的后备通道。
+控制平面使用当前已验证的 UART/握手接口；数据平面继续使用 GPIO 图片 packet。M3 只验证一张 1920×1080 静态图片的完整传输、CRC/CDC、加载时间和安全提交，不要求持续视频带宽。若后续改变 packet 宽度或像素格式，必须先做独立 Questa、STA 和真板门禁。
 
 ### 2.2 板间物理接口与通信方案
 
@@ -63,9 +63,9 @@ HX4S20C 原理图提供两组 40-pin DC3 扩展口（GPIOA/GPIOB）。接口本�
 | 层 | 首选实现 | 用途 | 验证要求 |
 |---|---|---|---|
 | 控制面 | 4-wire SPI：M SCK/MOSI/CS，S MISO | `READY/OPEN/PAUSE/CREDIT/STATUS/ERROR`、descriptor 摘要、heartbeat | 先用 1-10 MHz；独立 SPI loopback，再做两板握手和 reset 恢复 |
-| 数据面候选 A | 32-bit single-ended DATA + LINK_CLK + VALID/SOF/EOL/EOF | packed YUV422 行/tile 数据 | 从 25 MHz PRBS 开始，逐步到 74.25 MHz；必须有 CRC、sequence、credit、CDC 和误码注入 |
-| 数据面候选 B | 16-bit DATA + LINK_CLK，按 148.5 MHz 发送 | 当 32-bit GPIO 布线/时序不可收敛时的备选 | 只有候选 A 在管脚、STA 或信号完整性上失败时启用 |
-| 后备通道 | 千兆 Ethernet | 调试、文件搬运或压缩媒体 | 不作为首版原始 1080P60 像素链路 |
+| 数据面候选 A | 当前 14 线 mailbox/burst | 静态图片 packet | 先完成 640×480 回退，再测 1080P 图片加载时间、CRC、CDC 和复位恢复 |
+| 数据面候选 B | 更宽 GPIO 静态图片 packet 或 RGB565 | 当当前 mailbox 加载时间/资源不可接受时 | 只有 M3-0 的容量、管脚和 STA 评估通过后启用 |
+| 调试后备 | USB-UART/以太网（若另接设备） | 日志、配置或文件搬运 | 不作为 FPGA-to-FPGA 图片显示主链路 |
 
 40-pin 连接器的具体 GPIO 编号、方向、IO 标准、时钟脚和地线分配必须在 M1 形成一张 pin map，并由 B 线和集成负责人共同冻结；在此之前，计划中的 74.25 MHz 和 32-bit 只是候选参数，不能写入正式约束或宣称已具备吞吐能力。
 
@@ -81,7 +81,7 @@ slave  GPIO_TX  -> master GPIO_RX
 master GND      -- slave GND
 ```
 
-两端均使用普通 GPIO 和 3.3 V LVCMOS；不要连接 5 V。协议先采用 8N1、115200 baud、固定短帧，不传原始像素：`0x55 0xA5 opcode length payload crc8`。第一帧只做 `PING/READY`，随后做 `OPEN/STATUS/ABORT`，接收端用 LED 或数码管显示计数/错误码。验证顺序为：分别烧录 `master.bit` 和 `slave.bit` → 不接线单板自检 → 接 GND → 接 TX/RX → master 发送 PING → slave 回 ACK → 注入 reset 后重复握手。该 profile 只证明 GPIO 电气连接、两个角色 bitstream 和最小控制协议，不替代 SPI 或 source-synchronous 媒体链路。
+两端均使用普通 GPIO 和 3.3 V LVCMOS；不要连接 5 V。控制协议采用 8N1、115200 baud、固定短帧，不传原始像素：`0x55 0xA5 opcode length payload crc8`。第一帧只做 `PING/READY`，随后做 `OPEN/STATUS/ABORT`，接收端用 LED 或数码管显示计数/错误码。验证顺序为：分别烧录 `master.bit` 和 `slave.bit` → 不接线单板自检 → 接 GND → 接 TX/RX → Master 发送 PING → Slave 回 ACK → 注入 reset 后重复握手。该 profile 只证明 GPIO 电气连接、两个角色 bitstream 和最小控制协议；M3 另行验证静态图片数据 packet 的完整性和加载时间。
 
 ### 2.3 双 bitstream 构建与板级验证
 
@@ -102,7 +102,7 @@ slave_top  + slave  ADC/SDC -> slave.bit
 4. 两板数据面验证：接入 PRBS/CRC/sequence，先低速再提升链路时钟；记录误码、丢包、重复包和 backpressure。
 5. 媒体闭环验证：写入 `slave.bit` 与 `master.bit`，从板真实 TF 媒体经链路到主板安全提交；最后再分别取得双板 `[S]`、`[B]` 和长稳证据。
 
-1080p 主目标使用 1920×1080 / 148.5 MHz pixel / 742.5 MHz serial 的独立 HDMI profile。1280×720 仅保留为可选故障隔离 profile；M3 的正式门禁改为 1080p packed-YUV422 等效吞吐，避免把时间投入到并非最终验收的 720p 路线上。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 高速时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
+1080p 主目标使用独立 1920×1080 HDMI profile；1280×720 不再是开发节点。第二块板不能替代最终 HDMI 输出板对 APUG092/PHY 时序的验证；1080p 与双板链路均不得改变 P1-05A 640×480 rollback baseline。
 
 ## 2. P0 媒体契约
 
@@ -130,7 +130,7 @@ continuous display-order RGB888
 
 ## 3. P1-02B SDRAM backend
 
-P1-02B 已证明 `sdram_arbiter -> sdram_adapter -> official APUG011 -> EG_PHY_SDRAM_2M_32` 在独立 TD harness 中可完成 150 MHz timing closure。P1-05A 不修改其协议语义，而为连续视频新增独立 `p1_sdram_cached_adapter`。
+P1-02B 已证明 `sdram_arbiter -> sdram_adapter -> official APUG011 -> EG_PHY_SDRAM_2M_32` 在独立 TD harness 中可完成 150 MHz timing closure。P1-05A 不修改其协议语义，而为连续图片读出使用独立 `p1_sdram_cached_adapter`。
 
 ## 4. P1-04C HDMI golden boundary
 
@@ -299,12 +299,12 @@ P1-05A HDMI golden boundary 继续保护；但双板接口、主板 1080p profil
 
 ```text
 M0  P0/P1-05A 已有基线
-M1  双板协议、1080p 架构/时钟/引脚契约与开发骨架
-M2  双板 640×480 TF/BMP 第一闭环（P1-05B 功能并入此节点）
-M3  1080p packed-YUV422 等效数据链吞吐门禁（720p 可选排错）
-M4  双板媒体 + 主板 1920×1080 静态图和 UI
-M5  视频、切换、转场、音频
-M6  1.4 扩展及双板 1080p 最终交付
+M1  双板协议、角色工程和接口契约
+M2  双板 640×480 TF/BMP 图片闭环（P1-05B 功能，已通过）
+M3  双板 1920×1080 静态图片传输与主板输出
+M4  图片轮播、转场、字幕、UI 和图像参数
+M5  HDMI 音频、音画同步、音频可视化
+M6  1.4 扩展、长稳、故障恢复与最终交付
 ```
 
-三人始终分别负责 A/B/C 一条开发线，集成负责人在每个 `M` 节点收口；不另设 I/Q 两套阶段或阶段性重复分工。1280×720 只作为排错时可选 profile，不是必经节点；M3 直接用 1080p 等效 payload 做数据链压力。P2/选题 1.4 的图层/字幕、转场、自适应缩放、实时参数/OSD 和音频可视化纳入 M4～M6；主板完成 UI 合成，从板提供媒体流。若链路不能承载两路源，允许从板预混合，但主板 1080p 输出仍是必需验收。
+三人始终分别负责 A/B/C 一条开发线，集成负责人在每个 `M` 节点收口；不另设 I/Q 两套阶段或阶段性重复分工。主板完成 1080P 图片 UI 合成、转场、图像参数和音频输出，从板只提供图片媒体事实与数据。M3 的像素格式和 packet 宽度以实测结果冻结，不能把候选方案当作已通过。

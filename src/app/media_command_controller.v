@@ -9,7 +9,8 @@
 
 module media_command_controller #(
     parameter integer IMAGE_ID_WIDTH    = 8,
-    parameter integer SLIDE_PERIOD_CLKS = 100
+    parameter integer SLIDE_PERIOD_CLKS = 100,
+    parameter integer ENABLE_PREFETCH   = 0
 )(
     input  wire                      clk,
     input  wire                      rst_n,
@@ -53,6 +54,10 @@ module media_command_controller #(
     reg [IMAGE_ID_WIDTH-1:0]         pending_image_id;
     reg                              deferred_valid;
     reg [IMAGE_ID_WIDTH-1:0]         deferred_image_id;
+    reg                              prefetch_pending;
+    reg                              prefetch_inflight;
+    reg                              normal_inflight;
+    reg [IMAGE_ID_WIDTH-1:0]         prefetch_image_id;
 
     wire catalog_usable = catalog_valid && (catalog_count != {IMAGE_ID_WIDTH{1'b0}});
     wire catalog_rebased = selected_image_id >= catalog_count;
@@ -60,7 +65,8 @@ module media_command_controller #(
     wire manual_next = catalog_active && catalog_usable && !emergency && key_event[1];
     wire manual_prev = catalog_active && catalog_usable && !emergency &&
                        !key_event[1] && key_event[2];
-    wire command_idle = media_cmd_ready && !pending_valid && !deferred_valid;
+    wire command_idle = media_cmd_ready && !pending_valid && !deferred_valid &&
+                        !prefetch_pending && !prefetch_inflight && !normal_inflight;
     wire auto_advance = catalog_active && catalog_usable && play_en && !emergency &&
                         command_idle &&
                         !key_event[0] && !key_event[3] && !key_event[1] && !key_event[2] &&
@@ -97,9 +103,9 @@ module media_command_controller #(
             requested_image_id = increment_image(selected_image_id);
     end
 
-    assign media_cmd_valid    = pending_valid;
-    assign media_cmd_image_id = pending_image_id;
-    assign media_cmd_mode     = CMD_OPEN;
+    assign media_cmd_valid    = pending_valid || (prefetch_pending && !selection_request);
+    assign media_cmd_image_id = pending_valid ? pending_image_id : prefetch_image_id;
+    assign media_cmd_mode     = pending_valid ? CMD_OPEN : 2'd1; // 1 = speculative cache fill
     assign beep_alert         = emergency;
 
     always @(posedge clk or negedge rst_n) begin
@@ -110,6 +116,10 @@ module media_command_controller #(
             pending_image_id <= {IMAGE_ID_WIDTH{1'b0}};
             deferred_valid   <= 1'b0;
             deferred_image_id<= {IMAGE_ID_WIDTH{1'b0}};
+            prefetch_pending <= 1'b0;
+            prefetch_inflight<= 1'b0;
+            normal_inflight  <= 1'b0;
+            prefetch_image_id<= {IMAGE_ID_WIDTH{1'b0}};
             selected_image_id<= {IMAGE_ID_WIDTH{1'b0}};
             play_en          <= 1'b1;
             emergency        <= 1'b0;
@@ -134,6 +144,9 @@ module media_command_controller #(
                 catalog_active    <= 1'b0;
                 pending_valid     <= 1'b0;
                 deferred_valid    <= 1'b0;
+                prefetch_pending  <= 1'b0;
+                prefetch_inflight <= 1'b0;
+                normal_inflight   <= 1'b0;
                 selected_image_id <= {IMAGE_ID_WIDTH{1'b0}};
             end else if (!catalog_active) begin
                 // A new catalog starts by requesting image zero exactly once.
@@ -156,13 +169,31 @@ module media_command_controller #(
 
                 if (selection_request) begin
                     selected_image_id <= requested_image_id;
+                    // Do not let background work get ahead of a user action.
+                    prefetch_pending <= 1'b0;
                 end
+
+                // media_cmd_ready is deliberately held low by the command
+                // router/coordinator for the lifetime of an accepted request.
+                // Its return marks either a committed local switch or a
+                // completed, fenced remote fill.
+                if (normal_inflight && media_cmd_ready) begin
+                    normal_inflight <= 1'b0;
+                    if (ENABLE_PREFETCH && !selection_request &&
+                        !pending_valid && !deferred_valid && catalog_count > 1) begin
+                        prefetch_image_id <= increment_image(selected_image_id);
+                        prefetch_pending <= 1'b1;
+                    end
+                end
+                if (prefetch_inflight && media_cmd_ready)
+                    prefetch_inflight <= 1'b0;
 
                 // valid/payload remain stable until the coordinator accepts a
                 // command.  New user intent is coalesced into one deferred
                 // command and emitted after the current handshake.
                 if (pending_valid) begin
                     if (media_cmd_ready) begin
+                        normal_inflight <= 1'b1;
                         if (selection_request &&
                             (requested_image_id != pending_image_id)) begin
                             pending_valid    <= 1'b1;
@@ -186,6 +217,15 @@ module media_command_controller #(
                     pending_valid    <= 1'b1;
                     pending_image_id <= deferred_image_id;
                     deferred_valid   <= 1'b0;
+                end
+
+                // Accept one speculative read only when no user command is
+                // pending. The Master cache-query path treats mode 1 as a
+                // fill-only operation, never as a display selection.
+                if (prefetch_pending && !pending_valid && !selection_request &&
+                    media_cmd_ready) begin
+                    prefetch_pending  <= 1'b0;
+                    prefetch_inflight <= 1'b1;
                 end
             end
         end

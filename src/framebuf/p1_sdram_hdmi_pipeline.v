@@ -30,8 +30,17 @@ module p1_sdram_hdmi_pipeline #(
     input  wire        sdr_clk,
     input  wire        sdr_rst_n,
 
-    // Sticky high after the fixed framebuffer has been fully written.
+    // Sticky high after the first framebuffer has been fully written.
     input  wire        frame_ready_sdr,
+
+    // Optional 640x480 A/B framebuffer handoff.  A completed back buffer is
+    // announced here and becomes the prefetch source only after the current
+    // frame's final line has been queued.  frame_switch_pulse then fires at
+    // the following raster frame boundary, after line 0/1 of the new buffer
+    // have had the normal look-ahead window to enter the ping-pong line RAM.
+    input  wire        next_frame_valid,
+    input  wire [20:0] next_frame_base,
+    output reg         frame_switch_pulse,
 
     // Ordered abstract read interface in SDRAM domain.
     output wire        sdr_mem_rd_valid,
@@ -41,8 +50,8 @@ module p1_sdram_hdmi_pipeline #(
     input  wire [31:0] sdr_mem_rdata,
 
     // Pixel-domain framebuffer data aligned to P1-04C raster timing.
-    output wire        fb_pixel_valid,
-    output wire [23:0] fb_pixel_data,
+    output reg         fb_pixel_valid,
+    output reg [23:0]  fb_pixel_data,
     output wire        frame_boundary,
     output wire        warm_ready,
     output wire        frame_ready_pix,
@@ -120,6 +129,8 @@ module p1_sdram_hdmi_pipeline #(
     reg         prefetch_start;
     reg  [1:0]  warm_count;
     reg         scheduler_error;
+    reg  [20:0] prefetch_frame_base;
+    reg         frame_switch_armed;
 
     wire prefetch_busy;
     wire prefetch_done;
@@ -144,7 +155,7 @@ module p1_sdram_hdmi_pipeline #(
         .clk                  (pix_clk),
         .rst_n                (pix_rst_n),
         .start                (prefetch_start),
-        .frame_base           (FRAME_BASE),
+        .frame_base           (prefetch_frame_base),
         .frame_width          (FRAME_WIDTH_CFG),
         .frame_height         (FRAME_HEIGHT_CFG),
         .frame_stride_words   (FRAME_STRIDE_CFG),
@@ -222,25 +233,49 @@ module p1_sdram_hdmi_pipeline #(
     // If both banks are occupied, line_prefetcher safely waits in WAIT_BUFFER.
     always @(posedge pix_clk or negedge pix_rst_n) begin
         if (!pix_rst_n) begin
-            prefetch_line  <= 16'd0;
-            prefetch_start <= 1'b0;
-            warm_count     <= 2'd0;
-            scheduler_error<= 1'b0;
+            prefetch_line       <= 16'd0;
+            prefetch_start      <= 1'b0;
+            warm_count          <= 2'd0;
+            scheduler_error     <= 1'b0;
+            prefetch_frame_base <= FRAME_BASE;
+            frame_switch_armed  <= 1'b0;
+            frame_switch_pulse  <= 1'b0;
         end else begin
-            prefetch_start <= 1'b0;
+            prefetch_start     <= 1'b0;
+            frame_switch_pulse <= 1'b0;
 
+            // Once the prefetcher has completed the final line of the current
+            // front buffer, redirect the normal line-0/line-1 look-ahead to
+            // the completed back buffer.  If completion arrives too late for
+            // this wrap, the swap naturally waits one additional video frame
+            // rather than mixing old/new lines.
             if (prefetch_done) begin
                 if (prefetch_ok) begin
-                    if (prefetch_line == FRAME_HEIGHT - 1)
+                    if (prefetch_line == FRAME_HEIGHT - 1) begin
                         prefetch_line <= 16'd0;
-                    else
+                        if (next_frame_valid &&
+                            (next_frame_base != prefetch_frame_base) &&
+                            !frame_switch_armed) begin
+                            prefetch_frame_base <= next_frame_base;
+                            frame_switch_armed  <= 1'b1;
+                        end
+                    end else begin
                         prefetch_line <= prefetch_line + 16'd1;
+                    end
 
                     if (warm_count < 2)
                         warm_count <= warm_count + 2'd1;
                 end else begin
                     scheduler_error <= 1'b1;
                 end
+            end
+
+            // The prefetch source changes only at the 479->0 wrap above. By
+            // this raster boundary the existing two-line look-ahead has had
+            // the same timing budget as every normal frame transition.
+            if (frame_switch_armed && frame_boundary) begin
+                frame_switch_armed <= 1'b0;
+                frame_switch_pulse <= 1'b1;
             end
 
             // Only launch a new line transaction when a line-buffer bank is
@@ -267,6 +302,14 @@ module p1_sdram_hdmi_pipeline #(
     // ------------------------------------------------------------
     // Free-running scanout scheduler.
     // ------------------------------------------------------------
+    // Golden AXIS timing has one output register after the free-running
+    // raster counters. Match it here, including the last pixel of each line.
+    wire scanout_pixel_valid;
+    wire [23:0] scanout_pixel_data;
+    always @(posedge pix_clk or negedge pix_rst_n) begin
+        if(!pix_rst_n) begin fb_pixel_valid<=0; fb_pixel_data<=0; end
+        else begin fb_pixel_valid<=scanout_pixel_valid; fb_pixel_data<=scanout_pixel_data; end
+    end
     wire scanout_timing_error;
     reg  scanout_enable;
 
@@ -302,8 +345,8 @@ module p1_sdram_hdmi_pipeline #(
         .lb_pixel_valid     (lb_pixel_valid),
         .lb_pixel_data      (lb_pixel_data),
         .lb_line_done       (lb_line_done),
-        .pixel_valid        (fb_pixel_valid),
-        .pixel_data         (fb_pixel_data),
+        .pixel_valid        (scanout_pixel_valid),
+        .pixel_data         (scanout_pixel_data),
         .frame_boundary     (frame_boundary),
         .active_expected    (),
         .timing_error       (scanout_timing_error),

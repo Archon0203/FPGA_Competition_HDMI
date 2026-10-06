@@ -57,6 +57,9 @@ module m2_slave_media_tx_top(
     wire [31:0] media_wr_data;
     wire media_catalog_valid;
     wire [7:0] media_catalog_count, media_error_code, media_sector_error_detail;
+    wire media_descriptor_valid;
+    wire [87:0] media_descriptor_filename_83;
+    wire [15:0] media_descriptor_width, media_descriptor_height;
     reg media_succeeded, media_failed;
     reg [7:0] media_failure_code, selected_image_id, active_image_id;
     reg media_scan_start;
@@ -75,6 +78,7 @@ module m2_slave_media_tx_top(
     wire [31:0] ctrl_tx_payload;
     wire remote_open_request;
     wire [7:0] remote_open_image_id;
+    wire remote_open_prefetch;
     wire ctrl_link_seen, ctrl_fault, ctrl_command_toggle, ctrl_reply_toggle;
     wire tx_busy;
     reg published1, published2, observed_loading;
@@ -85,6 +89,10 @@ module m2_slave_media_tx_top(
     reg [24:0] publish_wait_count;
     reg transport_retry_request;
     reg transport_retry_active;
+    // DISPLAY_PUBLISHED is asynchronous to this board's media clock.  Keep
+    // the observed completion sticky so STATUS polling cannot miss a one-cycle
+    // cache-fill publication on the Master.
+    reg publish_seen_sticky;
     wire use_framebuffer=published2 && observed_loading && !tx_busy;
     db_uart_rx #(.CLKS_PER_BIT(217)) u_m2_uart_rx (
         .clk(pixel_clk), .rst_n(media_rst_n), .rx(uart_rx),
@@ -106,6 +114,7 @@ module m2_slave_media_tx_top(
     wire       dispatch_cmd_valid;
     wire [7:0] dispatch_cmd_image_id;
     wire       dispatch_cmd_is_remote;
+    wire       dispatch_cmd_is_prefetch;
     wire       dispatch_bootstrap_issued;
     wire       dispatch_remote_queued;
     wire       media_cmd_accept_ready;
@@ -120,11 +129,12 @@ module m2_slave_media_tx_top(
         .frame_tx_payload(ctrl_tx_payload), .catalog_valid(media_catalog_valid),
         .catalog_count(media_catalog_count),
         .source_busy(media_busy || dispatch_cmd_valid || dispatch_remote_queued ||
-                     (media_succeeded && !use_framebuffer)),
-        .source_done(1'b0), .source_valid(media_succeeded && use_framebuffer),
+                     (media_succeeded && !publish_seen_sticky)),
+        .source_done(1'b0), .source_valid(media_succeeded && publish_seen_sticky),
         .source_error(media_failed),
         .source_error_code(media_failure_code), .selected_image_id(selected_image_id),
         .open_request(remote_open_request), .open_image_id(remote_open_image_id),
+        .open_prefetch(remote_open_prefetch),
         .link_seen(ctrl_link_seen), .fault(ctrl_fault),
         .command_toggle(ctrl_command_toggle), .reply_toggle(ctrl_reply_toggle));
 
@@ -145,22 +155,24 @@ module m2_slave_media_tx_top(
         .cmd_ready            (media_cmd_accept_ready),
         .remote_open_request  (dispatcher_open_request),
         .remote_open_image_id (dispatcher_open_image_id),
+        .remote_open_prefetch (remote_open_request && remote_open_prefetch),
         .catalog_restart      (media_scan_start),
         .cmd_valid            (dispatch_cmd_valid),
         .cmd_image_id         (dispatch_cmd_image_id),
         .cmd_is_remote        (dispatch_cmd_is_remote),
+        .cmd_is_prefetch      (dispatch_cmd_is_prefetch),
         .bootstrap_issued     (dispatch_bootstrap_issued),
         .remote_queued        (dispatch_remote_queued)
     );
 
     assign media_cmd_accept_ready = media_cmd_ready &&
-                                  (!media_succeeded || use_framebuffer ||
+                                  (!media_succeeded || use_framebuffer || publish_seen_sticky ||
                                    dispatch_cmd_is_remote || transport_retry_active) &&
                                   !tx_busy;
     assign media_cmd_valid    = dispatch_cmd_valid && media_cmd_accept_ready;
     assign media_cmd_image_id = dispatch_cmd_image_id;
     wire dispatch_fire=dispatch_cmd_valid && media_cmd_accept_ready;
-    m2_slave_tf_media_core #(.SPI_CLK_DIV(4), .SPI_INIT_CLK_DIV(32),
+    m2_slave_tf_media_core #(.SPI_CLK_DIV(0), .SPI_INIT_CLK_DIV(32),
                              .SPI_MODE3(1),
                              .WIDTH(HACTIVE), .HEIGHT(VACTIVE)) u_media (
         .clk             (pixel_clk),
@@ -180,8 +192,9 @@ module m2_slave_media_tx_top(
         .mem_wr_ready    (media_wr_ready),
         .catalog_valid   (media_catalog_valid),
         .catalog_count   (media_catalog_count), .catalog_epoch (),
-        .descriptor_valid(), .descriptor_image_id(),
-        .descriptor_width(), .descriptor_height(),
+        .descriptor_valid(media_descriptor_valid), .descriptor_image_id(),
+        .descriptor_width(media_descriptor_width), .descriptor_height(media_descriptor_height),
+        .descriptor_filename_83(media_descriptor_filename_83),
         .source_ready    (), .source_busy(media_busy),
         .source_done     (media_done), .source_error(media_error),
         .error_code      (media_error_code),
@@ -191,10 +204,14 @@ module m2_slave_media_tx_top(
 
     wire packet_valid, packet_ready;
     wire [31:0] packet_data;
-    m2_remote_frame_tx u_frame_tx(.clk(pixel_clk), .rst_n(media_rst_n),
+    m2_remote_frame_tx #(.COMPACT_RGB888(1)) u_frame_tx(.clk(pixel_clk), .rst_n(media_rst_n),
         .frame_begin(dispatch_fire), .image_id(media_cmd_image_id),
         .wr_valid(media_wr_valid), .wr_addr(media_wr_addr), .wr_data(media_wr_data),
         .wr_ready(media_wr_ready), .frame_done(media_done), .frame_error(media_error),
+        .filename_valid(media_descriptor_valid), .filename_83(media_descriptor_filename_83),
+        .info_valid(media_descriptor_valid), .image_width(media_descriptor_width),
+        .image_height(media_descriptor_height), .image_bpp(6'd24),
+        .prefetch_frame(dispatch_cmd_is_prefetch),
         .out_valid(packet_valid), .out_data(packet_data), .out_ready(packet_ready), .busy(tx_busy));
     m2_gpio_mailbox_tx u_link_tx(.clk(pixel_clk), .rst_n(media_rst_n),
         .in_valid(packet_valid), .in_data(packet_data), .in_ready(packet_ready),
@@ -206,6 +223,7 @@ module m2_slave_media_tx_top(
             selected_image_id<=0; active_image_id<=0;
             media_scan_start<=0; retry_count<=0;
             publish_wait_count<=0; transport_retry_request<=0; transport_retry_active<=0;
+            publish_seen_sticky<=0;
         end else begin
             published1<=display_published; published2<=published1;
             media_scan_start<=0;
@@ -234,12 +252,15 @@ module m2_slave_media_tx_top(
             end else retry_count<=0;
             if(dispatch_fire) begin
                 media_succeeded<=0; media_failed<=0; observed_loading<=0;
+                publish_seen_sticky<=0;
                 transport_retry_active<=0;
                 publish_wait_count<=0;
                 active_image_id<=media_cmd_image_id;
             end else if(!published2) observed_loading<=1;
+            if (published2 && media_succeeded)
+                publish_seen_sticky <= 1'b1;
             if(media_done) begin media_succeeded<=1; selected_image_id<=active_image_id; end
-            if(media_error) begin media_failed<=1; media_failure_code<=media_error_code; end
+            if(media_error) begin media_failed<=1; media_failure_code<=((media_error_code==8'h11 || media_error_code==8'h14) && media_sector_error_detail[7:4]==4'h4) ? media_sector_error_detail : media_error_code; end
         end
     end
     assign led={media_failed,media_succeeded && use_framebuffer,media_busy || tx_busy,media_catalog_valid};

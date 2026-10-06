@@ -4,12 +4,12 @@
 
 ## 1. 最终作品目标
 
-在 HX4S20C / EG4S20BG256 上实现无外部 CPU/MCU 的 HDMI 多媒体信息发布终端：
+在两块 HX4S20C / EG4S20BG256 上实现无外部 CPU/MCU 的双板 HDMI 图片信息发布终端：
 
 ```text
 TF/FAT32
   ↓
-BMP / frame sequence
+BMP 图片
   ↓
 internal SDRAM framebuffer
   ↓
@@ -27,7 +27,7 @@ HDMI display
 - P1-04C HDMI_B：`[B] PASS`；
 - **P1-05A internal SDRAM framebuffer → HDMI_B：TD6.2.1 routed `[S] PASS`；TD6.2.1 真板 `[B] PASS`。**
 - **M1ABC 双板可视化控制闭环：115200 framed UART 与 deterministic 页面真板门禁已通过；其用途是控制面基线，不代表真实媒体切换。**
-- **M2 已取得 Slave 本地真实 TF/FAT32/BMP 640×480 → Slave SDRAM → Slave HDMI 的板级子门禁；M2 双板切换/轮播与 Master-owned display 尚未通过。**
+- **M2 已取得 TF/FAT32/BMP → 14 线 → Master HDMI 的 640×480 图片闭环，NEXT/PREV 与自动轮播已真板通过。**
 
 ## 3. P1-05A 验收结果
 
@@ -130,19 +130,19 @@ P1-05B 的 TF/FAT32/BMP、A/B buffer 和 frame-boundary 安全提交仍是必需
 M0: P0/P1-05A 已有基线
 M1: 双板协议、A/B/C 契约与可视化控制闭环（board gate 已通过）
 M2: 双板 640×480 TF/BMP 第一闭环（P1-05B 功能）
-M3: 1080p packed-YUV422 等效数据链吞吐门禁（720p 仅可选排错）
-M4: 双板媒体 + 主板 1920×1080 静态图/UI
-M5: 视频、切换、转场、音频
-M6: 选题 1.4 扩展与双板 1080p 最终验收
+M3: 双板 1920×1080 静态图片传输与主板输出
+M4: 图片轮播、切换、转场、字幕、UI 和图像参数
+M5: HDMI 音频、音画同步、音频可视化
+M6: 选题 1.4 扩展、长稳、故障恢复与最终验收
 ```
 
-1280×720 不再是必经节点，只在 1080p 链路排错时作为可选 profile。M3 正式门禁直接要求 1080p60 packed-YUV422 等效 payload；旧 720p 75/375 MHz candidate 已 STA FAIL，不复用其时钟方案。任何真实 1080p HDMI profile 都必须独立完成时钟、PHY、P&R、STA 和真板验证。
+1280×720 不再是开发节点。M3 正式门禁是 1920×1080 静态图片的一次完整传输、主板安全提交和 HDMI 输出；像素格式、packet 宽度和缓存方式由 A/B/集成根据容量、加载时间、P&R/STA 和真板结果共同冻结。任何真实 1080p HDMI profile 都必须独立完成时钟、PHY、P&R、STA 和真板验证。
 
 ## 5.1 双板目标边界
 
-双板部署采用主从结构：主板负责最终 HDMI 视频/音频时序、UI/OSD、缩放、转场和输出；从板负责 TF/FAT32/BMP、视频读取、媒体预取和帧/行/tile 数据生产。板间控制使用 SPI，数据面使用待验证的 source-synchronous GPIO 链路；以太网只作为控制、调试或压缩数据后备链路。
+双板部署采用主从结构：主板负责最终 HDMI 视频/音频时序、UI/OSD、缩放、转场和输出；从板负责 TF/FAT32/BMP、图片预取和图片数据生产。板间控制和图片数据面沿用当前 GPIO/UART/握手实现，M3 重点验证静态图片 packet 的完整性和加载时间；USB 下载口不作为板间 FPGA 通信链路。
 
-1080p60 需要 148.5 MHz pixel clock 和 742.5 MHz serial clock。第二块板只能缓解媒体存储和预处理压力，不能替代输出主板的 APUG092/PHY 时序闭合。1080p 单帧约 2,073,600 个 32-bit word，接近单板 2M×32 SDRAM 容量，因此 1080p 不采用单板 A/B 全帧双缓冲；优先使用从板缓存下一帧、主板行/tile 缓冲和 frame-boundary 提交。
+1920×1080 HDMI 仍需要独立的 148.5 MHz pixel profile 和 APUG092/PHY 时序闭合。第二块板只能缓解图片存储和预处理压力；单帧约 2,073,600 像素，主板是否使用 RGB888、RGB565 或受保护区域/line buffer，必须在 M3 按资源与加载时间实测决定。
 
 本项目只维护一条从开始到交付的主线：
 
@@ -173,6 +173,6 @@ P1-05A rollback baseline 默认禁止改变：HDMI_B pins、50→25/125 MHz HDMI
 
 ## 8. 2026-10-01 路线修订：1080p 直达 + 分板验证门禁
 
-最终目标不变且不以 720p 作为交付：两块 HX4S20C、1920×1080 图片/视频、HDMI 音频、OSD/字幕、转场、缩放、实时参数和音频可视化。720p 从“必经 M3”降为可选诊断 profile；M3 直接验证宽链路持续吞吐和 1080p 148.5/742.5 MHz 物理可行性，M4 完成 1080p 静态媒体闭环。
+最终目标收敛为：两块 HX4S20C、1920×1080 图片、HDMI 音频、OSD/字幕、转场、缩放、亮度/对比度等实时参数和音频可视化。不做视频输出，不再设置 720p 或持续视频吞吐节点；M3 完成 1080P 静态图片闭环，M4～M6 完成呈现、音频和最终真板验收。
 
-从 M1 起，每个节点必须先做 Master-alone 与 Slave-alone，再接控制链路，最后接数据/媒体链路。M1 可视化工程采用“Master 控制、Slave HDMI 输出”并已真板 PASS。M2 允许继续使用 Slave HDMI 作为真实媒体诊断出口，但 **M2 完整验收仍要求 Master 成为最终显示 owner**；不能把 Slave 本地显示写成双板闭环。
+从 M1 起，每个节点必须先做 Master-alone 与 Slave-alone，再接控制链路，最后接图片数据链路。M1 的可视化工程是控制面门禁；M2 已回到最终架构并取得 Master HDMI 图片输出真板 PASS。后续所有节点都以 Master 为最终显示 owner，Slave 只负责图片生产。

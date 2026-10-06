@@ -53,7 +53,9 @@ module m2_slave_tf_hdmi_top (
         .HDMI_DDC_SCL(HDMI_DDC_SCL),
         .HDMI_DDC_SDA(HDMI_DDC_SDA),
         .remote_valid(1'b0), .remote_data(32'd0), .remote_ready(),
-        .remote_published(), .media_clock(), .media_reset_n());
+        .remote_published(), .media_clock(), .media_reset_n(),
+        .cache_query_valid(1'b0), .cache_query_image_id(8'd0), .cache_query_ready(),
+        .cache_reply_valid(), .cache_reply_hit(), .cache_reply_ready(1'b1), .card_missing(1'b0));
 endmodule
 
 module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
@@ -84,6 +86,13 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     input wire remote_valid,
     input wire [31:0] remote_data,
     output wire remote_ready, remote_published, media_clock, media_reset_n,
+    input wire cache_query_valid,
+    input wire [7:0] cache_query_image_id,
+    output wire cache_query_ready,
+    output reg cache_reply_valid,
+    output reg cache_reply_hit,
+    input wire cache_reply_ready,
+    input wire card_missing,
     inout  wire HDMI_DDC_SDA
 );
 
@@ -98,6 +107,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     localparam integer VFP     = 10;
     localparam integer VSA     = 2;
     localparam integer VBP     = 33;
+    localparam [20:0] FRAME_BUFFER_WORDS = 21'd307200;
 
     // ============================================================
     // P1-04C golden HDMI clocks: 50 MHz -> 25 MHz / 125 MHz
@@ -126,6 +136,8 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     // ============================================================
     wire hdmi_video_locked_sync;
     wire hdmi_video_ready;
+    wire hdmi_video_ready_async;
+    reg hdmi_ready_pix_ff1, hdmi_ready_pix_ff2;
     wire hdmi_recovery_pulse;
     wire hdmi_rst;
 
@@ -138,11 +150,18 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .video_locked_async (video_locked_unused),
         .hdmi_rst           (hdmi_rst),
         .video_locked_sync  (hdmi_video_locked_sync),
-        .video_ready        (hdmi_video_ready),
+        .video_ready        (hdmi_video_ready_async),
         .recovery_pulse     (hdmi_recovery_pulse)
     );
 
     wire pix_rst_n = !hdmi_rst;
+    // Supervisor owns 50 MHz; publication and raster own 25 MHz. All status
+    // crossings remain synchronized under the control/pixel clock exception.
+    always @(posedge pixel_clk or negedge pix_rst_n) begin
+        if(!pix_rst_n) begin hdmi_ready_pix_ff1<=0; hdmi_ready_pix_ff2<=0; end
+        else begin hdmi_ready_pix_ff1<=hdmi_video_ready_async; hdmi_ready_pix_ff2<=hdmi_ready_pix_ff1; end
+    end
+    assign hdmi_video_ready=hdmi_ready_pix_ff2;
 
     // ============================================================
     // APUG011 SDRAM clocks: reuse the already-closed official P1-02 PLL
@@ -225,16 +244,88 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire [31:0] ctrl_tx_payload;
     wire remote_open_request;
     wire [7:0] remote_open_image_id;
+    wire remote_open_prefetch;
     reg  frame_ready_media_ff1;
     reg  frame_ready_media_ff2;
     wire ctrl_link_seen, ctrl_fault, ctrl_command_toggle, ctrl_reply_toggle;
     reg  [7:0] selected_image_id;
     reg [7:0] active_image_id;
+    // Caption metadata follows the same commit boundary as the A/B framebuffer.
+    wire [7:0] displayed_caption_image_id;
+    wire [87:0] displayed_caption_filename_83;
+    wire [15:0] displayed_image_width, displayed_image_height;
+    wire [5:0] displayed_image_bpp;
+    wire remote_filename_valid;
+    wire [87:0] remote_filename_83;
+    wire remote_info_valid;
+    wire [15:0] remote_image_width, remote_image_height;
+    wire [5:0] remote_image_bpp;
+    wire local_descriptor_valid;
+    wire [15:0] local_descriptor_width, local_descriptor_height;
+    wire [87:0] local_descriptor_filename_83;
     reg use_framebuffer;
+    reg front_valid;
+    reg [2:0] display_bank;
+    reg [2:0] load_bank;
+    reg loading_active;
+    wire pipeline_protocol_error, framebuffer_switch_pulse;
+    reg frame_write_error_pix_ff2;
+    reg cache_switch_pending;
+    reg [2:0] cache_target_slot;
+    reg prefetch_active, prefetch_stored;
+    reg prefetch_publish_pulse;
+    // A speculative frame is complete when it has been fenced and committed
+    // to a non-front cache bank.  Keep that fact stable until the next OPEN;
+    // the UART STATUS poll is much slower than this pixel-domain pulse.
+    reg prefetch_publish_sticky;
+    reg [7:0] prefetch_publish_image_id;
+    wire cache_hit;
+    wire [2:0] cache_slot;
+    wire [5:0] cache_valid;
+    reg [2:0] next_load_slot;
+    integer slot_search;
+    always @(*) begin
+        next_load_slot=(display_bank==5) ? 0 : display_bank+1'b1;
+        for(slot_search=5;slot_search>=0;slot_search=slot_search-1)
+            if(!cache_valid[slot_search] && (!front_valid || slot_search!=display_bank))
+                next_load_slot=slot_search;
+    end
+    function [20:0] bank_base;
+        input [2:0] slot;
+        begin
+            case(slot)
+                1:bank_base=307200; 2:bank_base=614400; 3:bank_base=921600;
+                4:bank_base=1228800; 5:bank_base=1536000; default:bank_base=0;
+            endcase
+        end
+    endfunction
+    assign cache_query_ready=REMOTE_INPUT && !loading_active &&
+                             !cache_switch_pending && !cache_reply_valid &&
+                             !pipeline_protocol_error && !frame_write_error_pix_ff2;
+    wire cached_commit=cache_switch_pending && framebuffer_switch_pulse;
+    always @(posedge pixel_clk or negedge pix_rst_n) begin
+        if(!pix_rst_n) begin
+            cache_reply_valid<=0; cache_reply_hit<=0;
+            cache_switch_pending<=0; cache_target_slot<=0;
+        end else begin
+            if(cache_reply_valid && cache_reply_ready) cache_reply_valid<=0;
+            if(cache_query_valid && cache_query_ready) begin
+                if(front_valid && cache_hit && cache_slot!=display_bank) begin
+                    cache_target_slot<=cache_slot; cache_switch_pending<=1;
+                end else begin
+                    cache_reply_valid<=1; cache_reply_hit<=cache_hit;
+                end
+            end
+            if(cached_commit) begin
+                cache_switch_pending<=0; cache_reply_valid<=1; cache_reply_hit<=1;
+            end
+        end
+    end
     reg fenced_toggle_sdr;
     reg fenced_sync1, fenced_sync2, fenced_seen;
     reg frame_fenced_media;
     reg publish_wait_frame;
+    wire current_frame_published;
 
     // Synchronize the SDRAM-domain publish state back into the media domain.
     // After a successful media transaction, the next OPEN is held until the
@@ -269,6 +360,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire       dispatch_cmd_valid;
     wire [7:0] dispatch_cmd_image_id;
     wire       dispatch_cmd_is_remote;
+    wire       dispatch_cmd_is_prefetch;
     wire       dispatch_bootstrap_issued;
     wire       dispatch_remote_queued;
     wire       media_cmd_accept_ready;
@@ -283,11 +375,16 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .frame_tx_payload(ctrl_tx_payload), .catalog_valid(media_catalog_valid),
         .catalog_count(media_catalog_count),
         .source_busy(media_busy || dispatch_cmd_valid || dispatch_remote_queued ||
-                     (media_succeeded && !use_framebuffer)),
-        .source_done(1'b0), .source_valid(media_succeeded && use_framebuffer),
+                     (media_succeeded && !current_frame_published &&
+                      !prefetch_publish_sticky)),
+        .source_done(1'b0),
+        .source_valid(current_frame_published ||
+                      (prefetch_publish_sticky &&
+                       (selected_image_id == prefetch_publish_image_id))),
         .source_error(media_failed),
         .source_error_code(media_failure_code), .selected_image_id(selected_image_id),
         .open_request(remote_open_request), .open_image_id(remote_open_image_id),
+        .open_prefetch(remote_open_prefetch),
         .link_seen(ctrl_link_seen), .fault(ctrl_fault),
         .command_toggle(ctrl_command_toggle), .reply_toggle(ctrl_reply_toggle));
 
@@ -303,20 +400,24 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .cmd_ready            (media_cmd_accept_ready),
         .remote_open_request  (remote_open_request),
         .remote_open_image_id (remote_open_image_id),
+        .remote_open_prefetch (remote_open_prefetch),
         .catalog_restart      (media_scan_start),
         .cmd_valid            (dispatch_cmd_valid),
         .cmd_image_id         (dispatch_cmd_image_id),
         .cmd_is_remote        (dispatch_cmd_is_remote),
+        .cmd_is_prefetch      (dispatch_cmd_is_prefetch),
         .bootstrap_issued     (dispatch_bootstrap_issued),
         .remote_queued        (dispatch_remote_queued)
     );
 
     assign media_cmd_accept_ready = media_cmd_ready &&
-                                  (!media_succeeded || use_framebuffer);
+                                  (!media_succeeded || current_frame_published ||
+                                   prefetch_publish_sticky);
     assign media_cmd_valid    = dispatch_cmd_valid && media_cmd_accept_ready;
     assign media_cmd_image_id = dispatch_cmd_image_id;
     wire remote_begin;
     wire [7:0] remote_image;
+    wire remote_prefetch;
     wire dispatch_fire = REMOTE_INPUT ? remote_begin : (dispatch_cmd_valid && media_cmd_accept_ready);
 
     // Remote-path sticky milestones.  These are intentionally kept in the
@@ -347,8 +448,16 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         m2_remote_frame_rx u_frame_rx(.clk(pixel_clk), .rst_n(media_rst_n),
             .in_valid(remote_valid), .in_data(remote_data), .in_ready(remote_ready),
             .frame_begin(remote_begin), .frame_done(media_done), .frame_error(media_error),
-            .image_id(remote_image), .wr_valid(media_wr_valid), .wr_addr(media_wr_addr),
-            .wr_data(media_wr_data), .wr_ready(media_wr_ready), .busy(media_busy));
+            .image_id(remote_image), .frame_prefetch(remote_prefetch),
+            .wr_valid(media_wr_valid), .wr_addr(media_wr_addr),
+            .wr_data(media_wr_data), .wr_ready(media_wr_ready), .busy(media_busy),
+            .filename_valid(remote_filename_valid), .filename_83(remote_filename_83),
+            .info_valid(remote_info_valid), .image_width(remote_image_width),
+            .image_height(remote_image_height), .image_bpp(remote_image_bpp));
+        assign local_descriptor_valid = 1'b0;
+        assign local_descriptor_width = 16'd0;
+        assign local_descriptor_height = 16'd0;
+        assign local_descriptor_filename_83 = {11{8'h20}};
         assign media_cmd_ready=0;
         assign media_catalog_valid=1;
         assign media_catalog_count=1;
@@ -357,6 +466,13 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         assign sd_ncs=1; assign sd_sclk=0; assign sd_mosi=1;
     end else begin : g_local
         assign remote_begin=0; assign remote_image=0; assign remote_ready=0;
+        assign remote_prefetch=0;
+        assign remote_filename_valid=1'b0;
+        assign remote_filename_83={11{8'h20}};
+        assign remote_info_valid=1'b0;
+        assign remote_image_width=16'd0;
+        assign remote_image_height=16'd0;
+        assign remote_image_bpp=6'd0;
     m2_slave_tf_media_core #(.SPI_CLK_DIV(4), .SPI_INIT_CLK_DIV(32),
                              .SPI_MODE3(1),
                              .WIDTH(HACTIVE), .HEIGHT(VACTIVE)) u_media (
@@ -377,8 +493,9 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .mem_wr_ready    (media_wr_ready),
         .catalog_valid   (media_catalog_valid),
         .catalog_count   (media_catalog_count), .catalog_epoch (),
-        .descriptor_valid(), .descriptor_image_id(),
-        .descriptor_width(), .descriptor_height(),
+        .descriptor_valid(local_descriptor_valid), .descriptor_image_id(),
+        .descriptor_width(local_descriptor_width), .descriptor_height(local_descriptor_height),
+        .descriptor_filename_83(local_descriptor_filename_83),
         .source_ready    (), .source_busy(media_busy),
         .source_done     (media_done), .source_error(media_error),
         .error_code      (media_error_code),
@@ -387,11 +504,17 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
 
     end endgenerate
 
+    // Keep the currently displayed frame immutable while the next image is
+    // transferred.  Incoming media addresses are always 0..307199; translate
+    // them into the selected back-buffer bank before crossing into SDRAM.
+    wire [20:0] media_wr_addr_banked = media_wr_addr +
+                                       bank_base(load_bank);
+
     m2_media_write_cdc u_media_write_cdc (
         .media_clk      (pixel_clk),
         .media_rst_n    (media_rst_n),
         .media_wr_valid (media_wr_valid),
-        .media_wr_addr  (media_wr_addr),
+        .media_wr_addr  (media_wr_addr_banked),
         .media_wr_data  (media_wr_data),
         .media_wr_ready (media_wr_ready),
         .media_done     (media_done),
@@ -508,7 +631,8 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire        fb_warm_ready;
     wire        frame_ready_pix;
     wire        fb_underflow_sticky;
-    wire        pipeline_protocol_error;
+    wire [20:0] pending_frame_base;
+    wire        framebuffer_swap_request;
 
     p1_sdram_hdmi_pipeline #(
         .FRAME_WIDTH     (HACTIVE),
@@ -528,6 +652,9 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .sdr_clk          (sdr_clk_150m),
         .sdr_rst_n        (sdr_rst_n),
         .frame_ready_sdr  (frame_ready_sdr),
+        .next_frame_valid (framebuffer_swap_request),
+        .next_frame_base  (pending_frame_base),
+        .frame_switch_pulse(framebuffer_switch_pulse),
         .sdr_mem_rd_valid (pipeline_rd_valid),
         .sdr_mem_rd_addr  (pipeline_rd_addr),
         .sdr_mem_rd_ready (pipeline_rd_ready),
@@ -701,9 +828,9 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         .cke   (1'b1)
     );
 
-    // New media transactions explicitly invalidate the previously published
-    // single-buffer image. This prevents a second OPEN from being treated as
-    // already-ready while the same SDRAM address range is being overwritten.
+    // New media transactions leave the current front buffer published.  The
+    // toggle only starts a fresh SDRAM-write health epoch; pixel writes are
+    // redirected to the opposite A/B bank above.
     reg media_load_sdr_ff1, media_load_sdr_ff2, media_load_sdr_seen;
     wire media_load_begin_sdr = (media_load_sdr_ff2 != media_load_sdr_seen);
     always @(posedge sdr_clk_150m or negedge sdr_rst_n) begin
@@ -727,8 +854,8 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
             if (media_load_begin_sdr) begin
                 media_load_sdr_seen <= media_load_sdr_ff2;
                 // This P1 pipeline expects a monotonic frame_ready. Keep
-                // scanout draining while the single buffer is hidden/reloaded;
-                // dropping ready stalls prefetch but not its armed scanout.
+                // scanout draining from the front bank while the back bank is
+                // reloaded; dropping ready would unnecessarily stall prefetch.
                 frame_write_error <= 1'b0;
             end else if (sdr_fenced) begin
                 frame_ready_sdr <= 1'b1;
@@ -799,7 +926,13 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     reg frame_ready_sdr_pix_ff1;
     reg frame_ready_sdr_pix_ff2;
     reg frame_write_error_pix_ff1;
-    reg frame_write_error_pix_ff2;
+
+    assign pending_frame_base = bank_base(cache_switch_pending ? cache_target_slot : load_bank);
+    assign framebuffer_swap_request = cache_switch_pending || (front_valid && loading_active &&
+                                      media_succeeded && frame_fenced_media &&
+                                      frame_ready_pix && fb_warm_ready &&
+                                      !pipeline_protocol_error &&
+                                      !frame_write_error_pix_ff2);
 
     always @(posedge pixel_clk or negedge pix_rst_n) begin
         if (!pix_rst_n) begin
@@ -841,41 +974,132 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
         end
     end
 
+    reg fb_data_seen;
+
+    // Capture metadata for the image being loaded, but do not expose it to
+    // the subtitle until the same safe frame boundary that commits its pixels.
+    wire caption_filename_valid = REMOTE_INPUT ? remote_filename_valid : local_descriptor_valid;
+    wire [87:0] caption_filename_value = REMOTE_INPUT ? remote_filename_83 : local_descriptor_filename_83;
+    wire caption_info_valid = REMOTE_INPUT ? remote_info_valid : local_descriptor_valid;
+    wire [15:0] caption_image_width = REMOTE_INPUT ? remote_image_width : local_descriptor_width;
+    wire [15:0] caption_image_height = REMOTE_INPUT ? remote_image_height : local_descriptor_height;
+    wire [5:0] caption_image_bpp = REMOTE_INPUT ? remote_image_bpp : 6'd24;
+    wire dispatch_prefetch = REMOTE_INPUT && remote_prefetch;
+    wire prefetch_store_safe = prefetch_active && !prefetch_stored && front_valid &&
+                               media_succeeded && frame_fenced_media && frame_ready_pix &&
+                               !pipeline_protocol_error && !frame_write_error_pix_ff2 &&
+                               !media_failed;
+    wire bootstrap_publish_commit = !front_valid && fb_frame_boundary &&
+                     media_succeeded && frame_fenced_media &&
+                     frame_ready_pix && fb_warm_ready && fb_data_seen &&
+                     !pipeline_protocol_error &&
+                     !frame_write_error_pix_ff2 && publish_wait_frame;
+    wire caption_commit_pulse = (front_valid && framebuffer_switch_pulse) ||
+                                bootstrap_publish_commit;
+
+    m2_caption_commit u_caption_commit(
+        .clk(pixel_clk), .rst_n(pix_rst_n),
+        .load_begin(dispatch_fire),
+        .load_image_id(REMOTE_INPUT ? remote_image : media_cmd_image_id),
+        .filename_valid(caption_filename_valid),
+        .filename_83(caption_filename_value),
+        .image_info_valid(caption_info_valid),
+        .image_width(caption_image_width), .image_height(caption_image_height),
+        .image_bpp(caption_image_bpp),
+        .commit_pulse(caption_commit_pulse && !cached_commit),
+        .cache_store_pulse(prefetch_store_safe),
+        .load_slot(dispatch_fire ? next_load_slot : load_bank),
+        .cached_commit(cached_commit), .cached_slot(cache_target_slot),
+        .query_image_id(cache_query_image_id), .cache_hit(cache_hit),
+        .cache_slot(cache_slot), .cache_valid(cache_valid),
+        .displayed_image_id(displayed_caption_image_id),
+        .displayed_filename_83(displayed_caption_filename_83),
+        .displayed_image_width(displayed_image_width),
+        .displayed_image_height(displayed_image_height),
+        .displayed_image_bpp(displayed_image_bpp));
+
     // Publication proof: the line-buffer/scanout path must have produced real
     // framebuffer pixels *after the current frame has fenced*.  Previously the
     // Master could raise DISPLAY_PUBLISHED from state-machine milestones alone,
     // allowing the Slave to stop retrying even when scanout had never emitted a
     // framebuffer pixel on hardware.  Keep the Loading UI visible until this
     // proof exists.
-    reg fb_data_seen;
     always @(posedge pixel_clk or negedge pix_rst_n) begin
         if (!pix_rst_n)
             fb_data_seen <= 1'b0;
-        else if (dispatch_fire)
+        else if (dispatch_fire || framebuffer_switch_pulse)
             fb_data_seen <= 1'b0;
-        else if (frame_fenced_media && fb_pixel_valid)
+        else if (frame_fenced_media && fb_pixel_valid &&
+                 (!front_valid || !loading_active))
+            // For reloads, pixels seen before the bank handoff still belong to
+            // the previous frame and must not satisfy DISPLAY_PUBLISHED.
             fb_data_seen <= 1'b1;
     end
 
+    // Display ownership for six 640x480 framebuffer slots (1843200 words).  The first image
+    // keeps the proven startup path.  Every later transaction writes the other
+    // bank while the current front buffer remains visible; only the pipeline's
+    // safe frame-boundary pulse commits the new bank.
     always @(posedge pixel_clk or negedge pix_rst_n) begin
         if (!pix_rst_n) begin
-            use_framebuffer <= 1'b0;
+            use_framebuffer    <= 1'b0;
+            front_valid        <= 1'b0;
+            display_bank       <= 1'b0;
+            load_bank          <= 1'b0;
+            loading_active     <= 1'b0;
             publish_wait_frame <= 1'b0;
-        end else if (dispatch_fire) begin
-            // Hide the single buffer while it is being replaced. The display
-            // remains on the deterministic diagnostic page until a complete
-            // write has fenced and scanout has warmed again.
-            use_framebuffer <= 1'b0;
-            publish_wait_frame <= 1'b0;
-        end else if (fb_frame_boundary && media_succeeded && frame_fenced_media &&
-                     frame_ready_pix &&
-                     fb_warm_ready && fb_data_seen &&
-                     !pipeline_protocol_error &&
-                     !frame_write_error_pix_ff2) begin
-            // Discard one full scan after the write fence so prefetched lines
-            // cannot publish data from the previous image.
-            publish_wait_frame <= 1'b1;
-            if (publish_wait_frame) use_framebuffer <= 1'b1;
+            prefetch_active    <= 1'b0;
+            prefetch_stored    <= 1'b0;
+            prefetch_publish_pulse <= 1'b0;
+            prefetch_publish_sticky <= 1'b0;
+            prefetch_publish_image_id <= 8'd0;
+        end else begin
+            prefetch_publish_pulse <= 1'b0;
+            if (dispatch_fire) begin
+                prefetch_active <= dispatch_prefetch;
+                prefetch_stored <= 1'b0;
+                // A new OPEN supersedes the previous completion report.  The
+                // bridge will report ACCEPTED until this transaction finishes.
+                prefetch_publish_sticky <= 1'b0;
+            end else if (prefetch_store_safe) begin
+                prefetch_stored <= 1'b1;
+                prefetch_active <= 1'b0;
+                prefetch_publish_pulse <= 1'b1;
+                prefetch_publish_sticky <= 1'b1;
+                prefetch_publish_image_id <= active_image_id;
+            end
+            if (dispatch_fire && dispatch_prefetch) begin
+                load_bank <= next_load_slot;
+                // Keep scanning the current front bank during the background fill.
+                loading_active <= 1'b0;
+                publish_wait_frame <= 1'b0;
+            end else if (dispatch_fire) begin
+                load_bank      <= next_load_slot;
+                loading_active <= 1'b1;
+                publish_wait_frame <= 1'b0;
+                if (!front_valid)
+                    use_framebuffer <= 1'b0;
+            end else if (media_failed) begin
+                loading_active<=0;
+                prefetch_active<=0;
+            end else if (front_valid && framebuffer_switch_pulse) begin
+                display_bank       <= cache_switch_pending ? cache_target_slot : load_bank;
+                loading_active     <= 1'b0;
+                use_framebuffer    <= 1'b1;
+                publish_wait_frame <= 1'b0;
+            end else if (!front_valid && fb_frame_boundary &&
+                         media_succeeded && frame_fenced_media &&
+                         frame_ready_pix && fb_warm_ready && fb_data_seen &&
+                         !pipeline_protocol_error &&
+                         !frame_write_error_pix_ff2) begin
+                publish_wait_frame <= 1'b1;
+                if (publish_wait_frame) begin
+                    use_framebuffer <= 1'b1;
+                    front_valid     <= 1'b1;
+                    display_bank    <= load_bank;
+                    loading_active  <= 1'b0;
+                end
+            end
         end
     end
 
@@ -919,12 +1143,38 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     wire [23:0] loading_rgb;
     m2_loading_card u_loading_card(.clk(pixel_clk), .rst_n(pix_rst_n),
         .axis_valid(baseline_axis_valid), .axis_user(baseline_axis_user),
-        .axis_last(baseline_axis_last), .rgb(loading_rgb));
+        .axis_last(baseline_axis_last),
+        .background_rgb(framebuffer_axis_data),
+        .overlay_only(1'b0), .card_missing(card_missing),
+        .rgb(loading_rgb));
     wire loading_healthy = sdr_pll_lock_pix_ff2 && !frame_write_error_pix_ff2 &&
                            !media_failed && !pipeline_protocol_error;
-    wire [23:0] axis_data = use_framebuffer
-                          ? framebuffer_axis_data
-                          : (loading_healthy ? loading_rgb : startup_diag_data);
+    // Loading is startup-only. A reload, including a failed back-buffer load,
+    // leaves the previously committed picture on screen.
+    wire [23:0] axis_data_pre_subtitle = (card_missing === 1'b1) ? loading_rgb :
+                          (use_framebuffer && front_valid ? framebuffer_axis_data : loading_rgb);
+    wire [23:0] axis_data_with_subtitle;
+    m2_image_subtitle u_image_subtitle(
+        .clk(pixel_clk), .rst_n(pix_rst_n),
+        .axis_valid(baseline_axis_valid), .axis_user(baseline_axis_user),
+        .axis_last(baseline_axis_last),
+        .background_rgb(axis_data_pre_subtitle),
+        .enable(use_framebuffer && front_valid && !(card_missing === 1'b1)),
+        .image_id(displayed_caption_image_id),
+        .filename_83(displayed_caption_filename_83),
+        .rgb(axis_data_with_subtitle));
+
+    // Top-left translucent info box follows the committed image, while subtitles are
+    // geographically disjoint and therefore preserved unchanged.
+    wire [23:0] axis_data;
+    m2_image_info_overlay #(.FALLBACK_WIDTH(HACTIVE), .FALLBACK_HEIGHT(VACTIVE)) u_image_info_overlay(
+        .clk(pixel_clk), .rst_n(pix_rst_n),
+        .axis_valid(baseline_axis_valid), .axis_user(baseline_axis_user),
+        .axis_last(baseline_axis_last),
+        .background_rgb(axis_data_with_subtitle),
+        .enable(use_framebuffer && front_valid && !(card_missing === 1'b1)),
+        .image_width(displayed_image_width), .image_height(displayed_image_height),
+        .image_bpp(displayed_image_bpp), .rgb(axis_data));
 
     // ============================================================
     // P1-04C EDID trigger: unchanged
@@ -1006,8 +1256,15 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
                                  (pix_rst_n && !hdmi_video_ready);
     wire p1_05a_active = use_framebuffer && !display_runtime_fault;
 
-    assign remote_published = use_framebuffer && fb_data_seen && media_succeeded &&
-                              hdmi_video_ready && !p1_05a_error && !media_failed;
+    assign current_frame_published = use_framebuffer && front_valid &&
+                                     !loading_active && fb_data_seen &&
+                                     media_succeeded && frame_fenced_media &&
+                                     hdmi_video_ready && !p1_05a_error &&
+                                     !media_failed;
+    // Keep the completion indication asserted until the next OPEN.  The
+    // transport board runs on an independent clock and may sample this after
+    // several mailbox/CDC cycles; a one-cycle prefetch pulse is unsafe.
+    assign remote_published = current_frame_published || prefetch_publish_sticky;
 
     // 8-bit LED diagnostic.  On the Master (REMOTE_INPUT=1), LEDs 1..8 form a
     // left-to-right milestone chain; once a stage succeeds it stays visible:
@@ -1016,7 +1273,7 @@ module m2_frame_display_core #(parameter REMOTE_INPUT=0) (
     //   D6 line buffers warm, D7 real framebuffer pixel observed after fence,
     //   D8 framebuffer mux published.
     // In local mode retain the compact media/error byte used by P1 bring-up.
-    wire [7:0] remote_diag_byte = {use_framebuffer, fb_data_seen, fb_warm_ready,
+    wire [7:0] remote_diag_byte = {current_frame_published, fb_data_seen, fb_warm_ready,
                                    frame_ready_pix, frame_fenced_media,
                                    remote_done_seen, remote_begin_seen,
                                    hdmi_video_ready};

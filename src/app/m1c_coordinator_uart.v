@@ -13,6 +13,7 @@
 // selections.
 // ============================================================================
 module m1c_coordinator_uart #(
+    parameter integer ENABLE_LOCAL_CACHE = 0,
     parameter integer DISCOVERY_INTERVAL_CYCLES = 5_000_000,
     parameter integer ACK_TIMEOUT_CYCLES        = 2_500_000,
     parameter integer STATUS_POLL_INTERVAL_CYCLES = 1_000_000
@@ -20,6 +21,7 @@ module m1c_coordinator_uart #(
     input  wire        clk,
     input  wire        rst_n,
 
+    input wire local_cache_commit,
     input  wire        media_cmd_valid,
     input  wire [7:0]  media_cmd_image_id,
     input  wire [1:0]  media_cmd_mode,
@@ -189,6 +191,8 @@ module m1c_coordinator_uart #(
                 end
             end
 
+            if(ENABLE_LOCAL_CACHE && local_cache_commit) remote_visible<=1'b0;
+
             case (state)
                 ST_IDLE: begin
                     timeout_count <= 32'd0;
@@ -211,12 +215,13 @@ module m1c_coordinator_uart #(
                     end else if (media_cmd_valid && media_cmd_ready) begin
                         // Consume the bootstrap OPEN without reloading a frame
                         // that discovery already confirmed as visible.
-                        if (!(remote_visible && media_cmd_image_id == remote_selected_image)) begin
+                        if (ENABLE_LOCAL_CACHE || !(remote_visible && media_cmd_image_id == remote_selected_image)) begin
                         requested_image  <= media_cmd_image_id;
                         remote_visible   <= 1'b0;
                         frame_tx_opcode  <= OP_OPEN;
-                        frame_tx_length  <= 3'd1;
-                        frame_tx_payload <= {24'd0, media_cmd_image_id};
+                        frame_tx_length  <= 3'd2;
+                        frame_tx_payload <= {16'd0, media_cmd_mode, 6'd0,
+                                             media_cmd_image_id};
                         frame_tx_request <= 1'b1;
                         expected_ack     <= ACK_OPEN;
                         state            <= ST_WAIT;

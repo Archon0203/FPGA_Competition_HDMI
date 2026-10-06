@@ -30,6 +30,7 @@ module m2_open_dispatcher (
 
     input  wire       remote_open_request,
     input  wire [7:0] remote_open_image_id,
+    input  wire       remote_open_prefetch,
 
     // Pulse when the media/catalog layer is explicitly restarted after a
     // failure.  This re-arms the one-shot bootstrap for a newly rebuilt
@@ -39,10 +40,12 @@ module m2_open_dispatcher (
     output reg        cmd_valid,
     output reg  [7:0] cmd_image_id,
     output reg        cmd_is_remote,
+    output reg        cmd_is_prefetch,
     output reg        bootstrap_issued,
     output reg        remote_queued
 );
     reg [7:0] queued_image_id;
+    reg queued_prefetch;
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -52,6 +55,8 @@ module m2_open_dispatcher (
             bootstrap_issued  <= 1'b0;
             remote_queued     <= 1'b0;
             queued_image_id   <= 8'd0;
+            queued_prefetch   <= 1'b0;
+            cmd_is_prefetch   <= 1'b0;
         end else begin
             // A restart creates a new bootstrap opportunity only if the Master
             // does not already own the next OPEN transaction and no command
@@ -68,6 +73,7 @@ module m2_open_dispatcher (
             if (remote_open_request) begin
                 remote_queued    <= 1'b1;
                 queued_image_id  <= remote_open_image_id;
+                queued_prefetch  <= remote_open_prefetch;
                 bootstrap_issued <= 1'b1;
             end
 
@@ -77,6 +83,7 @@ module m2_open_dispatcher (
                 if (cmd_ready) begin
                     cmd_valid     <= 1'b0;
                     cmd_is_remote <= 1'b0;
+                    cmd_is_prefetch <= 1'b0;
                 end
             end else begin
                 // Give an already queued request first priority.  If no old
@@ -88,11 +95,13 @@ module m2_open_dispatcher (
                     cmd_is_remote <= 1'b1;
                     if (remote_queued) begin
                         cmd_image_id <= queued_image_id;
+                        cmd_is_prefetch <= queued_prefetch;
                         // Preserve a newer request arriving as the old queue
                         // entry moves to the immutable valid/ready output.
                         remote_queued <= remote_open_request;
                     end else begin
                         cmd_image_id  <= remote_open_image_id;
+                        cmd_is_prefetch <= remote_open_prefetch;
                         remote_queued <= 1'b0;
                     end
                 end else if (catalog_valid && (catalog_count != 8'd0) &&
@@ -100,6 +109,7 @@ module m2_open_dispatcher (
                     cmd_valid        <= 1'b1;
                     cmd_image_id     <= 8'd0;
                     cmd_is_remote    <= 1'b0;
+                    cmd_is_prefetch  <= 1'b0;
                     bootstrap_issued <= 1'b1;
                 end
             end

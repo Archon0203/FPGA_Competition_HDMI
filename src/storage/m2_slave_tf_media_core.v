@@ -29,6 +29,7 @@ module m2_slave_tf_media_core #(
     output wire [7:0]  descriptor_image_id,
     output wire [15:0] descriptor_width,
     output wire [15:0] descriptor_height,
+    output wire [87:0] descriptor_filename_83,
     output wire        source_ready,
     output wire        source_busy,
     output wire        source_done,
@@ -68,6 +69,7 @@ module m2_slave_tf_media_core #(
         .descriptor_image_id(descriptor_image_id),
         .descriptor_width(descriptor_width),
         .descriptor_height(descriptor_height),
+        .descriptor_filename_83(descriptor_filename_83),
         .source_ready(source_ready), .source_busy(source_busy),
         .source_done(source_done), .source_error(source_error),
         .error_code(error_code));

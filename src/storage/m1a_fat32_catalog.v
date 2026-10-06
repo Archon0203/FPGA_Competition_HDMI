@@ -23,6 +23,7 @@ module m1a_fat32_catalog #(
     output wire [1:0]  descriptor_type,
     output wire [31:0] descriptor_cluster,
     output wire [31:0] descriptor_size,
+    output wire [87:0] descriptor_name_83,
     output wire [31:0] descriptor_fat_lba_base,
     output wire [31:0] descriptor_data_lba_base,
     output wire [7:0]  descriptor_sectors_per_cluster,
@@ -36,6 +37,7 @@ module m1a_fat32_catalog #(
     wire [4:0] file_index;
     wire [1:0] file_type;
     wire [31:0] file_cluster, file_size;
+    wire [87:0] file_name_83;
     wire file_wr;
     wire [31:0] fat_lba_base, data_lba_base;
     wire [7:0] sectors_per_cluster;
@@ -47,7 +49,7 @@ module m1a_fat32_catalog #(
         .scan_done(scan_done), .scan_ok(scan_ok),
         .file_count(scan_file_count), .file_index(file_index),
         .file_type(file_type), .file_cluster(file_cluster),
-        .file_size(file_size), .file_wr(file_wr),
+        .file_size(file_size), .file_name_83(file_name_83), .file_wr(file_wr),
         .fat_lba_base(fat_lba_base), .data_lba_base(data_lba_base),
         .sectors_per_cluster(sectors_per_cluster)
     );
@@ -57,7 +59,8 @@ module m1a_fat32_catalog #(
         .scan_done(scan_done), .scan_ok(scan_ok),
         .entry_valid(file_wr), .entry_index(file_index),
         .entry_type(file_type), .entry_cluster(file_cluster),
-        .entry_size(file_size), .scan_fat_lba_base(fat_lba_base),
+        .entry_size(file_size), .entry_name_83(file_name_83),
+        .scan_fat_lba_base(fat_lba_base),
         .scan_data_lba_base(data_lba_base),
         .scan_sectors_per_cluster(sectors_per_cluster),
         .query_valid(query_valid), .query_image_id(query_image_id),
@@ -66,6 +69,7 @@ module m1a_fat32_catalog #(
         .descriptor_type(descriptor_type),
         .descriptor_cluster(descriptor_cluster),
         .descriptor_size(descriptor_size),
+        .descriptor_name_83(descriptor_name_83),
         .descriptor_fat_lba_base(descriptor_fat_lba_base),
         .descriptor_data_lba_base(descriptor_data_lba_base),
         .descriptor_sectors_per_cluster(descriptor_sectors_per_cluster),

@@ -37,6 +37,7 @@ module m2_real_media_uart_bridge (
 
     output reg         open_request,
     output reg  [7:0]  open_image_id,
+    output reg         open_prefetch,
     output reg         link_seen,
     output reg         fault,
     output reg         command_toggle,
@@ -82,6 +83,7 @@ module m2_real_media_uart_bridge (
             frame_tx_payload <= 32'd0;
             open_request     <= 1'b0;
             open_image_id    <= 8'd0;
+            open_prefetch    <= 1'b0;
             link_seen        <= 1'b0;
             fault            <= 1'b0;
             command_toggle   <= 1'b0;
@@ -115,7 +117,7 @@ module m2_real_media_uart_bridge (
                         if (rx_frame_opcode == OP_PING && rx_frame_length == 3'd0) begin
                             queue_response(8'h80, live_status, live_error);
                         end else if (rx_frame_opcode == `M1A_CMD_OPEN &&
-                                     rx_frame_length == 3'd1) begin
+                                     (rx_frame_length == 3'd1 || rx_frame_length == 3'd2)) begin
                             if (!catalog_valid) begin
                                 fault <= 1'b1;
                                 queue_response(8'h81, `M1A_STATUS_ERROR,
@@ -130,6 +132,8 @@ module m2_real_media_uart_bridge (
                                 // coordinator therefore never times out while
                                 // the Slave is legitimately busy with TF I/O.
                                 open_image_id <= rx_frame_payload[7:0];
+                                open_prefetch <= (rx_frame_length == 3'd2) &&
+                                                 (rx_frame_payload[15:14] == 2'd1);
                                 open_request  <= 1'b1;
                                 open_pending  <= 1'b1;
                                 open_started  <= 1'b0;

@@ -13,16 +13,16 @@
 
 | 负责人 | 开发线 | 主要职责 | 部署板卡与边界 |
 |---|---|---|---|
-| 张宗 | C 线 + 集成 | 主板 UI、交互、`media_cmd`、OSD、缩放、转场、音频和 1080p UI 适配；维护公共接口、集成分支、顶层与约束；组织综合、布局布线、STA、BitGen 和真板验收 | C 线主要运行在主板；集成负责人统一维护 `src/top/**`、`constraints/**` 和 TD 工程，不承接 A/B 线内部模块实现 |
-| 曾雨婷 | A 线 | 从板 TF/FAT32/BMP 解析、媒体目录、预取、SDRAM、descriptor/packet，以及 1080p 媒体数据供给 | 主要运行在从板；只修改 A 线所有权范围，按冻结的 descriptor、packet 和板间接口提交模块 |
-| 杨文轩 | B 线 | 从板发送、主板接收、SPI/GPIO/PRBS/CRC/CDC、line/tile buffer，以及 HDMI 1080p 时序和安全提交 | 跨从板发送端与主板接收端；只修改 B 线所有权范围，按冻结的板间链路和显示时序接口提交模块 |
+| 张宗 | C 线 + 集成 | 主板 UI、交互、`media_cmd`、OSD、字幕、缩放、转场、亮度/对比度、HDMI 音频、音画同步和音频可视化；维护公共接口、集成分支、顶层与约束；组织综合、布局布线、STA、BitGen 和真板验收 | C 线主要运行在主板；集成负责人统一维护 `src/top/**`、`constraints/**` 和 TD 工程，不承接 A/B 线内部模块实现 |
+| 曾雨婷 | A 线 | 从板 TF/FAT32/BMP 解析、图片目录、预取、descriptor、图片 payload 和媒体状态；不做视频输出 | 主要运行在从板；只修改 A 线所有权范围，按冻结的 descriptor、packet 和板间接口提交模块 |
+| 杨文轩 | B 线 | 从板发送、主板接收、CRC/握手、SDRAM/BRAM、1080P 静态图片缓存、安全提交和 HDMI 视频时序 | 跨从板发送端与主板接收端；只修改 B 线所有权范围，按冻结的板间链路和显示时序接口提交模块 |
 
 ### 集成与阶段规则
 
-1. `M0` 是已完成的 P0/P1-05A 基线；`M1` deterministic 双板控制门禁已关闭；**当前节点为 `M2`**。P1-05B 作为 `M2` 的双板架构第一闭环。Slave 本地 TF/BMP 诊断 PASS 不等于 M2 双板完成。
-2. `M1` 的双板可视化控制闭环已经在真板通过；当前进入 `M2`。`M3` 直接以 1080p packed-YUV422 等效吞吐和 1080p PHY 可行性为硬门禁，1280×720 只允许作为故障隔离 profile，不能作为节点完成条件。
+1. `M0` 是已完成的 P0/P1-05A 基线；`M1` deterministic 双板控制门禁已关闭；`M2` 的 640×480 双板图片、主板 HDMI、切换和轮播基础闭环已通过；**当前仍处于 `M2`，正在收口 M2.1，尚未进入 M3**。P1-05B 作为 `M2` 的双板架构第一闭环。
+2. `M3` 的硬门禁是 1920×1080 静态图片一次完整传输、主板安全提交和 HDMI 输出，不做视频输出；像素格式和 packet 宽度必须依据资源、加载时间、STA 和真板结果冻结。
 3. 公共接口（`media_cmd`、descriptor/packet、板间链路、时钟/复位、显示提交等）由集成负责人先定义并冻结；接口变更必须先在 PR 中说明影响范围，再由集成负责人协调 A/B/C 三线同步修改。
-4. C 线可先用 deterministic raster、固定 catalog 和 PRBS mock 开发按键/旋钮/转轮/UI；真实选图范围、媒体类型、播放完成/错误必须接入 A 线 `catalog/descriptor/status`，真实缩放/OSD/转场验收必须接入 B 线 `canonical raster/frame_boundary/underflow`。mock 通过不等于双板集成通过。
+4. C 线可先用 deterministic raster、固定 catalog 和图片 mock 开发按键/旋钮/转轮/UI；真实选图范围、图片完成/错误必须接入 A 线 `catalog/descriptor/status`，真实缩放/OSD/转场验收必须接入 B 线 `canonical raster/frame_boundary/underflow`。mock 通过不等于双板集成通过。
 5. 旋钮采用外接增量式正交编码器 A/B + 按压开关的候选方案，优先使用 40-pin GPIO；pin ownership、电平、消抖、CDC 和约束由集成负责人冻结后才能上板。
 6. 双板构建产物必须分开保存：`master.bit` 对应主板 `master_top + master ADC/SDC`，`slave.bit` 对应从板 `slave_top + slave ADC/SDC`。更换 Top 或约束后必须完整执行 synthesis、P&R、STA、BitGen，并在烧录记录中写明板号、角色、commit 和 bitstream 哈希。
 7. A 线和 B 线不得直接修改对方所有权范围，也不得绕过已冻结接口建立隐式依赖。跨线需求通过接口、stub 或测试数据提出。
@@ -77,8 +77,8 @@ cd FPGA_Competition_HDMI
 
 ## M2 主板输出候选分工（2026-10-04）
 
-- 曾雨婷 / A：Slave TF、catalog、BMP、媒体状态、后续 SD 提速/预取；消费 B 的背压，不另做显示链。
-- 杨文轩 / B：Slave 发送 + Master 接收、CRC/握手、SDRAM/BRAM、后续双缓冲/安全提交/高速 PHY。
-- 张宗 / C + 集成：Master 按键/轮播/加载 UI、DONE 与显示发布协调、双角色工程/时序/接线板测。
+- 曾雨婷 / A：Slave TF、catalog、BMP、图片状态、SD 提速/预取；消费 B 的背压，不另做显示链。
+- 杨文轩 / B：Slave 发送 + Master 接收、CRC/握手、SDRAM/BRAM、1080P 静态图片缓存/安全提交和 HDMI 视频时序。
+- 张宗 / C + 集成：Master 按键/轮播/加载 UI、字幕/转场/亮度对比度、HDMI 音频/音画同步/音频可视化、DONE 与显示发布协调、双角色工程/时序/接线板测。
 
-当前两份长期工程 Top 为 `m2_master_tf_hdmi_top` / `m2_slave_media_tx_top`；主板输出 HDMI、从板放 TF。当前 profile 是 14 线低速图片传输，最终 1080p 视频 PHY 未验收。共同按 [板测表](docs/develop_records/M2_MASTER_OUTPUT_20261004.md) 验证，当前 PASS 只写入 docs03。
+当前两份长期工程 Top 为 `m2_master_tf_hdmi_top` / `m2_slave_media_tx_top`；主板输出 HDMI、从板放 TF。当前 profile 是 14 线低速图片传输，640×480 已真板通过；1920×1080 静态图片、音频和 UI 仍按 docs08 的 M3～M6 验收。共同按 [板测表](docs/develop_records/M2_MASTER_OUTPUT_20261004.md) 验证，当前 PASS 只写入 docs03。

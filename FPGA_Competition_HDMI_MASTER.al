@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="C:/Users/HP/Downloads/FPGA_Competition_HDMI_M2_MASTER_IPFIX_20261005/FPGA_Competition_HDMI_M2_MASTER_IPFIX_20261005">
+<Project Version="3" Minor="2" Path="D:/AnlogicProject/FPGA_Competition_HDMI">
     <Project_Created_Time></Project_Created_Time>
     <TD_Encoding>UTF-8</TD_Encoding>
     <TD_Version>6.2.168116</TD_Version>
@@ -269,7 +269,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="75"/>
+                    <Attr Name="CompileOrder" Val="77"/>
                 </FileInfo>
             </File>
             <File Path="src/dual_board/m1b_line_packet_checker.v">
@@ -363,7 +363,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="73"/>
+                    <Attr Name="CompileOrder" Val="74"/>
                 </FileInfo>
             </File>
             <File Path="src/framebuf/framebuffer_writer.v">
@@ -638,6 +638,46 @@
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
                     <Attr Name="CompileOrder" Val="72"/>
+                </FileInfo>
+            </File>
+            <File Path="src/display/m2_caption_commit.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="73"/>
+                </FileInfo>
+            </File>
+            <File Path="src/display/m2_image_info_overlay.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="75"/>
+                </FileInfo>
+            </File>
+            <File Path="src/display/m2_image_subtitle.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="76"/>
+                </FileInfo>
+            </File>
+            <File Path="src/dual_board/m2_cache_command_cdc.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="78"/>
+                </FileInfo>
+            </File>
+            <File Path="src/dual_board/m2_cache_command_router.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="79"/>
                 </FileInfo>
             </File>
         </Verilog>

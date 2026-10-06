@@ -1,0 +1,47 @@
+Reading D:/Questasim64_10.7c/tcl/vsim/pref.tcl
+
+# 10.7c
+
+# vsim -c work.tb_m2_display_cache_e2e -do "run -all; quit -f" 
+# Start time: 13:33:59 on Oct 06,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\src\top\m2_slave_tf_hdmi_top.v(724): (vopt-2685) [TFMPC] - Too few port connections for 'u_sdram_adapter'.  Expected 35, found 33.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\src\top\m2_slave_tf_hdmi_top.v(724): (vopt-2718) [TFMPC] - Missing connection for port 'read_cache_miss_count_debug'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\src\top\m2_slave_tf_hdmi_top.v(724): (vopt-2718) [TFMPC] - Missing connection for port 'read_cache_hit_count_debug'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 30, found 17.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_DDC_SDA'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_DDC_SCL'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_CLK_P'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_D2_P'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_D1_P'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'HDMI_D0_P'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'sd_mosi'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'sd_sclk'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'sd_ncs'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'diag_sel_n'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'diag_led_n'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'led'.
+# ** Warning: D:\AnlogicProject\FPGA_Competition_HDMI\sim_tb\loading_overlay\tb_m2_display_cache_e2e.v(24): (vopt-2718) [TFMPC] - Missing connection for port 'uart_tx'.
+# //  Questa Sim-64
+# //  Version 10.7c win64 Aug 18 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_m2_display_cache_e2e(fast)
+# run -all
+# CACHE_LATENCY_NS: image=0 ns=16799980
+# CACHE_LATENCY_NS: image=2 ns=16799980
+# PASS: display core startup, three banks, seamless reload, cache pixels/captions, missing-card UI mux
+# ** Note: $finish    : D:/AnlogicProject/FPGA_Competition_HDMI/sim_tb/loading_overlay/tb_m2_display_cache_e2e.v(99)
+#    Time: 420000590 ns  Iteration: 2  Instance: /tb_m2_display_cache_e2e
+# End time: 13:34:30 on Oct 06,2026, Elapsed time: 0:00:31
+# Errors: 0, Warnings: 17

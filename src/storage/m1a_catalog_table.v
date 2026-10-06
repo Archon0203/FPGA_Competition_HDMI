@@ -25,6 +25,7 @@ module m1a_catalog_table #(
     input  wire [1:0]  entry_type,
     input  wire [31:0] entry_cluster,
     input  wire [31:0] entry_size,
+    input  wire [87:0] entry_name_83,
     input  wire [31:0] scan_fat_lba_base,
     input  wire [31:0] scan_data_lba_base,
     input  wire [7:0]  scan_sectors_per_cluster,
@@ -38,6 +39,7 @@ module m1a_catalog_table #(
     output reg  [1:0]  descriptor_type,
     output reg  [31:0] descriptor_cluster,
     output reg  [31:0] descriptor_size,
+    output reg  [87:0] descriptor_name_83,
     output reg  [31:0] descriptor_fat_lba_base,
     output reg  [31:0] descriptor_data_lba_base,
     output reg  [7:0]  descriptor_sectors_per_cluster,
@@ -59,6 +61,7 @@ module m1a_catalog_table #(
     reg [1:0]  type_mem [0:TABLE_MAX-1];
     reg [31:0] cluster_mem [0:TABLE_MAX-1];
     reg [31:0] size_mem [0:TABLE_MAX-1];
+    reg [87:0] name_mem [0:TABLE_MAX-1];
     reg [31:0] fat_base_mem [0:TABLE_MAX-1];
     reg [31:0] data_base_mem [0:TABLE_MAX-1];
     reg [7:0]  spc_mem [0:TABLE_MAX-1];
@@ -79,6 +82,7 @@ module m1a_catalog_table #(
             descriptor_type <= 2'd0;
             descriptor_cluster <= 32'd0;
             descriptor_size <= 32'd0;
+            descriptor_name_83 <= {11{8'h20}};
             descriptor_fat_lba_base <= 32'd0;
             descriptor_data_lba_base <= 32'd0;
             descriptor_sectors_per_cluster <= 8'd0;
@@ -92,6 +96,7 @@ module m1a_catalog_table #(
                 type_mem[i] <= 2'd0;
                 cluster_mem[i] <= 32'd0;
                 size_mem[i] <= 32'd0;
+                name_mem[i] <= {11{8'h20}};
                 fat_base_mem[i] <= 32'd0;
                 data_base_mem[i] <= 32'd0;
                 spc_mem[i] <= 8'd0;
@@ -115,6 +120,7 @@ module m1a_catalog_table #(
                 type_mem[entry_index] <= entry_type;
                 cluster_mem[entry_index] <= entry_cluster;
                 size_mem[entry_index] <= entry_size;
+                name_mem[entry_index] <= entry_name_83;
                 fat_base_mem[entry_index] <= scan_fat_lba_base;
                 data_base_mem[entry_index] <= scan_data_lba_base;
                 spc_mem[entry_index] <= scan_sectors_per_cluster;
@@ -144,6 +150,7 @@ module m1a_catalog_table #(
                     descriptor_type <= type_mem[query_image_id[4:0]];
                     descriptor_cluster <= cluster_mem[query_image_id[4:0]];
                     descriptor_size <= size_mem[query_image_id[4:0]];
+                    descriptor_name_83 <= name_mem[query_image_id[4:0]];
                     descriptor_fat_lba_base <= fat_base_mem[query_image_id[4:0]];
                     descriptor_data_lba_base <= data_base_mem[query_image_id[4:0]];
                     descriptor_sectors_per_cluster <= spc_mem[query_image_id[4:0]];

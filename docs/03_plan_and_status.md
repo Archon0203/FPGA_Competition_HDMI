@@ -102,13 +102,13 @@ M1ABC aggregate QuestaSim 10.7c            [C] PASS
 Master KEY2/KEY3/KEY4 控制 Slave 页面       [B] PASS
 ```
 
-M1 的 `[B]` 只证明低速三线 UART 控制、角色 bitstream 和 mock/deterministic media-service 可视闭环。它**不证明**真实 TF 图片切换、source-synchronous 高速数据面或 1080p。
+M1 的 `[B]` 只证明低速三线 UART 控制、角色 bitstream 和 mock/deterministic media-service 可视闭环。它不证明 1080p；真实图片闭环在 M2 单独验收。
 
 M1 关闭记录以 `docs/develop_records/M1ABC_V5_VALIDATION.md` 为准。
 
-## 5. 当前节点：M2
+## 5. 当前节点：M2（M2.1 体验收口未完成，尚未进入 M3）
 
-M2 的完整目标仍是：
+M2 已关闭基础功能目标，完整链路为：
 
 ```text
 Slave TF/FAT32/BMP
@@ -118,7 +118,7 @@ Slave TF/FAT32/BMP
   -> Master HDMI
 ```
 
-M2 **基础双板图片闭环已取得真板 `[B] PASS`，但节点尚未完全关闭**。2026-10-05 FIX6 修正 `link_data[3:5]` 的 J1/FPGA 球位映射后，用户重新构建并上板确认：Slave 从 TF 读取真实 640×480 BMP，经 14 线链路传到 Master，Master HDMI 能显示图片，NEXT/PREV 可切换，自动轮播可工作。当前版本冻结为 `M2_FIX6_BOARD_PASS_20261005`。仍未关闭的内容包括加载时延、Loading UI 形态、故障/复位长稳，以及后续持续视频所需的高速数据面。
+M2 **基础双板图片闭环已取得真板 `[B] PASS`**。2026-10-05 FIX6 修正 `link_data[3:5]` 的 J1/FPGA 球位映射后，用户重新构建并上板确认：Slave 从 TF 读取真实 640×480 BMP，经 14 线链路传到 Master，Master HDMI 能显示图片，NEXT/PREV 可切换，自动轮播可工作。当前版本冻结为 `M2_FIX6_BOARD_PASS_20261005`。加载时延、Loading UI 形态、提前预读稳定性、故障/复位长稳和回归债务仍属于 M2.1 收口内容；在这些内容完成并重新板测前，**项目不进入 M3**。
 
 ### 5.1 已通过：Slave 本地真实 TF/BMP 第一图
 
@@ -222,10 +222,10 @@ bitstream 的 `[S]`/`[B]`，因此双板 TF → Master HDMI 仍保持未验收�
 | 新拓扑：真实媒体 + 新传输、CRC/背压、加载 UI、RAM/scanout | 12 项 `[U/C-sub] PASS` |
 | Master final routed | 4514 LUT；SWNS +0.236 ns，HWNS +0.003 ns；STNS/HTNS=0；BitGen 完成 |
 | Slave final routed | 6114 LUT；SWNS +10.085 ns，HWNS +0.075 ns；STNS/HTNS=0；BitGen 完成 |
-| TF → 14 线 → Master HDMI 真板 | `—`，待接线、同时更新两 bitstream 后验收 |
-| 1080p / 高速持续视频 / 双缓冲无闪屏 | 未完成 |
+| TF → 14 线 → Master HDMI 真板 | FIX6 `[B] PASS`，640×480 图片、切换、轮播 |
+| 1920×1080 静态图片 / 安全提交 / 双缓冲策略 | 未完成 |
 
-LUT 降低来自 RAM 推断修正与职责拆分。新链路是有确认的低速图片搬运，不是高速视频吞吐证据。当前卡 SPI 速率保持已验证值，加载耗时未宣称缩短。故障/断线可能需双板复位，M2 安全恢复门槛尚未关闭。
+LUT 降低来自 RAM 推断修正与职责拆分。新链路是已确认的低速图片搬运，尚未证明 1920×1080 的加载时间和资源余量。该历史候选卡 SPI 速率保持当时已验证值，加载耗时未宣称缩短。故障/断线可能需双板复位，M2.1 安全恢复门槛尚未关闭。
 
 ### 5.6 历史集成候选：M2_TEAM_INTEGRATION_20261005
 
@@ -260,21 +260,47 @@ auto carousel                                                           [B] PASS
 - J1 electrical static audit PASS；
 - `tb_m2_physical_pin_fault_signature` PASS；
 - `tb_m2_full_frame_mailbox_640x480` PASS；
-- 但 `framebuf/tb_p1_sdram_cached_adapter` 仍为 current active regression 的已知 FAIL；
+- 当时 `framebuf/tb_p1_sdram_cached_adapter` 为 active regression 的已知 FAIL；2026-10-06 定向回归已 PASS(58)，全仓 audit 尚未重跑；
 - 另有若干历史/可选 testbench FAIL，不能据此宣称全仓 Questa 全绿。
 
 当前已知体验/架构问题：
 
 1. 图片加载明显偏慢，官方样例可近似秒切，本工程当前仍有较长等待；
-2. Loading UI 当前整屏覆盖显示，后续应改为保留上一帧，仅叠加小型加载提示；
-3. 14 线握手链本阶段只作为静态图片链验证，不作为持续视频链路；
+2. FIX6 基线的 Loading UI 会整屏替换；最新要求是仅首次启动显示 Loading，后续切图保持旧图且不显示 Loading；
+3. 14 线握手链本阶段只作为静态图片链验证，M3 需测量其 1080P 静态图片加载时间；
 4. 断链、异常卡、复位恢复和长稳仍需单独验收。
 
 冻结记录见 [`develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md`](develop_records/M2_FIX6_BOARD_PASS_FREEZE_20261005.md)。
 
-## 6. M2 关闭门槛
+### 5.8 当前工作树候选：M2_UI_FAST_INTEGRATION_20261006
 
-M2 只有同时满足以下条件才可关闭：
+2026-10-06 在 `fix/m2-fast-ui-20261006` 集成两位队友的 UI、加载提速和提前预读工程，作为 **M2.1 体验收口候选**；M3 的 1080P 主目标保持为后续节点。由于提前预读当前仍不够稳定，本候选尚未取得 `[B]/[L]`，FIX6 继续作为真板回退基线。
+
+- 首次启动全屏“加载中” → 首图；后续切图始终保持旧图、不显示 Loading；缺卡显示同风格“未识别到TF卡”。
+- 保留底部字幕和左上角圆角半透明 RES/RGB 信息框；图片与字幕元数据在同一帧边界提交。
+- 主板六槽 **640×480** 缓存；手动和自动轮播均支持本地命中快切。正式显示核心仿真两次测得 **16.799980 ms**，不是冷加载真板耗时。
+- 在此候选上增加后台提前预读：空闲时从板读取下一张并写入主板非前台缓存槽；预读完成不改变当前画面，用户 K2/K3 优先，显式缓存查询后才在安全帧边界切换。预读完成反馈已改为跨板粘滞状态，避免 UART STATUS 漏采样。
+- SD 运行期从 3.125 提到 6.25 MHz，初始化仍为约 390.625 kHz；compact RGB888 按地址跳变发送 ADDR，典型 bottom-up 全图传输 words 减少约 49.9%；首次访问和淘汰后的图片仍需后台读取/传输。
+- UI 来源的 −31.562 ns setup 路径已修复：尺寸/BPP 采用 16 拍 BCD 格式化，像素域保持完整 STA；修正 framebuffer 与官方 AXIS 的一拍对齐，并同步控制域 HDMI 健康状态。
+
+| 项目 | 本候选证据 |
+|---|---|
+| 原有 M2 控制/媒体/传输回归 | 14/14 `[U/C-sub] PASS` |
+| UI/缓存/metadata/compact/SDRAM 扩展回归 | 28/28 `[U/C-sub] PASS`，其中 cached adapter PASS(58) |
+| 补充正式显示/缓存控制/缺卡集成 | 4/4 `[C-sub] PASS`，厂商物理边界使用明确的仿真模型 |
+| Master routed/BitGen | `[S] PASS`：8730 LUT，SWNS +0.190 ns，HWNS +0.011 ns，STNS/HTNS=0 |
+| Slave routed/BitGen | `[S] PASS`：7058 LUT，SWNS +10.203 ns，HWNS +0.075 ns，STNS/HTNS=0 |
+| 此候选真板功能/冷加载性能/长稳 | `[B]/[L] 待验`，不可继承 FIX6 的 PASS |
+| 后台预读与用户优先级 | `[C-sub] PASS`；实际板上表现不稳定，暂不关闭 M2.1 |
+| 1080P／热插拔／完整 full audit | 尚未通过对应门禁；六槽布局不得直接用于 1080P |
+
+成套交付：`sim_work/m2_ui_fast_20261006_release/delivery/master.bit`、`slave.bit`；继续沿用 FIX6 14 根线，HDMI 接主板，TF 留从板。新 Slave 使用 `B17E01xx` compact header，**两份 bit 必须一起升级，不能混用旧 Master**。
+
+[集成契约、预读增量、原始证据、SHA256、分工及板测步骤](develop_records/M2_UI_FAST_INTEGRATION_20261006.md)；预读增量记录见 [M2_PREFETCH_20261006](develop_records/M2_PREFETCH_20261006.md)。Master hold/setup 裕量较小，仅表述为“此 routed 候选无违例”；不宣称 1080P 时序已闭合或全仓回归全绿。
+
+## 6. M2 基础闭环与 M2.1 收口门槛
+
+以下前三项已经构成 M2 基础功能 `[B]`；后两项是 M2.1 的安全和长稳收口：
 
 1. `[C]`：真实 TF/FAT32/BMP 经完整双板媒体链到 Master 显示可复现；
 2. `[S]`：Master/Slave 对应最终 M2 candidate 均完成 TD6.2.1 final STA，setup/hold 0 violation；
@@ -282,29 +308,29 @@ M2 只有同时满足以下条件才可关闭：
 4. `[B]`：断链、错包、坏文件或重置时不提交半帧，能保持上一帧或 fallback；
 5. 控制命令必须以真实媒体事务完成为边界，不能把 UART ACK/`ACCEPTED` 当成整帧完成。
 
-当前状态：**基础双板真实图片、手动切换和自动轮播已经通过；M2 完整关闭门槛仍未全部满足。** 当前缺口主要是异常/复位恢复、长稳、加载体验，以及 current active regression 清理。
+当前状态：**仍处于 M2。** M2 基础双板真实图片、手动切换和自动轮播已通过；M2.1 的加载体验、提前预读稳定性、异常/复位恢复、长稳和 current active regression 清理尚未完成，因此尚未进入 M3。
 
 ## 7. 后续节点状态
 
 | 节点 | 目标 | 当前状态 |
 |---|---|---|
-| M2 | 640×480 真实媒体双板第一闭环 | **FIX6 真板 `[B] PASS`：Master HDMI 出图、NEXT/PREV、自动轮播；节点继续处理恢复/加载体验/回归债务** |
-| M3 | source-synchronous 数据面达到 1080p packed-YUV422 等效持续吞吐；720p 仅作排错 | 未开始完整验收 |
-| M4 | Master 真实 1920×1080 静态图 + UI/OSD | 未完成 |
-| M5 | 视频、切换、转场、音频 | 未完成 |
-| M6 | 最终双板 1080p 长稳与故障恢复 | 未完成 |
+| M2 | 640×480 真实图片双板第一闭环 | **基础闭环 FIX6 真板 `[B] PASS`；当前继续做 M2.1 收口** |
+| M3 | 双板 1920×1080 静态图片传输、缓存和主板输出 | **尚未开始；等待 M2.1 关闭** |
+| M4 | 1080P 图片轮播、转场、字幕、UI 和图像参数 | 未完成 |
+| M5 | HDMI 音频、音画同步、音频可视化 | 未完成 |
+| M6 | 1.4 扩展、长稳、故障恢复与最终交付 | 未完成 |
 
-当前可以表述“640×480 静态图片真实双板链路已真板通过”；仍没有证据允许表述“1080p 持续视频已支持”。
+当前可以表述“640×480 静态图片真实双板链路已真板通过”；仍没有证据允许表述“1920×1080 静态图片已支持”。
 
 ## 8. 当前验证顺序
 
 1. 以 `M2_FIX6_BOARD_PASS_20261005` 作为当前可回退真板基线，后续改动必须能回到该版本。
-2. A 线优先量化并缩短 TF/BMP 加载耗时；不要在未测量前盲目修改多个存储模块。
-3. C 线把 Loading 从整屏替换改为“保留上一帧 + 小型 overlay”，并保持 publish/fault 语义不变。
-4. B 线先清理 `tb_p1_sdram_cached_adapter` active regression，再继续异常/复位/长稳门禁。
-5. 14 线链继续作为静态图片基线；持续视频另开高速数据面方案，不把本次图片 PASS 当作视频带宽证据。
+2. M3-0 由 A/B/集成共同冻结 1920×1080 图片的像素格式、packet 方式、缓存布局和加载时间指标。
+3. A 线完成 1080P BMP 解析和耗时分段；B 线完成 1080P 接收/缓存/安全提交；C 线先接入可旁路的 1080P raster/UI。
+4. C 线仅首次启动显示全屏 Loading；后续切图保持旧图、不显示 Loading；缺卡显示同风格“未识别到TF卡”，保持真实 publish/fault 语义。
+5. M2.1 缓存适配器定向回归已 PASS(58)，继续补异常/复位/长稳和完整 audit；不新增视频路线。
 
-当前 full audit 并非全绿：完整 640×480 mailbox、物理 pin fault、主要 M2 链路均通过，但仍有 1 个 ACTIVE/DEEP gate 失败和若干历史/可选测试失败。
+上次 full audit 并非全绿；2026-10-06 的定向回归不能替代重新执行完整 audit，仍不得宣称全仓全绿。
 
 ## 9. 更新纪律
 
